@@ -24,10 +24,11 @@
 
 ;;; Commentary:
 
-;; indent-bars highlights indentation with configurable graphical
-;; bars, including depth-varying color options.  The indentation of
-;; the current line is (optionally) specially highlighted.  Works for
-;; modes using space-based indentation.
+;; indent-bars highlights indentation with configurable font-based
+;; bars.  It includes the option for depth-varying colors and
+;; highlighting the indentation level of the current line.  Bars span
+;; blank lines, by default.  Works only for modes using fixed,
+;; space-based indentation.
 
 ;;; Code:
 ;;;; Requires
@@ -77,12 +78,12 @@ same (e.g., see `indent-bars-zigzag')."
   :group 'indent-bars)
 
 (defcustom indent-bars-zigzag nil
-  "The zigzag to apply.
+  "The zigzag to apply to the bar pattern.
 If non-nil, an alternating zigzag offset will be applied to
-consecutive groups of identical non-space characters.  From the
-top of the pattern, positive values will zigzag (right, left,
-right, ..) and negative values (left, right, left, ...).  There
-is no wrap-around.
+consecutive groups of identical non-space characters in
+`indent-bars-pattern'.  From the top of the pattern, positive
+values will zigzag (right, left, right, ..) and negative
+values (left, right, left, ...).  There is no wrap-around.
 
 Example:
 
@@ -92,24 +93,25 @@ Example:
   zigzag: -0.25
 
 would produce a zigzag pattern which differs from the normal
-value like:
+bar pattern as follows:
 
-    |    |     	      |    |
+    |    |            |    |
     | .. | =========> |..  |
-    | .. |     	      |  ..|
+    | .. |            |  ..|
     | .. | apply zig- |  ..|
     | .. | zag -0.25  |..  |
 
-Note that the offset will be truncated at zero and the bitmap
-will not extend past one, so achieving an equal zig-zag left and
-right requires leaving room on each side of the bar for the
-zig-zag; see `indent-bars-offset-frac' and
+Note that the pattern will be truncated at both left and right
+boundaries, so (although not required) achieving an equal zig-zag
+left and right requires leaving room on each side of the bar for
+the zig-zag; see `indent-bars-offset-frac' and
 `indent-bars-width-frac'."
   :type '(choice
-	  (const :value "No zig-zag" :value nil)
+	  (const :tag "No zig-zag" :value nil)
 	  (float :value 0.1 :tag "Zig-zag fraction"
-		 :match (lambda (_ val) (and (<= val 1) (>= val -1)))
-		 :type-error "Fraction must be between -1 and 1")))
+		 :match (lambda (_ val) (and val (<= val 1) (>= val -1)))
+		 :type-error "Fraction must be between -1 and 1"))
+  :group 'indent-bars)
 
 (defcustom indent-bars-color
   '(highlight :background t :blend 0.25)
@@ -163,18 +165,18 @@ plist with keys:
 
     (:regexp :background :palette :blend)
 
-where:
+with:
 
   REGEXP: A regular expression string used to match against all
     face names.  For the matching faces, the first match group in
     the regex (if any) will be interpreted as a number, and used
     to sort the resulting list of faces.  The foreground color of
     each matching face will then constitute the depth color
-    palette (see PALETTE, which this option overrides).
+    palette (see also PALETTE, which this option overrides).
 
   BACKGROUND: A boolean.  If non-nil, use the background color
     from the faces matching REGEXP for the palette instead of
-    foreground.
+    their foreground colors.
 
   PALETTE: An explicit cyclical palette of colors/faces for
     depth-varying bar colors.  Note that REGEXP takes precedence
@@ -193,9 +195,10 @@ where:
     beginning of the list.
 
   BLEND: a blend factor which controls how the palette colors are
-    blended with the main bar color (see `indent-bars-color' for
-    information on how blend factors are used).  A nil (or unity)
-    value causes the palette colors to be used as-is.
+    blended with the frame background color (see
+    `indent-bars-color' for information on how blend factors are
+    used).  A nil (or unity) value causes the palette colors to
+    be used as-is.
 
 Note that, for this setting to have any effect, one of REGEXP or
 PALETTE is required (the former overriding the latter).  If both
@@ -211,7 +214,7 @@ indentation level, if configured; see
 			 (:background
 			  (boolean
 			   :value t
-			   :tag "Use Matching Face Background Colors"))
+			   :tag "Use Matching Face's Background Colors"))
 			 (:palette
 			  (repeat :tag "Explicit Color/Face List"
 				  (choice (color :tag "Color")
@@ -222,10 +225,10 @@ indentation level, if configured; see
 						(const :format "\n"
 						       :value background)))))
 			 (:blend
-			  (float :tag "Fraction"
+			  (float :tag "Blend Fraction into Main Color"
 				 :value 0.5
 				 :match (lambda (_ val)
-					  (and (<= val 1) (>= val 0)))
+					  (and val (<= val 1) (>= val 0)))
 				 :type-error
 				 "Factor must be between 0 and 1")))))
   :group 'indent-bars)
@@ -249,14 +252,14 @@ provided, it is a blend fraction between 0 and 1 for blending the
 highlight color with the depth-based or main color; see
 `indent-bars-colors' for its meaning."
   :type '(choice
-	  (const :tag "None " :value nil)
+	  (const :tag "No Current Depth Highlighting" :value nil)
 	  (list :tag "Highlight"
 		(choice :tag "Face or Color" color face)
 		(plist :tag "Options"
 		       :inline t
 		       :options
-		       ((:background (boolean :tag "Use Face Background Color"))
-			(:blend (float :tag "Blend with Main Color")
+		       ((:background (boolean :tag "Use Face's Background Color"))
+			(:blend (float :tag "Blend Fraction into Existing Color")
 				:value 0.5
 				:match (lambda (_ val) (and (<= val 1) (>= val 0)))
 				:type-error "Factor must be between 0 and 1")))))
