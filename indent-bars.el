@@ -449,10 +449,14 @@ font-lock properties."
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
 
-(defsubst indent-bars--block (n)
-  "Create a number with N lowest bits set."
-  (cl-loop for i below n sum (ash 1 i)))
+;; (defsubst indent-bars--block (n)
+;;   "Create a number with N lowest bits set."
+;;   (- (ash n) 1))
 
+(defun indent-bars--shift-and-carry (num w n)
+  "Shift number NUM of width W bits up by N bits, carrying to the low bits.
+N should be less than W."
+  (logand (- (ash 1 w) 1) (logior (ash num n) (ash num (- n w)))))
 
 (defun indent-bars--rot (num w n)
   "Rotate number NUM of W bits by N bits right."
@@ -492,6 +496,45 @@ font-lock properties."
 				  vconcat
 				  (list (logand n (indent-bars--block shift)))))
 			 inds)))))))
+
+;; A stipple pattern is drawn as a fixed repeating pattern with
+;; respect to the *entire frame*.  Turning on :stipple for a character
+;; merely "opens a window" on that virtual, fixed, frame-filling
+;; repeated stipple pattern.  Since the pattern start outside the body
+;; (in literally the first frame pixel), you must consider the shift:
+;;
+;;   g=(mod (car (window-edges nil t nil t)) (window-font-width))
+;;
+;; g is the extra "gutter" offset that must be accounted for.  Once
+;; the block/zigzag/whatever pattern is made, it gets shifted up g
+;; bits, with carry over (wrap around) among w=(window-font-width)
+;; bits (i.e the width of the bitmap).
+;;
+;; Note that different window sides will possibly have different g
+;; values, which means the same bitmap cannot work for the buffer in
+;; both windows.  So showing the same buffer side by side will
+;; (likely) lead to mis-alignment.
+;;
+;; Solutions:
+;;
+;;  - Use window hooks to update the stipple bitmap as focus or
+;;    windows change.  So at least the focused buffer looks correct.
+;;  - Otherwise, just live with it?
+;;  - Suggest using separate frames for this?
+;;  - Hide the bars in unfocused windows?  But this isn't great.  The
+;;    information is useful.
+;;  - Could also hide only in non-main window showing the current
+;;  - buffer, with different g values.  But it will be suprising when
+;;    they vanish.
+;;  - Provide a helper command to adjust window sizes so g is
+;;    preserved (for a given w).  But two *different* buffers, both
+;;    side-by-side, make this impossible to work (if they have
+;;    different font sizes).  Maybe that's OK though, if you are
+;;    considering the current buffer only.
+
+
+
+
 
 (defun indent-bars--stipple (w h)
   "Calculate the correct stipple bitmap pattern for char width W and height H.
