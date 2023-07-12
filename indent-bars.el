@@ -453,67 +453,68 @@ font-lock properties."
 ;;   "Create a number with N lowest bits set."
 ;;   (- (ash n) 1))
 
-(defun indent-bars--shift-and-carry (num w n)
-  "Shift number NUM of width W bits up by N bits, carrying to the low bits.
-N should be less than W."
-  (logand (- (ash 1 w) 1) (logior (ash num n) (ash num (- n w)))))
+(defsubst indent-bars--block (n)
+  "Create a block of N low-order 1 bits."
+  (- (ash 1 n) 1))
 
 (defun indent-bars--rot (num w n)
-  "Rotate number NUM of W bits by N bits right."
-  (+ (ash (logand num (indent-bars--block n)) (- w n)) ; shift n bits up
-     (ash (logand num (ash (indent-bars--block (- w n)) n)) (- n))))
+  "Shift number NUM of W bits up by N bits, carrying around to the low bits.
+N should be strictly less than W and the returned value will fit
+within W bits."
+  (logand (indent-bars--block w)
+	  (logior (ash num n) (ash num (- n w)))))
 
-(defun indent-bars--row-data (w offset)
-  "Calculate stipple row data for character width W, shifted by OFFSET bits."
-  ;; Note: Low-order bits are leftmost.  Stipple bitmap data are "scrambled":
-  ;;  w>8:  multibyte: bytes ordering rotated right by 1, last byte
-  ;;        short, with w%8 lower bits
-  ;;  w>3:  rotates lower w bits right by 2*(mod w 4)
-  ;;  w<=3: rotates lower w bit right by (mod w 2)
-  ;; Example: width 10, 1 pixel blank then 6 filled, rest blank (left of
-  ;; decimal ignored).  2 bytes required:
-  ;;   desired pattern 0001111110 -> 0.0011111 00000.10 -> rot1 = (string 2 31)
-  (let* ((rowbytes (/ (+ w 7) 8))
-	 (bitwidth (max 1 (round (* w indent-bars-width-frac))))
-	 (num (ash (indent-bars--block bitwidth) offset))
-	 (leftoverbits (if-let ((val (mod w 8)) ((= val 0))) 8 val)))
-    (cond
-     ;; Single Byte: bit rotation
-     ((<= w 3) (unibyte-string (indent-bars--rot num w (mod w 2))))
-     ((< w 8) (unibyte-string (indent-bars--rot num w (* 2 (mod w 4)))))
-     ((= w 8) (unibyte-string num))
-     ;;  Multibyte
-     (t (let ((inds `(,(1- rowbytes) ; rot1 byte ordering
-		      ,@(number-sequence 0 (- rowbytes 2)))) 
-	      (shifts `(,leftoverbits	; last byte short
-			,@(make-list (1- rowbytes) 8))))
-	  (apply #'unibyte-string
-		 (mapcar (apply-partially
-			  #'aref (cl-loop
-				  for i in (reverse inds)
-				  for n = num then (ash n (- shift))
-				  for shift = (nth i shifts)
-				  vconcat
-				  (list (logand n (indent-bars--block shift)))))
-			 inds)))))))
+(defun indent-bars--row-data (w pad offset)
+  "Calculate stipple row data to fit in character W.
+The stipple pattern has full repeat width of W.  The width of the
+pattern of filled pixels is determined by
+`indent-bars-width-frac'.  It is then shifted by PAD bits (to the
+right in the stipple pattern for positive values).  Subsequently,
+the value is up (with wrap-around) by OFFSET bits, and returned.
+OFFSET is the starting bit offset of a character in the closest
+stipple repeat; i.e. if pixel 1 of the stipple aligns with pixel
+1 of the chacter, OFFSET=0.  OFFSET should be less than W."
+  (let* ((bar-width (max 1 (round (* w indent-bars-width-frac))))
+	 (num (indent-bars--rot
+	       (ash (indent-bars--block bar-width) pad) w offset)))
+    (apply #'unibyte-string
+	   (cl-loop for boff = 0 then (+ boff 8) while (< boff w)
+		    for nbits = (min 8 (- w boff))
+		    collect (ash (logand num
+					 (ash (indent-bars--block nbits) boff))
+				 (- boff))))))
 
-;; A stipple pattern is drawn as a fixed repeating pattern with
-;; respect to the *entire frame*.  Turning on :stipple for a character
-;; merely "opens a window" on that virtual, fixed, frame-filling
-;; repeated stipple pattern.  Since the pattern start outside the body
-;; (in literally the first frame pixel), you must consider the shift:
+;; indent-bars uses a selectively-revealed stipple pattern width a
+;; width equivalent to the (fixed) width of characters to efficiently
+;; draw bars.  A stipple pattern is drawn as a fixed repeating bit
+;; pattern, with its low bits and earlier bytes leftmost.  It is drawn
+;; with respect to the *entire frame*, with its first bit aligned with
+;; the first (leftmost) frame pixel.  Turning on :stipple for a
+;; character merely "opens a window" on that virtual, fixed,
+;; frame-filling repeating stipple pattern.  Since the pattern starts
+;; outside the body (in literally the first frame pixel, typically in
+;; the fringe), you must consider the shift between the first pixel of
+;; a character and the first pixel of the repeating stipple block at
+;; that pixel position or above:
 ;;
-;;   g=(mod (car (window-edges nil t nil t)) (window-font-width))
+;;     |<--w-->|<--w-->|<--w-->|     w = pattern width
+;;     | marg/fringe |<-chr->|     chr = character width = w
+;;             |<-g->|               g = gutter offset of chr start, g<w
+;; 
 ;;
-;; g is the extra "gutter" offset that must be accounted for.  Once
-;; the block/zigzag/whatever pattern is made, it gets shifted up g
-;; bits, with carry over (wrap around) among w=(window-font-width)
-;; bits (i.e the width of the bitmap).
+;; g is the extra "gutter" offset that must be accounted for:
+;; 
+;;      g=(mod (car (window-edges nil t nil t)) (window-font-width))
+;; 
+;; When the block/zigzag/whatever pattern is made, to align with
+;; characters, it must get shifted up (= right) by g bits, with carry
+;; over (wrap) around w=(window-font-width) bits (i.e the width of the
+;; bitmap).  The byte/bit pattern is first-lowest-leftmost.
 ;;
 ;; Note that different window sides will possibly have different g
 ;; values, which means the same bitmap cannot work for the buffer in
-;; both windows.  So showing the same buffer side by side will
-;; (likely) lead to mis-alignment.
+;; both windows.  So showing the same buffer side by side can lead to
+;; mis-alignment in the non-active buffer.
 ;;
 ;; Solutions:
 ;;
