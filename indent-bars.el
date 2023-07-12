@@ -484,6 +484,7 @@ stipple repeat; i.e. if pixel 1 of the stipple aligns with pixel
 					 (ash (indent-bars--block nbits) boff))
 				 (- boff))))))
 
+;; ** Notes on the stipples:
 ;; indent-bars uses a selectively-revealed stipple pattern width a
 ;; width equivalent to the (fixed) width of characters to efficiently
 ;; draw bars.  A stipple pattern is drawn as a fixed repeating bit
@@ -522,18 +523,16 @@ stipple repeat; i.e. if pixel 1 of the stipple aligns with pixel
 ;;    windows change.  So at least the focused buffer looks correct.
 ;;  - Otherwise, just live with it?
 ;;  - Suggest using separate frames for this?
-;;  - Hide the bars in unfocused windows?  But this isn't great.  The
-;;    information is useful.
+;;  - Hide the bars be setting the stipple pattern to 0 in unfocused
+;;    windows?  But this isn't great.  The information is useful.
 ;;  - Could also hide only in non-main window showing the current
-;;  - buffer, with different g values.  But it will be suprising when
-;;    they vanish.
+;;    buffer, with different g values.  But it will be suprising when
+;;    they vanish only when the same buffer is shown twice.
 ;;  - Provide a helper command to adjust window sizes so g is
 ;;    preserved (for a given w).  But two *different* buffers, both
-;;    side-by-side, make this impossible to work (if they have
-;;    different font sizes).  Maybe that's OK though, if you are
-;;    considering the current buffer only.
-
-
+;;    side-by-side, make this impossible to work at the same time (if
+;;    they have different font sizes).  Maybe that's OK though, if you
+;;    are considering the current buffer only.
 
 
 
@@ -585,6 +584,7 @@ OBJ, otherwise in the buffer."
     (indent-bars--draw (+ (line-beginning-position) indent-bars-spacing) (match-end 1)))
   nil)
 
+;;* 
 ;;;; Font Lock
 
 (defvar-local indent-bars--font-lock-keywords nil)
