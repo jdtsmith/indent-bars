@@ -655,16 +655,30 @@ are not indicated."
 	     (set-text-properties ep (1+ ep) `(display ,s)))
 	   (forward-line 1)))))))
 
-;;;; Text scaling
+;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
+(defvar-local indent-bars--gutter-rot 0)
+(defun indent-bars--window-change (win)
+  "Update the stipple for buffer in window WIN."
+  (when (eq win (selected-window))
+    (let* ((w (window-font-width))
+	   (rot (mod (car (window-edges nil t nil t)) w)))
+      (when (/= indent-bars--gutter-rot rot)
+	(setq indent-bars--gutter-rot rot)
+	(indent-bars--resize-stipple w rot)))))
+
+(defun indent-bars--resize-stipple (&optional w rot)
+  "Recreate stipple with updated size.
+W is the optional `window-font-width' and ROT the bit rotation If
+not passed they will be calculated."
   (if indent-bars--remap-stipple
       (face-remap-remove-relative indent-bars--remap-stipple))
-  (when text-scale-mode
-    (setq indent-bars--remap-stipple
-	  (face-remap-add-relative 'indent-bars-stipple
-				   :stipple (indent-bars--stipple
-					     (window-font-width)
-					     (window-font-height))))))
+  (let  ((w (or w (window-font-width)))
+	 (rot (or rot (mod (car (window-edges nil t nil t)) w)))
+	 (h (window-font-height)))
+      (setq indent-bars--remap-stipple
+	    (face-remap-add-relative 'indent-bars-stipple
+				     :stipple (indent-bars--stipple w h rot)))))
 
 
 ;;;; Current indentation highlight
@@ -762,11 +776,13 @@ Adapted from `highlight-indentation-mode'."
   (setq-local font-lock-unfontify-region-function #'indent-bars--unfontify)
   (indent-bars--setup-font-lock)
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
-  
 
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
 
+  ;; Window state: selection/size
+  (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
+  
   ;; Current depth highlight
   (if indent-bars-highlight-current-indentation
       (add-hook 'post-command-hook #'indent-bars--post-command nil t))
