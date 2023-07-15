@@ -44,9 +44,9 @@
   :group 'basic-faces
   :prefix "indent-bars-")
 
-(defcustom indent-bars-spacing
-  (if (and (boundp 'standard-indent) standard-indent) standard-indent 2)
-  "Default indentation spacing, used if major mode isn't detected."
+(defcustom indent-bars-spacing-override nil
+  "Override for default, major-mode based indentation spacing.
+Set only if the default guessed spacing is incorrect."
   :local t
   :type 'integer
   :group 'indent-bars)
@@ -439,7 +439,6 @@ Saves the vector of face symbols in variable
       (indent-bars--create-faces depth))
   (aref indent-bars--faces (1- depth)))
 
-;;;; Display
 (defvar indent-bars-orig-unfontify-region nil)
 (defun indent-bars--unfontify (beg end)
   "Unfontify region between BEG and END.
@@ -448,10 +447,8 @@ font-lock properties."
   (let ((font-lock-extra-managed-props
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
-
-;; (defsubst indent-bars--block (n)
-;;   "Create a number with N lowest bits set."
-;;   (- (ash n) 1))
+;;;; Display
+(defvar-local indent-bars-spacing nil)
 
 (defsubst indent-bars--block (n)
   "Create a block of N low-order 1 bits."
@@ -595,7 +592,6 @@ OBJ, otherwise in the buffer."
     (indent-bars--draw (+ (line-beginning-position) indent-bars-spacing) (match-end 1)))
   nil)
 
-;;* 
 ;;;; Font Lock
 
 (defvar-local indent-bars--font-lock-keywords nil)
@@ -711,41 +707,44 @@ Works by remapping the appropriate indent-bars-N face."
 (defun indent-bars--guess-spacing ()
   "Get indentation spacing of current buffer.
 Adapted from `highlight-indentation-mode'."
-  (cond ((and (derived-mode-p 'python-mode) (boundp 'py-indent-offset))
-         py-indent-offset)
-        ((and (derived-mode-p 'python-mode) (boundp 'python-indent-offset))
-         python-indent-offset)
-        ((and (derived-mode-p 'ruby-mode) (boundp 'ruby-indent-level))
-         ruby-indent-level)
-        ((and (derived-mode-p 'scala-mode) (boundp 'scala-indent:step))
-         scala-indent:step)
-        ((and (derived-mode-p 'scala-mode) (boundp 'scala-mode-indent:step))
-         scala-mode-indent:step)
-        ((and (or (derived-mode-p 'scss-mode) (derived-mode-p 'css-mode))
-	      (boundp 'css-indent-offset))
-         css-indent-offset)
-        ((and (derived-mode-p 'nxml-mode) (boundp 'nxml-child-indent))
-         nxml-child-indent)
-        ((and (derived-mode-p 'coffee-mode) (boundp 'coffee-tab-width))
-         coffee-tab-width)
-        ((and (derived-mode-p 'js-mode) (boundp 'js-indent-level))
-         js-indent-level)
-        ((and (derived-mode-p 'js2-mode) (boundp 'js2-basic-offset))
-         js2-basic-offset)
-        ((and (fboundp 'derived-mode-class)
-	      (eq (derived-mode-class major-mode) 'sws-mode) (boundp 'sws-tab-width))
-         sws-tab-width)
-        ((and (derived-mode-p 'web-mode) (boundp 'web-mode-markup-indent-offset))
-         web-mode-markup-indent-offset)
-        ((and (derived-mode-p 'web-mode) (boundp 'web-mode-html-offset)) ; old var
-         web-mode-html-offset)
-        ((and (local-variable-p 'c-basic-offset) (boundp 'c-basic-offset))
-         c-basic-offset)
-        ((and (derived-mode-p 'yaml-mode) (boundp 'yaml-indent-offset))
-         yaml-indent-offset)
-        ((and (derived-mode-p 'elixir-mode) (boundp 'elixir-smie-indent-basic))
-         elixir-smie-indent-basic)
-        (t indent-bars-spacing)))
+  (cond
+   (indent-bars-spacing-override)
+   ((and (derived-mode-p 'python-mode) (boundp 'py-indent-offset))
+    py-indent-offset)
+   ((and (derived-mode-p 'python-mode) (boundp 'python-indent-offset))
+    python-indent-offset)
+   ((and (derived-mode-p 'ruby-mode) (boundp 'ruby-indent-level))
+    ruby-indent-level)
+   ((and (derived-mode-p 'scala-mode) (boundp 'scala-indent:step))
+    scala-indent:step)
+   ((and (derived-mode-p 'scala-mode) (boundp 'scala-mode-indent:step))
+    scala-mode-indent:step)
+   ((and (or (derived-mode-p 'scss-mode) (derived-mode-p 'css-mode))
+	 (boundp 'css-indent-offset))
+    css-indent-offset)
+   ((and (derived-mode-p 'nxml-mode) (boundp 'nxml-child-indent))
+    nxml-child-indent)
+   ((and (derived-mode-p 'coffee-mode) (boundp 'coffee-tab-width))
+    coffee-tab-width)
+   ((and (derived-mode-p 'js-mode) (boundp 'js-indent-level))
+    js-indent-level)
+   ((and (derived-mode-p 'js2-mode) (boundp 'js2-basic-offset))
+    js2-basic-offset)
+   ((and (fboundp 'derived-mode-class)
+	 (eq (derived-mode-class major-mode) 'sws-mode) (boundp 'sws-tab-width))
+    sws-tab-width)
+   ((and (derived-mode-p 'web-mode) (boundp 'web-mode-markup-indent-offset))
+    web-mode-markup-indent-offset)
+   ((and (derived-mode-p 'web-mode) (boundp 'web-mode-html-offset)) ; old var
+    web-mode-html-offset)
+   ((and (local-variable-p 'c-basic-offset) (boundp 'c-basic-offset))
+    c-basic-offset)
+   ((and (derived-mode-p 'yaml-mode) (boundp 'yaml-indent-offset))
+    yaml-indent-offset)
+   ((and (derived-mode-p 'elixir-mode) (boundp 'elixir-smie-indent-basic))
+    elixir-smie-indent-basic)
+   ((and (boundp 'standard-indent) standard-indent))
+   (t 4))) 				; backup
 
 (defun indent-bars--setup-font-lock ()
   "Setup font lock keywords and functions for indent-bars."
@@ -793,7 +792,8 @@ Adapted from `highlight-indentation-mode'."
     (add-hook 'font-lock-extend-region-functions 
 	      #'indent-bars--extend-blank-line-regions 95 t))
 
-  (font-lock-flush))
+  (font-lock-flush)
+  (indent-bars--highlight-current-depth))
 
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
