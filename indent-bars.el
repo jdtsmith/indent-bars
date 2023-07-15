@@ -674,8 +674,7 @@ are not indicated."
   "Refresh current indentation depth highlight.
 Works by remapping the appropriate indent-bars-N face."
   (let ((depth (/ (current-indentation) indent-bars-spacing)))
-    (when (and (> depth 0) (not (= depth indent-bars--current-depth))
-	       (< depth (length indent-bars--faces)))
+    (when (and (> depth 0) (not (= depth indent-bars--current-depth)))
       (setq indent-bars--current-depth depth)
       (if indent-bars--remap-face 	; out with the old
 	  (face-remap-remove-relative indent-bars--remap-face))
@@ -756,7 +755,7 @@ Adapted from `highlight-indentation-mode'."
 
   ;; Faces
   (indent-bars--create-stipple-face (frame-char-width) (frame-char-height))
-  (indent-bars--create-faces 9 'reset)   ; extends as needed
+  (indent-bars--create-faces 9 'reset)	; extends as needed
 
   ;; Font-lock
   (setq indent-bars-orig-unfontify-region font-lock-unfontify-region-function)
