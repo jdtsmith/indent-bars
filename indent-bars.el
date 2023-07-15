@@ -54,11 +54,11 @@
 (defcustom indent-bars-width-frac 0.32
   "The width of the indent bar as a fraction of the character width."
   :type '(float :tag "Width fraction"
-	  :match (lambda (_ val) (and val (<= val 1) (>= val 0)))
-	  :type-error "Fraction must be between 0 and 1")
+		:match (lambda (_ val) (and val (<= val 1) (>= val 0)))
+		:type-error "Fraction must be between 0 and 1")
   :group 'indent-bars)
 
-(defcustom indent-bars-offset-frac 0.1
+(defcustom indent-bars-pad-frac 0.1
   "The offset of the bar from the left edge of the character.
 A float, the fraction of the character width."
   :type '(float :tag "Offset fraction"
@@ -104,7 +104,7 @@ bar pattern as follows:
 Note that the pattern will be truncated at both left and right
 boundaries, so (although not required) achieving an equal zig-zag
 left and right requires leaving room on each side of the bar for
-the zig-zag; see `indent-bars-offset-frac' and
+the zig-zag; see `indent-bars-pad-frac' and
 `indent-bars-width-frac'."
   :type '(choice
 	  (const :tag "No zig-zag" :value nil)
@@ -464,19 +464,20 @@ within W bits."
   (logand (indent-bars--block w)
 	  (logior (ash num n) (ash num (- n w)))))
 
-(defun indent-bars--row-data (w pad offset)
+(defun indent-bars--row-data (w pad rot)
   "Calculate stipple row data to fit in character W.
 The stipple pattern has full repeat width of W.  The width of the
 pattern of filled pixels is determined by
-`indent-bars-width-frac'.  It is then shifted by PAD bits (to the
-right in the stipple pattern for positive values).  Subsequently,
-the value is up (with wrap-around) by OFFSET bits, and returned.
-OFFSET is the starting bit offset of a character in the closest
-stipple repeat; i.e. if pixel 1 of the stipple aligns with pixel
-1 of the chacter, OFFSET=0.  OFFSET should be less than W."
+`indent-bars-width-frac'.  It is then shifted up by PAD bits (to
+the right in the stipple pattern for positive values).
+Subsequently, the value is shifted up (with W-bit wrap-around) by
+ROT bits, and returned.  ROT is the starting bit offset of a
+character within the closest stipple repeat to the left; i.e. if
+pixel 1 of the stipple aligns with pixel 1 of the chacter, ROT=0.
+ROT should be less than W."
   (let* ((bar-width (max 1 (round (* w indent-bars-width-frac))))
 	 (num (indent-bars--rot
-	       (ash (indent-bars--block bar-width) pad) w offset)))
+	       (ash (indent-bars--block bar-width) pad) w rot)))
     (apply #'unibyte-string
 	   (cl-loop for boff = 0 then (+ boff 8) while (< boff w)
 		    for nbits = (min 8 (- w boff))
@@ -497,15 +498,20 @@ stipple repeat; i.e. if pixel 1 of the stipple aligns with pixel
 ;; the fringe), you must consider the shift between the first pixel of
 ;; a character and the first pixel of the repeating stipple block at
 ;; that pixel position or above:
-;;
+;; 
+;;     |<-frame edge |<---buffer/window edge
 ;;     |<--w-->|<--w-->|<--w-->|     w = pattern width
 ;;     | marg/fringe |<-chr->|     chr = character width = w
 ;;             |<-g->|               g = gutter offset of chr start, g<w
-;; 
 ;;
-;; g is the extra "gutter" offset that must be accounted for:
+;; Or, when the character width exceeds the margin/fringe offset:
 ;; 
-;;      g=(mod (car (window-edges nil t nil t)) (window-font-width))
+;;     |<-frame edge |<---buffer/window edge
+;;     |<--------w-------->|<---------w-------->|
+;;     | marg/fringe |<-------chr------->|
+;;     |<-----g----->|
+;;
+;; So g = (mod marg/fringe w).
 ;; 
 ;; When the block/zigzag/whatever pattern is made, to align with
 ;; characters, it must get shifted up (= right) by g bits, with carry
@@ -533,13 +539,18 @@ stipple repeat; i.e. if pixel 1 of the stipple aligns with pixel
 ;;    side-by-side, make this impossible to work at the same time (if
 ;;    they have different font sizes).  Maybe that's OK though, if you
 ;;    are considering the current buffer only.
+;;  - Use C-x 4 c (clone-indirect-buffer-other-window).  Probably the
+;;    best solution!  But a bug in Emacs <29 means
+;;    `face-remapping-alist' is shared between indirect and master
+;;    buffers.  Fixed in Emacs 29.
 
-
-
-(defun indent-bars--stipple (w h)
+(defun indent-bars--stipple (w h rot)
   "Calculate the correct stipple bitmap pattern for char width W and height H.
+ROT is the number of bits to rotate the pattern
+around to the right.
+
 Uses configuration variables `indent-bars-width-frac',
-`indent-bars-offset-frac', `indent-bars-pattern', and
+`indent-bars-pad-frac', `indent-bars-pattern', and
 `indent-bars-zigzag'."
   (let* ((rowbytes (/ (+ w 7) 8))
 	 (plen (length indent-bars-pattern))
@@ -548,11 +559,11 @@ Uses configuration variables `indent-bars-width-frac',
 	 (chunk (/ (float h) plen))
 	 (small (floor chunk))
 	 (large (ceiling chunk))
-	 (offset (round (* w indent-bars-offset-frac)))
+	 (pad (round (* w indent-bars-pad-frac)))
 	 (zz (if indent-bars-zigzag (round (* w indent-bars-zigzag)) 0)) 
 	 (zeroes (make-string rowbytes ?\0))
 	 (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
-		    (list (indent-bars--row-data w offset))  ; one row
+		    (list (indent-bars--row-data w pad rot)) ; one row
 		  (cl-loop for last-fill-char = nil
 			   for small-p = t then (not small-p)
 			   for n = (if small-p small large)
@@ -562,7 +573,7 @@ Uses configuration variables `indent-bars-width-frac',
 						       (not (eq x last-fill-char)))
 						  (- zoff) zoff)
 			   for row = (if (eq x ?\s) zeroes
-				       (indent-bars--row-data w (+ offset zoff)))
+				       (indent-bars--row-data w (+ pad zoff)))
 			   unless (eq x ?\s) do (setq last-fill-char x)
 			   append (cl-loop repeat n collect row)))))
     (list w (length dlist) (string-join dlist))))
@@ -646,9 +657,6 @@ are not indicated."
 
 ;;;; Text scaling
 (defvar-local indent-bars--remap-stipple nil)
-(defun indent-bars--resize-stipple ()
-  "Recreate stipple with font size change."
-  (message "GOT: %S (%d,%d)" (current-buffer) (window-font-width) (window-font-height))
   (if indent-bars--remap-stipple
       (face-remap-remove-relative indent-bars--remap-stipple))
   (when text-scale-mode
@@ -782,7 +790,7 @@ Adapted from `highlight-indentation-mode'."
 	indent-bars--depth-palette nil
 	indent-bars--faces nil
 	indent-bars--remap-face nil
-	indent-bars--stipple nil)
+	indent-bars--gutter-offset 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
   (remove-hook 'post-command-hook #'indent-bars--post-command t)
   (remove-hook 'font-lock-extend-region-functions 
