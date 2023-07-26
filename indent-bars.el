@@ -403,10 +403,12 @@ color, if setup (see `indent-bars-highlight-current-indentation')."
 (defvar indent-bars--faces nil)
 (defvar-local indent-bars--remap-face nil)
 
-(defun indent-bars--create-stipple-face (w h)
-  "Create and set the `indent-bars-stipple' face for character size W x H."
+(defun indent-bars--create-stipple-face (w h rot)
+  "Create and set the default `indent-bars-stipple' face.
+Create for character size W x H with offset ROT."
   (face-spec-set 'indent-bars-stipple
-		 `((t (:inherit nil :stipple ,(indent-bars--stipple w h))))))
+		 `((t
+		    (:inherit nil :stipple ,(indent-bars--stipple w h rot))))))
 
 (defun indent-bars--calculate-face-spec (depth &optional current-highlight)
   "Calculate the face spec for indentation bar at an indentation DEPTH.
@@ -458,6 +460,10 @@ font-lock properties."
 (defsubst indent-bars--block (n)
   "Create a block of N low-order 1 bits."
   (- (ash 1 n) 1))
+
+(defun indent-bars--stipple-rot (w)
+  "Return the stipple rotation for pattern with W for the current window."
+  (mod (car (window-edges nil t nil t)) w))
 
 (defun indent-bars--rot (num w n)
   "Shift number NUM of W bits up by N bits, carrying around to the low bits.
@@ -575,7 +581,7 @@ Uses configuration variables `indent-bars-width-frac',
 						       (not (eq x last-fill-char)))
 						  (- zoff) zoff)
 			   for row = (if (eq x ?\s) zeroes
-				       (indent-bars--row-data w (+ pad zoff)))
+				       (indent-bars--row-data w (+ pad zoff) rot))
 			   unless (eq x ?\s) do (setq last-fill-char x)
 			   append (cl-loop repeat n collect row)))))
     (list w (length dlist) (string-join dlist))))
@@ -663,7 +669,7 @@ are not indicated."
   "Update the stipple for buffer in window WIN, if selected."
   (when (eq win (selected-window))
     (let* ((w (window-font-width))
-	   (rot (mod (car (window-edges nil t nil t)) w)))
+	   (rot (indent-bars--stipple-rot w)))
       (when (/= indent-bars--gutter-rot rot)
 	(setq indent-bars--gutter-rot rot)
 	(indent-bars--resize-stipple w rot)))))
@@ -674,12 +680,12 @@ W is the optional `window-font-width' and ROT the bit rotation If
 not passed they will be calculated."
   (if indent-bars--remap-stipple
       (face-remap-remove-relative indent-bars--remap-stipple))
-  (let  ((w (or w (window-font-width)))
-	 (rot (or rot (mod (car (window-edges nil t nil t)) w)))
+  (let* ((w (or w (window-font-width)))
+	 (rot (or rot (indent-bars--stipple-rot w)))
 	 (h (window-font-height)))
-      (setq indent-bars--remap-stipple
-	    (face-remap-add-relative 'indent-bars-stipple
-				     :stipple (indent-bars--stipple w h rot)))))
+    (setq indent-bars--remap-stipple
+	  (face-remap-add-relative 'indent-bars-stipple
+				   :stipple (indent-bars--stipple w h rot)))))
 
 
 ;;;; Current indentation highlight
