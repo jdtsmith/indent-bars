@@ -51,7 +51,7 @@ Set only if the default guessed spacing is incorrect."
   :type 'integer
   :group 'indent-bars)
 
-(defcustom indent-bars-width-frac 0.32
+(defcustom indent-bars-width-frac 0.25
   "The width of the indent bar as a fraction of the character width."
   :type '(float :tag "Width fraction"
 		:match (lambda (_ val) (and val (<= val 1) (>= val 0)))
@@ -66,13 +66,13 @@ A float, the fraction of the character width."
 	  :type-error "Fraction must be between 0 and 1")
   :group 'indent-bars)
 
-(defcustom indent-bars-pattern "."
-  "A string specifying the vertical structure pattern of indent bars.
+(defcustom indent-bars-pattern ".  .  "
+  "A pattern specifying the vertical structure of indent bars.
 Space signifies blank regions, and any other character signifies
-filled regions.  The pattern is scaled to match the character
-height.  Example: \". . \" would specify alternating filled and
-blank regions each approximately one-quarter of the character
-height.  Note that non-blank characters need not be the
+filled regions.  The pattern length is scaled to match the
+character height.  Example: \". . \" would specify alternating
+filled and blank regions each approximately one-quarter of the
+character height.  Note that non-blank characters need not be the
 same (e.g., see `indent-bars-zigzag')."
   :type 'string
   :group 'indent-bars)
@@ -81,15 +81,15 @@ same (e.g., see `indent-bars-zigzag')."
   "The zigzag to apply to the bar pattern.
 If non-nil, an alternating zigzag offset will be applied to
 consecutive groups of identical non-space characters in
-`indent-bars-pattern'.  From the top of the pattern, positive
-values will zigzag (right, left, right, ..) and negative
+`indent-bars-pattern'.  Starting from the top of the pattern,
+positive values will zigzag (right, left, right, ..) and negative
 values (left, right, left, ...).  There is no wrap-around.
 
 Example:
 
   pattern: \" .**.\"
   width:   0.5
-  offset:  0.25
+  pad:     0.25
   zigzag: -0.25
 
 would produce a zigzag pattern which differs from the normal
@@ -102,9 +102,9 @@ bar pattern as follows:
     | .. | zag -0.25  |..  |
 
 Note that the pattern will be truncated at both left and right
-boundaries, so (although not required) achieving an equal zig-zag
-left and right requires leaving room on each side of the bar for
-the zig-zag; see `indent-bars-pad-frac' and
+boundaries, so (although not required) achieving an equal zigzag
+left and right requires leaving padding on each side of the bar
+for the zig-zag; see `indent-bars-pad-frac' and
 `indent-bars-width-frac'."
   :type '(choice
 	  (const :tag "No zig-zag" :value nil)
@@ -114,8 +114,8 @@ the zig-zag; see `indent-bars-pad-frac' and
   :group 'indent-bars)
 
 (defcustom indent-bars-color
-  '(highlight :background t :blend 0.25)
-  "Configuration for the main indent bar color.
+  '(highlight :background t :blend 0.35)
+  "The main indent bar color.
 The format is a list of 1 required element, followed by an
 optional plist (keyword/value pairs):
 
@@ -158,7 +158,7 @@ where:
   :group 'indent-bars)
 
 (defcustom indent-bars-color-by-depth
-  '(:regexp "outline-\\([0-9]+\\)" :blend 0.25)
+  '(:regexp "outline-\\([0-9]+\\)" :blend 1)
   "Configuration for depth-varying indentation bar coloring.
 If non-nil, depth-based coloring is performed.  This should be a
 plist with keys:
@@ -194,11 +194,13 @@ with:
     palette, colors will be obtained by wrapping around to the
     beginning of the list.
 
-  BLEND: a blend factor which controls how the palette colors are
-    blended with the frame background color (see
-    `indent-bars-color' for information on how blend factors are
-    used).  A nil (or unity) value causes the palette colors to
-    be used as-is.
+  BLEND: a blend factor (0..1) which controls how palette colors
+    are blended with the main color, prior to blending with the
+    frame background color (see `indent-bars-color' for
+    information on how blend factors are specified).  A nil value
+    causes the palette colors to be used as-is.  A unity value
+    causes the palette color to be blended directly with the
+    background using any blend factor from `indent-bars-color'.
 
 Note that, for this setting to have any effect, one of REGEXP or
 PALETTE is required (the former overriding the latter).  If both
@@ -515,7 +517,7 @@ ROT should be less than W."
 ;; over (wrap) around w=(window-font-width) bits (i.e the width of the
 ;; bitmap).  The byte/bit pattern is first-lowest-leftmost.
 ;;
-;; Note that different window sides will possibly have different g
+;; Note that different window sides will often have different g
 ;; values, which means the same bitmap cannot work for the buffer in
 ;; both windows.  So showing the same buffer side by side can lead to
 ;; mis-alignment in the non-active buffer.
@@ -655,7 +657,7 @@ are not indicated."
 (defvar-local indent-bars--remap-stipple nil)
 (defvar-local indent-bars--gutter-rot 0)
 (defun indent-bars--window-change (win)
-  "Update the stipple for buffer in window WIN."
+  "Update the stipple for buffer in window WIN, if selected."
   (when (eq win (selected-window))
     (let* ((w (window-font-width))
 	   (rot (mod (car (window-edges nil t nil t)) w)))
