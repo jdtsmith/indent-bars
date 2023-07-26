@@ -769,13 +769,20 @@ Adapted from `highlight-indentation-mode'."
 
 (defun indent-bars--setup-font-lock ()
   "Setup font lock keywords and functions for indent-bars."
+  (unless (eq font-lock-unfontify-region-function #'indent-bars--unfontify)
+    (setq indent-bars-orig-unfontify-region font-lock-unfontify-region-function))
+  (setq-local font-lock-unfontify-region-function #'indent-bars--unfontify)
   (setq indent-bars--font-lock-keywords
 	`((,(rx-to-string `(seq bol (group (>= ,(1+ indent-bars-spacing) ?\s)) nonl))
 	   (1 (indent-bars--display)))))
+  (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
       (let ((re (rx bol (+ (or ?\s ?\n)) eol)))
 	(setq indent-bars--font-lock-blank-line-keywords
-	      `((,re (0 (indent-bars--handle-blank-lines))))))))
+	      `((,re (0 (indent-bars--handle-blank-lines)))))
+	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
+	(add-hook 'font-lock-extend-region-functions
+		  #'indent-bars--extend-blank-line-regions 95 t))))
 
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
@@ -788,32 +795,26 @@ Adapted from `highlight-indentation-mode'."
 	indent-bars--current-depth-palette (indent-bars--current-depth-palette))
 
   ;; Faces
-  (indent-bars--create-stipple-face (frame-char-width) (frame-char-height))
-  (indent-bars--create-faces 9 'reset)	; extends as needed
-
-  ;; Font-lock
-  (setq indent-bars-orig-unfontify-region font-lock-unfontify-region-function)
-  (setq-local font-lock-unfontify-region-function #'indent-bars--unfontify)
-  (indent-bars--setup-font-lock)
-  (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
+  (indent-bars--create-stipple-face (frame-char-width) (frame-char-height)
+				    (indent-bars--stipple-rot (frame-char-width)))
+  (indent-bars--create-faces 9 'reset)	; N.B.: extends as needed
 
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
+  (unless (eq (frame-char-width) (window-font-width)) ; maybe current window needs?
+    (indent-bars--resize-stipple))
 
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
-  
+
   ;; Current depth highlight
   (if indent-bars-highlight-current-indentation
-      (add-hook 'post-command-hook #'indent-bars--post-command nil t))
+      (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t))
 
-  ;; Blank lines
-  (when indent-bars-display-on-blank-lines
-    (font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
-    (add-hook 'font-lock-extend-region-functions 
-	      #'indent-bars--extend-blank-line-regions 95 t))
-
+  ;; Font-lock
+  (indent-bars--setup-font-lock)
   (font-lock-flush)
+
   (indent-bars--highlight-current-depth))
 
 (defun indent-bars-teardown ()
@@ -821,16 +822,24 @@ Adapted from `highlight-indentation-mode'."
   (font-lock-remove-keywords nil indent-bars--font-lock-keywords)
   (font-lock-remove-keywords nil indent-bars--font-lock-blank-line-keywords)
   (font-lock-flush)
+  (if indent-bars--remap-face
+      (face-remap-remove-relative indent-bars--remap-face))
   (setq font-lock-unfontify-region-function indent-bars-orig-unfontify-region)
   (setq indent-bars--current-depth-palette nil
 	indent-bars--depth-palette nil
 	indent-bars--faces nil
 	indent-bars--remap-face nil
-	indent-bars--gutter-offset 0)
+	indent-bars--gutter-rot 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
-  (remove-hook 'post-command-hook #'indent-bars--post-command t)
+  (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions 
 	       #'indent-bars--extend-blank-line-regions t))
+
+(defun indent-bars-reset ()
+  "Reset indent-bars config."
+  (interactive)
+  (indent-bars-teardown)
+  (indent-bars-setup))
 
 ;;;###autoload
 (define-minor-mode indent-bars-mode
