@@ -275,10 +275,6 @@ meaning."
 			(:blend (float :tag "Blend Fraction into Existing Color")
 				:value 0.5
 				:match (lambda (_ val) (and (<= val 1) (>= val 0)))
-  
-(defcustom indent-bars-highlight-current-delay 0.2
-  "Delay in seconds after any commands before current indentation is highlighted."
-  :type 'float
 				:type-error "Factor must be between 0 and 1")
 			(:width (float :tag "Bar width"))
 			(:pad (float :tag "Bar Pad (from left)"))
@@ -714,15 +710,6 @@ Works by remapping the appropriate indent-bars-N face."
 	       (hl-col (indent-bars--get-color depth 'highlight)))
 	  (setq indent-bars--remap-face
 		(face-remap-add-relative face :foreground hl-col))))))
-
-(defvar indent-bars--current-depth-timer nil)
-(defun indent-bars--post-command ()
-  "Schedule current indentation depth highlighting."
-  (when indent-bars--current-depth-timer
-    (cancel-timer indent-bars--current-depth-timer))
-  (setq indent-bars--current-depth-timer
-	(run-at-time indent-bars-highlight-current-delay nil
-		     #'indent-bars--highlight-current-depth)))
 
 ;;;; Setup and mode
 (defun indent-bars--guess-spacing ()
