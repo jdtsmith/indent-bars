@@ -236,27 +236,38 @@ indentation level, if configured; see
   :group 'indent-bars)
 
 (defcustom indent-bars-highlight-current-indentation
-  '(default :blend 0.5)
+  '(nil :pattern ".")
   "Current indentation bar highlight configuration.
 Use this to configure optional highlighting of the bar at the
 current line's indentation level.  Format:
 
-  nil | (color_or_face [:background :blend])
+    nil | (color_or_face|nil [:background :blend :width
+                              :pad :pattern :zigzag])
 
 If nil, no highlighting will be applied to bars at the current
-depth of the line at point.  If non-nil, all bars at the
-indentation depth will be highlighted in this color (after a
-delay; see `indent-bars-highlight-current-delay').  COLOR_OR_FACE
-can be either a color (string) or face name (symbol) from which
-the foreground color is taken.  If BACKGROUND is non-nil, the
+depth of the line at point.  Otherwise, a list containing at
+least one element.  If the list starts with a color or face, all
+bars at the indentation depth will be highlighted in this color.
+COLOR_OR_FACE can be either a color (string) or face
+name (symbol) from which the foreground color is taken, or nil,
+to indicate no change in color.  If BACKGROUND is non-nil, the
 face's background color will be used instead.  If BLEND is
 provided, it is a blend fraction between 0 and 1 for blending the
 highlight color with the depth-based or main color; see
-`indent-bars-colors' for its meaning."
+`indent-bars-colors' for its meaning.
+
+If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the bar pattern
+at the current level will be altered as well; see
+`indent-bars-width-frac', `indent-bars-pad-frac',
+`indent-bars-pattern', and `indent-bars-zigzag' for their
+meaning."
   :type '(choice
 	  (const :tag "No Current Depth Highlighting" :value nil)
 	  (list :tag "Highlight"
-		(choice :tag "Face or Color" color face)
+		(choice :tag "Current Color"
+			(color :tag "Color")
+			(face :tag "Color from Frame")
+			(const :tag "No Color Change" :value nil))
 		(plist :tag "Options"
 		       :inline t
 		       :options
@@ -264,12 +275,15 @@ highlight color with the depth-based or main color; see
 			(:blend (float :tag "Blend Fraction into Existing Color")
 				:value 0.5
 				:match (lambda (_ val) (and (<= val 1) (>= val 0)))
-				:type-error "Factor must be between 0 and 1")))))
-  :group 'indent-bars)
   
 (defcustom indent-bars-highlight-current-delay 0.2
   "Delay in seconds after any commands before current indentation is highlighted."
   :type 'float
+				:type-error "Factor must be between 0 and 1")
+			(:width (float :tag "Bar width"))
+			(:pad (float :tag "Bar Pad (from left)"))
+			(:pattern (string :tag "Vertical Pattern"))
+			(:zigzag (float :tag "Zig-Zag"))))))
   :group 'indent-bars)
 
 (defcustom indent-bars-display-on-blank-lines t
@@ -418,12 +432,6 @@ current depth highlight color."
     `((t . ( :inherit indent-bars-stipple
 	     :foreground ,(indent-bars--get-color depth current-highlight))))))
 
-;((t (:inherit nil
-;; 		 :stipple ,(my/highlight-indentation-stipple
-;; 			    (frame-char-width)
-;; 			    (frame-char-height))
-;; 		 :foreground ,(face-background 'hl-line)))))
-
 (defun indent-bars--create-faces (num &optional redefine)
   "Create bar faces up to depth NUM, redefining them if REDEFINE is non-nil.
 Saves the vector of face symbols in variable
@@ -494,14 +502,15 @@ ROT should be less than W."
 				 (- boff))))))
 
 ;; ** Notes on the stipples:
-;; indent-bars uses a selectively-revealed stipple pattern width a
-;; width equivalent to the (fixed) width of characters to efficiently
-;; draw bars.  A stipple pattern is drawn as a fixed repeating bit
-;; pattern, with its low bits and earlier bytes leftmost.  It is drawn
-;; with respect to the *entire frame*, with its first bit aligned with
-;; the first (leftmost) frame pixel.  Turning on :stipple for a
-;; character merely "opens a window" on that virtual, fixed,
-;; frame-filling repeating stipple pattern.  Since the pattern starts
+;;
+;; indent-bars uses a selectively-revealed stipple pattern with a
+;; width equivalent to the (presumed fixed) width of characters to
+;; efficiently draw bars.  A stipple pattern is drawn as a fixed
+;; repeating bit pattern, with its lowest bits and earlier bytes
+;; leftmost.  It is drawn with respect to the *entire frame*, with its
+;; first bit aligned with the first (leftmost) frame pixel.  Turning
+;; on :stipple for a character merely "opens a window" on that
+;; frame-filling, repeating stipple pattern.  Since the pattern starts
 ;; outside the body (in literally the first frame pixel, typically in
 ;; the fringe), you must consider the shift between the first pixel of
 ;; a character and the first pixel of the repeating stipple block at
@@ -690,6 +699,7 @@ not passed they will be calculated."
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth nil)
+(defvar-local indent-bars--current-depth-stipple nil)
 
 (defun indent-bars--highlight-current-depth ()
   "Refresh current indentation depth highlight.
