@@ -293,9 +293,12 @@ float FAC, with 1.0 matching C1 and 0.0 C2."
 		      (+ (* a fac) (* b (- 1.0 fac))))
 		    (color-name-to-rgb c1) (color-name-to-rgb c2))))
 
-(defun indent-bars--main-color ()
+(defun indent-bars--main-color (&optional tint tint-blend)
   "Calculate the main bar color.
-Uses `indent-bars-color'."
+Uses `indent-bars-color' for color and background blend config.
+If TINT and TINT-BLEND are passed, first blend the TINT color
+into the main color with the requested blend, prior to blending
+into the background color."
   (cl-destructuring-bind (main &key background blend) indent-bars-color
     (let ((col (cond ((facep main)
 		      (funcall (if background
@@ -303,6 +306,8 @@ Uses `indent-bars-color'."
 				 #'face-foreground)
 			       main))
 		     ((color-defined-p main) main))))
+      (if (and tint tint-blend (color-defined-p tint))
+	  (setq col (indent-bars--blend-colors tint col tint-blend)))
       (if blend
 	  (setq col
 		(indent-bars--blend-colors
@@ -315,24 +320,23 @@ See `indent-bars-color-by-depth'."
   (when indent-bars-color-by-depth
     (cl-destructuring-bind (&key regexp background palette blend)
 	indent-bars-color-by-depth
-      (let ((bg (frame-parameter nil 'background-color))
-	    (colors (cond
-		     (regexp
-		      (indent-bars--depth-colors-from-regexp regexp background))
-		     (palette
-		      (delq nil
-			    (cl-loop for el in palette
-				     collect (cond
-					      ((and (consp el) (facep (car el)))
-					       (face-background (car el)))
-					      ((facep el)
-					       (face-foreground el))
-					      ((color-defined-p el) el)
-					      (t nil))))))))
+      (let ((colors
+	     (cond
+	      (regexp
+	       (indent-bars--depth-colors-from-regexp regexp background))
+	      (palette
+	       (delq nil
+		     (cl-loop for el in palette
+			      collect (cond
+				       ((and (consp el) (facep (car el)))
+					(face-background (car el)))
+				       ((facep el)
+					(face-foreground el))
+				       ((color-defined-p el) el)
+				       (t nil))))))))
 	(vconcat
 	 (if blend
-	     (mapcar (lambda (c) (indent-bars--blend-colors c bg blend))
-		     colors)
+	     (mapcar (lambda (c) (indent-bars--main-color c blend)) colors)
 	   colors))))))
 
 (defun indent-bars--current-depth-palette ()
@@ -385,16 +389,15 @@ returned."
 (defun indent-bars--get-color (depth  &optional current-highlight)
   "Return the color appropriate for indentation DEPTH.
 If CURRENT-HIGHLIGHT is non-nil, return the appropriate highlight
-color, if setup (see
-`indent-bars-highlight-current-indentation')."
+color, if setup (see `indent-bars-highlight-current-indentation')."
   (let* ((palette (if current-highlight
 		      indent-bars--current-depth-palette
 		    indent-bars--depth-palette)))
-    (if palette
-	(if (vectorp palette)
-	    (aref palette (mod (1- depth) (length palette)))
-	  palette)  ;  a standalone color
-      indent-bars--main-color)))
+    (cond
+     ((vectorp palette)
+      (aref palette (mod (1- depth) (length palette))))
+     (palette)  ; single color
+     (t indent-bars--main-color))))
 
 ;;;; Faces
 (defvar indent-bars--faces nil)
