@@ -209,7 +209,7 @@ PALETTE is required (the former overriding the latter).  If both
 are omitted or nil, all bars will have the same color, based on
 MAIN_COLOR (aside possibly from the bar at the current
 indentation level, if configured; see
-`indent-bars-highlight-current-indentation')."
+`indent-bars-highlight-current-depth')."
   :type '(choice :tag "Depth Palette"
 		 (const :tag "No Depth-Coloring" nil)
 		 (plist :tag "Depth-Coloring"
@@ -237,51 +237,54 @@ indentation level, if configured; see
 				 "Factor must be between 0 and 1")))))
   :group 'indent-bars)
 
-(defcustom indent-bars-highlight-current-indentation
-  '(nil :pattern ".")
-  "Current indentation bar highlight configuration.
+(defcustom indent-bars-highlight-current-depth
+  '(:pattern ".")			; solid bar, no color change
+  "Current indentation depth bar highlight configuration.
 Use this to configure optional highlighting of the bar at the
-current line's indentation level.  Format:
+current line's indentation depth level.
 
-    nil | (color_or_face|nil [:background :blend :width
-                              :pad :pattern :zigzag])
+Format:
+
+    nil | (:color :face :background :blend :width :pad :pattern :zigzag)
 
 If nil, no highlighting will be applied to bars at the current
-depth of the line at point.  Otherwise, a list containing at
-least one element.  If the list starts with a color or face, all
-bars at the indentation depth will be highlighted in this color.
-COLOR_OR_FACE can be either a color (string) or face
-name (symbol) from which the foreground color is taken, or nil,
-to indicate no change in color.  If BACKGROUND is non-nil, the
-face's background color will be used instead.  If BLEND is
-provided, it is a blend fraction between 0 and 1 for blending the
-highlight color with the depth-based or main color; see
-`indent-bars-colors' for its meaning.
+depth of the line at point.  Otherwise, a plist describes what
+highlighting to apply, which can include changes to color and/or
+bar pattern.  At least one of :color, :face, :width, :pad,
+:pattern, or :zigzag must be set and non-nil for this setting to
+take effect.
+
+With COLOR or FACE set, all bars at the current depth will be
+highlighted in the appropriate color, either COLOR, or, if FACE
+is set, FACE's foreground or background color (the latter if
+BACKGROUND is non-nil).
+
+If BLEND is provided, it is a blend fraction between 0 and 1 for
+blending the highlight color with the existing (depth-based or
+main) bar color; see `indent-bars-colors' for its meaning.
+BLEND=1 indicates using the full, unblended highlight
+color (i.e., the same as omitting BLEND).
 
 If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the bar pattern
-at the current level will be altered as well; see
+at the current level will be altered as well.  Note that
 `indent-bars-width-frac', `indent-bars-pad-frac',
-`indent-bars-pattern', and `indent-bars-zigzag' for their
-meaning."
+`indent-bars-pattern', and `indent-bars-zigzag' will be used as
+defaults for any missing values; see these variables."
   :type '(choice
-	  (const :tag "No Current Depth Highlighting" :value nil)
-	  (list :tag "Highlight"
-		(choice :tag "Current Color"
-			(color :tag "Color")
-			(face :tag "Color from Frame")
-			(const :tag "No Color Change" :value nil))
-		(plist :tag "Options"
-		       :inline t
-		       :options
-		       ((:background (boolean :tag "Use Face's Background Color"))
-			(:blend (float :tag "Blend Fraction into Existing Color")
-				:value 0.5
-				:match (lambda (_ val) (and (<= val 1) (>= val 0)))
-				:type-error "Factor must be between 0 and 1")
-			(:width (float :tag "Bar width"))
-			(:pad (float :tag "Bar Pad (from left)"))
-			(:pattern (string :tag "Vertical Pattern"))
-			(:zigzag (float :tag "Zig-Zag"))))))
+	  (const :tag "No Current Highlighting" :value nil)
+	  (plist :tag "Highlight Current Depth"
+		 :options
+		 ((:color (color :tag "Highlight Color"))
+		  (:face (face :tag "Color from Face"))
+		  (:background (boolean :tag "Use Face's Background Color"))
+		  (:blend (float :tag "Blend Fraction into Existing Color")
+			  :value 0.5
+			  :match (lambda (_ val) (and (<= val 1) (>= val 0)))
+			  :type-error "Factor must be between 0 and 1")
+		  (:width (float :tag "Bar Width"))
+		  (:pad (float :tag "Bar Padding (from left)"))
+		  (:pattern (string :tag "Fill Pattern"))
+		  (:zigzag (float :tag "Zig-Zag")))))
   :group 'indent-bars)
 
 (defcustom indent-bars-display-on-blank-lines t
@@ -352,25 +355,28 @@ See `indent-bars-color-by-depth'."
 	   colors))))))
 
 (defun indent-bars--current-depth-palette ()
-  "Calculate the color or color palette for highlighting the current depth bar.
-Based on `indent-bars-color-by-depth' or, if not configured for
-depth-varying color, simply `indent-bars-color'.  See
-`indent-bars-highlight-current-indentation' for configuration."
-  (when indent-bars-highlight-current-indentation
-    (cl-destructuring-bind (cur &key background blend)
-	indent-bars-highlight-current-indentation
+  "Colors for highlighting the current depth bar.
+A color or palette (vector) of colors is returned, which may be
+nil, in which case no special current depth-coloring is used.
+See `indent-bars-highlight-current-depth' for
+configuration."
+  (when indent-bars-highlight-current-depth
+    (cl-destructuring-bind (&key color face background blend)
+	indent-bars-highlight-current-depth
       (when-let ((color
-		  (cond ((facep cur)
-			 (funcall (if background
-				      #'face-background
-				    #'face-foreground)
-				  cur))
-			((color-defined-p cur) cur))))
+		  (cond
+		   ((facep face)
+		    (funcall (if background
+				 #'face-background
+			       #'face-foreground)
+			     face))
+		   ((color-defined-p color)
+		    color))))
 	(if blend
 	    (if indent-bars--depth-palette ; blend into depth palette
 		(vconcat (mapcar (lambda (c)
 				   (indent-bars--blend-colors color c blend))
-			 indent-bars--depth-palette))
+				 indent-bars--depth-palette))
 	      (indent-bars--blend-colors color indent-bars--main-color blend))
 	  color)))))
 
@@ -401,9 +407,9 @@ returned."
 (defun indent-bars--get-color (depth  &optional current-highlight)
   "Return the color appropriate for indentation DEPTH.
 If CURRENT-HIGHLIGHT is non-nil, return the appropriate highlight
-color, if setup (see `indent-bars-highlight-current-indentation')."
-  (let* ((palette (if current-highlight
-		      indent-bars--current-depth-palette
+color, if setup (see `indent-bars-highlight-current-depth')."
+  (let* ((palette (or (and current-highlight
+			   indent-bars--current-depth-palette)
 		    indent-bars--depth-palette)))
     (cond
      ((vectorp palette)
@@ -815,6 +821,7 @@ Adapted from `highlight-indentation-mode'."
       (face-remap-remove-relative indent-bars--remap-face))
   (setq font-lock-unfontify-region-function indent-bars-orig-unfontify-region)
   (setq indent-bars--current-depth-palette nil
+	indent-bars--current-depth-stipple nil
 	indent-bars--depth-palette nil
 	indent-bars--faces nil
 	indent-bars--remap-face nil
