@@ -609,7 +609,7 @@ BAR-FROM is one by default.  If passed, properties are set in
 OBJ, otherwise in the buffer."
   (cl-loop for pos = start then (+ pos indent-bars-spacing) while (< pos end)
 	   for barnum from (or bar-from 1)
-	   ;; XXX need rear-nonsticky font-lock-face???
+	   ;; XXX need rear-nonsticky face???
 	   do (put-text-property pos (1+ pos)
 				 'face (indent-bars--face barnum) obj)))
 
