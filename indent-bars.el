@@ -445,11 +445,8 @@ Saves the vector of face symbols in variable
 	 (cl-loop for i from 1 to num
 		  for face = (intern (format "indent-bars-%d" i))
 		  do
-		  (if (facep face)
-		      (when redefine
-			(face-spec-reset-face face)
-			(face-spec-set face (indent-bars--calculate-face-spec i)))
-		    (face-spec-set face (indent-bars--calculate-face-spec i)))
+		  (if (and redefine (facep face)) (face-spec-reset-face face))
+		  (face-spec-set face (indent-bars--calculate-face-spec i))
 		  collect face))))
 
 (defsubst indent-bars--face (depth)
@@ -466,6 +463,7 @@ font-lock properties."
   (let ((font-lock-extra-managed-props
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
+
 ;;;; Display
 (defvar-local indent-bars-spacing nil)
 
