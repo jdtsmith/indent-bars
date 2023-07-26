@@ -562,24 +562,30 @@ ROT should be less than W."
 ;;    `face-remapping-alist' is shared between indirect and master
 ;;    buffers.  Fixed in Emacs 29.
 
-(defun indent-bars--stipple (w h rot)
-  "Calculate the correct stipple bitmap pattern for char width W and height H.
-ROT is the number of bits to rotate the pattern
-around to the right.
+(defun indent-bars--stipple (w h rot
+			     &optional width-frac pad-frac pattern zigzag)
+  "Calculate stipple bitmap pattern for char width W and height H.
+ROT is the number of bits to rotate the pattern around to the
+right (with wrap).
 
 Uses configuration variables `indent-bars-width-frac',
 `indent-bars-pad-frac', `indent-bars-pattern', and
-`indent-bars-zigzag'."
+`indent-bars-zigzag', unless PAD-FRAC, WIDTH-FRAC, PATTERN,
+and/or ZIGZAG are set (the latter overriding the config
+variables, which see)."
   (let* ((rowbytes (/ (+ w 7) 8))
-	 (plen (length indent-bars-pattern))
-	 (pat (if (< h plen) (substring indent-bars-pattern 0 h)
-		indent-bars-pattern))
+	 (pattern (or pattern indent-bars-pattern))
+	 (plen (length pattern))
+	 (pat (if (< h plen) (substring pattern 0 h) pattern))
 	 (chunk (/ (float h) plen))
 	 (small (floor chunk))
 	 (large (ceiling chunk))
-	 (pad (round (* w indent-bars-pad-frac)))
-	 (zz (if indent-bars-zigzag (round (* w indent-bars-zigzag)) 0)) 
+	 (pad-frac (or pad-frac indent-bars-pad-frac))
+	 (pad (round (* w pad-frac)))
+	 (zigzag (or zigzag indent-bars-zigzag))
+	 (zz (if zigzag (round (* w zigzag)) 0))
 	 (zeroes (make-string rowbytes ?\0))
+	 (width-frac (or width-frac indent-bars-width-frac))
 	 (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
 		    (list (indent-bars--row-data w pad rot width-frac)) ; one row
 		  (cl-loop for last-fill-char = nil
