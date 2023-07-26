@@ -603,7 +603,7 @@ OBJ, otherwise in the buffer."
 	   for barnum from (or bar-from 1)
 	   ;; XXX need rear-nonsticky font-lock-face???
 	   do (put-text-property pos (1+ pos)
-				 'font-lock-face (indent-bars--face barnum) obj)))
+				 'face (indent-bars--face barnum) obj)))
 
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
