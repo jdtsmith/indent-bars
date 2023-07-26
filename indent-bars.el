@@ -53,7 +53,7 @@ Set only if the default guessed spacing is incorrect."
 
 (defcustom indent-bars-width-frac 0.25
   "The width of the indent bar as a fraction of the character width."
-  :type '(float :tag "Width fraction"
+  :type '(float :tag "Width Fraction"
 		:match (lambda (_ val) (and val (<= val 1) (>= val 0)))
 		:type-error "Fraction must be between 0 and 1")
   :group 'indent-bars)
@@ -61,7 +61,7 @@ Set only if the default guessed spacing is incorrect."
 (defcustom indent-bars-pad-frac 0.1
   "The offset of the bar from the left edge of the character.
 A float, the fraction of the character width."
-  :type '(float :tag "Offset fraction"
+  :type '(float :tag "Offset Fraction"
 	  :match (lambda (_ val) (and val (<= val 1) (>= val 0)))
 	  :type-error "Fraction must be between 0 and 1")
   :group 'indent-bars)
@@ -74,7 +74,7 @@ character height.  Example: \". . \" would specify alternating
 filled and blank regions each approximately one-quarter of the
 character height.  Note that non-blank characters need not be the
 same (e.g., see `indent-bars-zigzag')."
-  :type 'string
+  :type '(string :tag "Fill Pattern")
   :group 'indent-bars)
 
 (defcustom indent-bars-zigzag nil
@@ -107,8 +107,8 @@ left and right requires leaving padding on each side of the bar
 for the zig-zag; see `indent-bars-pad-frac' and
 `indent-bars-width-frac'."
   :type '(choice
-	  (const :tag "No zig-zag" :value nil)
-	  (float :value 0.1 :tag "Zig-zag fraction"
+	  (const :tag "No Zigzag" :value nil)
+	  (float :value 0.1 :tag "Zigzag Fraction"
 		 :match (lambda (_ val) (and val (<= val 1) (>= val -1)))
 		 :type-error "Fraction must be between -1 and 1"))
   :group 'indent-bars)
@@ -143,7 +143,9 @@ where:
     If BLEND is nil or unspecified, no blending is done, and
     MAIN_COLOR is used as-is."
   :type
-  '(list (choice :tag "Main Bar Color" color (face :tag "from Face"))
+  '(list (choice :tag "Main Bar Color"
+		 color
+		 (face :tag "from Face"))
 	 (plist :tag "Options"
 		:inline t
 		:options
