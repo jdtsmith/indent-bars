@@ -482,18 +482,17 @@ within W bits."
   (logand (indent-bars--block w)
 	  (logior (ash num n) (ash num (- n w)))))
 
-(defun indent-bars--row-data (w pad rot)
-  "Calculate stipple row data to fit in character W.
-The stipple pattern has full repeat width of W.  The width of the
-pattern of filled pixels is determined by
-`indent-bars-width-frac'.  It is then shifted up by PAD bits (to
-the right in the stipple pattern for positive values).
+(defun indent-bars--row-data (w pad rot width-frac)
+  "Calculate stipple row data to fit in character of width W.
+The width of the pattern of filled pixels is determined by
+WIDTH-FRAC.  The pattern itself is shifted up by PAD bits (which
+shifts the pattern to the right, for positive values of PAD).
 Subsequently, the value is shifted up (with W-bit wrap-around) by
 ROT bits, and returned.  ROT is the starting bit offset of a
 character within the closest stipple repeat to the left; i.e. if
 pixel 1 of the stipple aligns with pixel 1 of the chacter, ROT=0.
 ROT should be less than W."
-  (let* ((bar-width (max 1 (round (* w indent-bars-width-frac))))
+  (let* ((bar-width (max 1 (round (* w width-frac))))
 	 (num (indent-bars--rot
 	       (ash (indent-bars--block bar-width) pad) w rot)))
     (apply #'unibyte-string
@@ -582,7 +581,7 @@ Uses configuration variables `indent-bars-width-frac',
 	 (zz (if indent-bars-zigzag (round (* w indent-bars-zigzag)) 0)) 
 	 (zeroes (make-string rowbytes ?\0))
 	 (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
-		    (list (indent-bars--row-data w pad rot)) ; one row
+		    (list (indent-bars--row-data w pad rot width-frac)) ; one row
 		  (cl-loop for last-fill-char = nil
 			   for small-p = t then (not small-p)
 			   for n = (if small-p small large)
@@ -592,7 +591,8 @@ Uses configuration variables `indent-bars-width-frac',
 						       (not (eq x last-fill-char)))
 						  (- zoff) zoff)
 			   for row = (if (eq x ?\s) zeroes
-				       (indent-bars--row-data w (+ pad zoff) rot))
+				       (indent-bars--row-data w (+ pad zoff)
+							      rot width-frac))
 			   unless (eq x ?\s) do (setq last-fill-char x)
 			   append (cl-loop repeat n collect row)))))
     (list w (length dlist) (string-join dlist))))
