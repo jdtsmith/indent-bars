@@ -621,10 +621,8 @@ OBJ, otherwise in the buffer."
   nil)
 
 ;;;; Font Lock
-
 (defvar-local indent-bars--font-lock-keywords nil)
 (defvar indent-bars--font-lock-blank-line-keywords nil)
-
 
 (defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
 (defun indent-bars--extend-blank-line-regions ()
@@ -679,6 +677,43 @@ are not indicated."
 	     (set-text-properties ep (1+ ep) `(display ,s)))
 	   (forward-line 1)))))))
 
+;;;; Current indentation highlight
+(defvar-local indent-bars--current-depth 0)
+(defvar-local indent-bars--current-depth-stipple nil)
+
+(defun indent-bars--set-current-depth-stipple (&optional w h rot)
+  "Set the current depth stipple highlight (if any).
+One of the keywords :width, :pad, :pattern, or :zigzag must be
+set in `indent-bars-highlight-current-depth' config.  W, H, and
+ROT are as in `indent-bars--stipple', and have similar default values."
+  (cl-destructuring-bind (&key width pad pattern zigzag)
+      indent-bars-highlight-current-depth
+    (when (or width pad pattern zigzag)
+      (let* ((w (or w (window-font-width)))
+	     (rot (or rot (indent-bars--stipple-rot w)))
+	     (h (or h (window-font-height))))
+	(setq indent-bars--current-depth-stipple
+	      (indent-bars--stipple w h rot width pad pattern zigzag))))))
+
+(defun indent-bars--highlight-current-depth ()
+  "Refresh current indentation depth highlight.
+Works by remapping the appropriate indent-bars-N face."
+  (let ((depth (/ (current-indentation) indent-bars-spacing)))
+    (when (not (= depth indent-bars--current-depth))
+      (if indent-bars--remap-face 	; out with the old
+	  (face-remap-remove-relative indent-bars--remap-face))
+      (setq indent-bars--current-depth depth)
+      (when (> depth 0)
+	(let ((face (indent-bars--face depth))
+	      (hl-col (and indent-bars--current-depth-palette
+			   (indent-bars--get-color depth 'highlight))))
+	  (when (or hl-col indent-bars--current-depth-stipple)
+	    (setq indent-bars--remap-face
+		  (apply #'face-remap-add-relative face
+			 `(,@(when hl-col `(:foreground ,hl-col))
+			   ,@(when indent-bars--current-depth-stipple
+			       `(:stipple ,indent-bars--current-depth-stipple)))))))))))
+
 ;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
 (defvar-local indent-bars--gutter-rot 0)
@@ -689,7 +724,11 @@ are not indicated."
 	   (rot (indent-bars--stipple-rot w)))
       (when (/= indent-bars--gutter-rot rot)
 	(setq indent-bars--gutter-rot rot)
-	(indent-bars--resize-stipple w rot)))))
+	(indent-bars--resize-stipple w rot)
+	(if indent-bars--current-depth-stipple
+	    (indent-bars--set-current-depth-stipple w (window-font-height) rot))))))
+
+
 
 (defun indent-bars--resize-stipple (&optional w rot)
   "Recreate stipple with updated size.
@@ -701,27 +740,12 @@ not passed they will be calculated."
 	 (rot (or rot (indent-bars--stipple-rot w)))
 	 (h (window-font-height)))
     (setq indent-bars--remap-stipple
-	  (face-remap-add-relative 'indent-bars-stipple
-				   :stipple (indent-bars--stipple w h rot)))))
+	  (face-remap-add-relative
+	   'indent-bars-stipple
+	   :stipple (indent-bars--stipple w h rot)))
+    (if indent-bars--current-depth-stipple
+	(indent-bars--set-current-depth-stipple w h rot))))
 
-
-;;;; Current indentation highlight
-(defvar-local indent-bars--current-depth nil)
-(defvar-local indent-bars--current-depth-stipple nil)
-
-(defun indent-bars--highlight-current-depth ()
-  "Refresh current indentation depth highlight.
-Works by remapping the appropriate indent-bars-N face."
-  (let ((depth (/ (current-indentation) indent-bars-spacing)))
-    (when (and (> depth 0) (not (= depth indent-bars--current-depth)))
-      (setq indent-bars--current-depth depth)
-      (if indent-bars--remap-face 	; out with the old
-	  (face-remap-remove-relative indent-bars--remap-face))
-
-      (if-let ((face (indent-bars--face depth))
-	       (hl-col (indent-bars--get-color depth 'highlight)))
-	  (setq indent-bars--remap-face
-		(face-remap-add-relative face :foreground hl-col))))))
 
 ;;;; Setup and mode
 (defun indent-bars--guess-spacing ()
@@ -807,8 +831,9 @@ Adapted from `highlight-indentation-mode'."
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
 
   ;; Current depth highlight
-  (if indent-bars-highlight-current-indentation
-      (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t))
+  (when indent-bars-highlight-current-depth
+    (indent-bars--set-current-depth-stipple)
+    (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t))
 
   ;; Font-lock
   (indent-bars--setup-font-lock)
