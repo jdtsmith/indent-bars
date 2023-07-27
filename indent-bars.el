@@ -361,17 +361,15 @@ nil, in which case no special current depth-coloring is used.
 See `indent-bars-highlight-current-depth' for
 configuration."
   (when indent-bars-highlight-current-depth
-    (cl-destructuring-bind (&key color face background blend)
+    (cl-destructuring-bind (&key color face background blend &allow-other-keys)
 	indent-bars-highlight-current-depth
       (when-let ((color
 		  (cond
-		   ((facep face)
-		    (funcall (if background
-				 #'face-background
-			       #'face-foreground)
-			     face))
-		   ((color-defined-p color)
-		    color))))
+		   ((facep face) (funcall (if background
+					      #'face-background
+					    #'face-foreground)
+					  face))
+		   ((and color (color-defined-p color)) color))))
 	(if blend
 	    (if indent-bars--depth-palette ; blend into depth palette
 		(vconcat (mapcar (lambda (c)
