@@ -589,18 +589,18 @@ variables, which see)."
 	 (width-frac (or width-frac indent-bars-width-frac))
 	 (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
 		    (list (indent-bars--row-data w pad rot width-frac)) ; one row
-		  (cl-loop for last-fill-char = nil
-			   for small-p = t then (not small-p)
-			   for n = (if small-p small large)
+		  (cl-loop for last-fill-char = nil then x
 			   for x across pat
+			   for n = small then (if (and (/= x ?\s) (= n small))
+						  large
+						small)
 			   for zoff = zz then (if (and last-fill-char
-						       (not (eq x ?\s))
-						       (not (eq x last-fill-char)))
+						       (/= x ?\s)
+						       (/= x last-fill-char))
 						  (- zoff) zoff)
-			   for row = (if (eq x ?\s) zeroes
+			   for row = (if (= x ?\s) zeroes
 				       (indent-bars--row-data w (+ pad zoff)
 							      rot width-frac))
-			   unless (eq x ?\s) do (setq last-fill-char x)
 			   append (cl-loop repeat n collect row)))))
     (list w (length dlist) (string-join dlist))))
 
