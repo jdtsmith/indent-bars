@@ -576,8 +576,8 @@ and/or ZIGZAG are set (the latter overriding the config
 variables, which see)."
   (let* ((rowbytes (/ (+ w 7) 8))
 	 (pattern (or pattern indent-bars-pattern))
-	 (plen (length pattern))
-	 (pat (if (< h plen) (substring pattern 0 h) pattern))
+	 (pat (if (< h (length pattern)) (substring pattern 0 h) pattern))
+	 (plen (length pat))
 	 (chunk (/ (float h) plen))
 	 (small (floor chunk))
 	 (large (ceiling chunk))
