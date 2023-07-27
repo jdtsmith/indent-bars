@@ -44,13 +44,6 @@
   :group 'basic-faces
   :prefix "indent-bars-")
 
-(defcustom indent-bars-spacing-override nil
-  "Override for default, major-mode based indentation spacing.
-Set only if the default guessed spacing is incorrect."
-  :local t
-  :type 'integer
-  :group 'indent-bars)
-
 (defcustom indent-bars-width-frac 0.25
   "The width of the indent bar as a fraction of the character width."
   :type '(float :tag "Width Fraction"
@@ -72,8 +65,8 @@ Space signifies blank regions, and any other character signifies
 filled regions.  The pattern length is scaled to match the
 character height.  Example: \". . \" would specify alternating
 filled and blank regions each approximately one-quarter of the
-character height.  Note that non-blank characters need not be the
-same (e.g., see `indent-bars-zigzag')."
+character height.  Note that the non-blank characters need not be
+the same (e.g., see `indent-bars-zigzag')."
   :type '(string :tag "Fill Pattern")
   :group 'indent-bars)
 
@@ -83,7 +76,7 @@ If non-nil, an alternating zigzag offset will be applied to
 consecutive groups of identical non-space characters in
 `indent-bars-pattern'.  Starting from the top of the pattern,
 positive values will zigzag (right, left, right, ..) and negative
-values (left, right, left, ...).  There is no wrap-around.
+values (left, right, left, ...).
 
 Example:
 
@@ -102,9 +95,9 @@ bar pattern as follows:
     | .. | zag -0.25  |..  |
 
 Note that the pattern will be truncated at both left and right
-boundaries, so (although not required) achieving an equal zigzag
-left and right requires leaving padding on each side of the bar
-for the zig-zag; see `indent-bars-pad-frac' and
+boundaries, so (although this is not required) achieving an equal
+zigzag left and right requires leaving sufficient padding on each
+side of the bar; see `indent-bars-pad-frac' and
 `indent-bars-width-frac'."
   :type '(choice
 	  (const :tag "No Zigzag" :value nil)
@@ -285,6 +278,13 @@ defaults for any missing values; see these variables."
 		  (:pad (float :tag "Bar Padding (from left)"))
 		  (:pattern (string :tag "Fill Pattern"))
 		  (:zigzag (float :tag "Zig-Zag")))))
+  :group 'indent-bars)
+
+(defcustom indent-bars-spacing-override nil
+  "Override for default, major-mode based indentation spacing.
+Set only if the default guessed spacing is incorrect."
+  :local t
+  :type 'integer
   :group 'indent-bars)
 
 (defcustom indent-bars-display-on-blank-lines t
