@@ -627,19 +627,19 @@ OBJ, otherwise in the buffer.  OBJ is returned."
 (defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
 (defun indent-bars--extend-blank-line-regions ()
   "Extend the region about to be font-locked to include stretches of blank lines."
+  ;; (message "request to extend: %d->%d" font-lock-beg font-lock-end)
   (let ((changed nil) (chars " \n"))
-    (unless (eq font-lock-beg (point-min))
-      (goto-char (1- font-lock-beg))
-      (when (< (skip-chars-backward chars) 0)
-	(unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
-	(if (< (point) font-lock-beg)
-	    (setq changed t font-lock-beg (point)))))
-    (unless (eq font-lock-end (point-max))
-      (goto-char (1+ font-lock-end))
-      (when (> (skip-chars-forward chars) 0)
-	;; (unless (eolp) (beginning-of-line 0))
-	(if (> (point) font-lock-end)
-	    (setq changed t font-lock-end (point)))))
+    (goto-char font-lock-beg)
+    (when (< (skip-chars-backward chars) 0)
+      (unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
+      (when (< (point) font-lock-beg)
+	(setq changed t font-lock-beg (point))))
+    (goto-char font-lock-end)
+    (when (> (skip-chars-forward chars) 0)
+      (unless (bolp) (beginning-of-line 1))
+      (when (> (point) font-lock-end)
+	(setq changed t font-lock-end (point))))
+    ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
     changed))
 
 (defun indent-bars--handle-blank-lines ()
@@ -649,35 +649,42 @@ is non-nil.  Uses surrounding line indentation to determine
 additional bars to display on each line, and uses a string
 display property on the final newline if necessary to display the
 needed bars.  Blank lines at the beginning or end of the buffer
-are not indicated."
+are not indicated, even if otherwise they would be."
   (let* ((beg (match-beginning 0))
 	 (end (match-end 0))
 	 ctxbars)
-    (when (and (not (= end (point-max))) (not (= beg (point-min))))
-      (goto-char beg)
-      (forward-line -1)
-      (when (> (setq ctxbars
-		     (1- (max (/ (current-indentation) indent-bars-spacing)
-			      (progn
-				(goto-char end)
-				(forward-line 1)
-				(/ (current-indentation) indent-bars-spacing)))))
-	       0)
-       (goto-char beg)
-       (while (< (point) end)
-	 (let* ((bp (line-beginning-position))
-		(ep (line-end-position))
-		(len (- ep bp))
-		(nbars (/ len indent-bars-spacing))
-		nsp off s) ; "natural" bars
-	   (if (> nbars 0) (indent-bars--draw bp ep))
-	   (when (> ctxbars nbars) ;we need more bars than we have space!
-	     (unless (and (eq off (setq off (- (* (1+ nbars) indent-bars-spacing) len)))
-			  (eq nsp (setq nsp (- (* ctxbars indent-bars-spacing) len))))
-	       (setq s (concat (make-string nsp ?\s) "\n"))
-	       (indent-bars--draw off nsp (1+ nbars) s))
-	     (set-text-properties ep (1+ ep) `(display ,s)))
-	   (forward-line 1)))))))
+    (when (and (/= end (point-max)) (/= beg (point-min)))
+      (save-excursion
+	;; (message "BL: %d[%d]->%d[%d]" beg (/ (current-indentation) indent-bars-spacing)
+	;; 	 end
+	;; 	 (progn
+	;; 	   (goto-char end)
+	;; 	   (/ (current-indentation) indent-bars-spacing)))
+	(goto-char (1- beg)) 		;beg always bol
+	(when (> (setq ctxbars
+		       (1- (max (/ (current-indentation) indent-bars-spacing)
+				(progn
+				  (goto-char (1+ end)) ; end always eol
+				  (/ (current-indentation) indent-bars-spacing)))))
+		 0)
+	  (goto-char beg)
+	  (while (<= (point) end)
+	    (let* ((bp (line-beginning-position))
+		   (ep (line-end-position))
+		   (len (- ep bp))
+		   (nbars (/ (max 0 (1- len)) indent-bars-spacing)))
+	      ;; (message "len: %d nbars: %d ctxbars:%d" len nbars ctxbars)
+	      ;; Draw "real" bars in existing blank
+	      (if (> nbars 0) (indent-bars--draw (+ bp indent-bars-spacing) ep))
+	      ;; Add fake bars via display
+	      (when (> ctxbars nbars) 
+		(let* ((off (- (* (1+ nbars) indent-bars-spacing) len))
+		       (nsp (1+ (- (* ctxbars indent-bars-spacing) len)))
+		       (s (concat (make-string nsp ?\s) "\n")))
+		  (indent-bars--draw off nsp (1+ nbars) s)
+		  (put-text-property ep (1+ ep) 'display s)))
+	      (beginning-of-line 2)))))
+      nil)))
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth 0)
