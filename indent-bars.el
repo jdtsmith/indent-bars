@@ -741,9 +741,10 @@ not passed they will be calculated."
 	  (face-remap-add-relative
 	   'indent-bars-stipple
 	   :stipple (indent-bars--stipple w h rot)))
-    (if indent-bars--current-depth-stipple
-	(indent-bars--set-current-depth-stipple w h rot))))
-
+    (when indent-bars--current-depth-stipple
+      (indent-bars--set-current-depth-stipple w h rot)
+      (setq indent-bars--current-depth 0)
+      (indent-bars--highlight-current-depth))))
 
 ;;;; Setup and mode
 (defun indent-bars--guess-spacing ()
