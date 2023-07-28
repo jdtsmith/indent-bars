@@ -480,8 +480,7 @@ font-lock properties."
   "Shift number NUM of W bits up by N bits, carrying around to the low bits.
 N should be strictly less than W and the returned value will fit
 within W bits."
-  (logand (indent-bars--block w)
-	  (logior (ash num n) (ash num (- n w)))))
+  (logand (indent-bars--block w) (logior (ash num n) (ash num (- n w)))))
 
 (defun indent-bars--row-data (w pad rot width-frac)
   "Calculate stipple row data to fit in character of width W.
@@ -635,11 +634,13 @@ OBJ, otherwise in the buffer."
 	(unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
 	(if (< (point) font-lock-beg)
 	    (setq changed t font-lock-beg (point)))))
-    (goto-char font-lock-end)
-    (if (> (skip-chars-forward chars) 0)
-	(setq changed t font-lock-end (point)))
+    (unless (eq font-lock-end (point-max))
+      (goto-char (1+ font-lock-end))
+      (when (> (skip-chars-forward chars) 0)
+	;; (unless (eolp) (beginning-of-line 0))
+	(if (> (point) font-lock-end)
+	    (setq changed t font-lock-end (point)))))
     changed))
-
 
 (defun indent-bars--handle-blank-lines ()
   "Display the appropriate bars on regions of one or more blank-only lines.
