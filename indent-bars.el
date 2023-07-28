@@ -798,7 +798,7 @@ Adapted from `highlight-indentation-mode'."
 	   (1 (indent-bars--display)))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
-      (let ((re (rx bol (+ (or ?\s ?\n)) eol)))
+      (let ((re (rx bol (* (or ?\s ?\t ?\n)) eol)))
 	(setq indent-bars--font-lock-blank-line-keywords
 	      `((,re (0 (indent-bars--handle-blank-lines)))))
 	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
