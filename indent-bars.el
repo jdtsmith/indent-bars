@@ -695,12 +695,12 @@ are not indicated, even if otherwise they would be."
 One of the keywords :width, :pad, :pattern, or :zigzag must be
 set in `indent-bars-highlight-current-depth' config.  W, H, and
 ROT are as in `indent-bars--stipple', and have similar default values."
-  (cl-destructuring-bind (&key width pad pattern zigzag)
+  (cl-destructuring-bind (&key width pad pattern zigzag &allow-other-keys)
       indent-bars-highlight-current-depth
     (when (or width pad pattern zigzag)
       (let* ((w (or w (window-font-width)))
-	     (rot (or rot (indent-bars--stipple-rot w)))
-	     (h (or h (window-font-height))))
+	     (h (or h (window-font-height)))
+	     (rot (or rot (indent-bars--stipple-rot w))))
 	(setq indent-bars--current-depth-stipple
 	      (indent-bars--stipple w h rot width pad pattern zigzag))))))
 
