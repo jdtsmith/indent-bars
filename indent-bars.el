@@ -726,14 +726,10 @@ Works by remapping the appropriate indent-bars-N face."
 	   (rot (indent-bars--stipple-rot w)))
       (when (/= indent-bars--gutter-rot rot)
 	(setq indent-bars--gutter-rot rot)
-	(indent-bars--resize-stipple w rot)
-	(if indent-bars--current-depth-stipple
-	    (indent-bars--set-current-depth-stipple w (window-font-height) rot))))))
-
-
+	(indent-bars--resize-stipple w rot)))))
 
 (defun indent-bars--resize-stipple (&optional w rot)
-  "Recreate stipple with updated size.
+  "Recreate stipple(s) with updated size.
 W is the optional `window-font-width' and ROT the bit rotation If
 not passed they will be calculated."
   (if indent-bars--remap-stipple
@@ -826,8 +822,7 @@ Adapted from `highlight-indentation-mode'."
 
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
-  (unless (eq (frame-char-width) (window-font-width)) ; maybe current window needs?
-    (indent-bars--resize-stipple))
+  (indent-bars--resize-stipple)		; just in case
 
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
