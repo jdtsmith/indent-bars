@@ -37,10 +37,10 @@ Not yet in a package database; simply clone and point `use-package` at the corre
 *Note*: For `indent-bars` to work, your port and version of emacs must correctly support the `:stipple` face attribute.  
 
 - All known UNIX/GNU Linux versions support stipples. 
-- On Mac, only the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/) port has stipple support. 
+- On Mac, only the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/) port has stipple support (most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport)). 
 - Windows Emacs does not support stipples.
 
-Please open an issue with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version, evaluate:
+Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version, evaluate:
 
 ```elisp
 (set-face-stipple 'default `(,(window-font-width) 1 ,(unibyte-string 1)))
