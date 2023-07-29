@@ -4,7 +4,7 @@ Fast, configurable indentation guide-bars for Emacs.
 
 <img align="right" width="514" alt="ib_default" src="https://github.com/jdtsmith/indent-bars/assets/93749/4f652554-bede-4aa6-bdbc-233ec843d782">
 
-This package provides vertical indentation guide bars, and has the following features:
+This package provides vertical indentation _guide bars_, with the following features:
 
 - Uses stipple face properties with font-lock for ultra-fast performance (simply: *faces on spaces*).
 - Learns your buffer indentation spacing from the mode.
