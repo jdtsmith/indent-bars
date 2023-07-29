@@ -40,6 +40,7 @@
 (require 'face-remap)
 (require 'outline)
 (require 'font-lock)
+(require 'compat)
 
 ;;;; Customization
 (defgroup indent-bars nil
