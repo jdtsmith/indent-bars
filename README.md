@@ -34,6 +34,20 @@ Not yet in a package database; simply clone and point `use-package` at the corre
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 
+*Note*: For `indent-bars` to work, your port and version of emacs must correctly support the `:stipple` face attribute.  
+
+- All known UNIX/GNU Linux versions support stipples. 
+- On Mac, only the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/) port has stipple support. 
+- Windows Emacs does not support stipples.
+
+Please open an issue with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version, evaluate:
+
+```elisp
+(set-face-stipple 'default `(,(window-font-width) 1 ,(unibyte-string 1)))
+```
+
+and you should see a "jailbar" pattern in the default foreground color across all windows.
+
 # Customization
 `M-x customize-group indent-bars` is the easiest way to customize everything about the appearence and function of `indent-bars`.  Note: when changing any of these variables while `indent-bars` is on, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.  See some [examples](examples.md).
 	
@@ -52,6 +66,7 @@ The main customization variables:
 See the documentation of each variable for more details.
 
 # Details and Caveats
+
 ## Speed
 
 `indent-bars` was partially motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
