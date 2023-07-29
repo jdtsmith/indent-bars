@@ -19,7 +19,7 @@ This package provides vertical indentation guide bars, and has the following fea
 
 There are ([many](#related-packages)) existing packages that provide indentation highlighting/guides.  But none:
 
-1. were fast enough with large files (including with current depth highlight)
+1. were fast enough with large files (including current depth highlighting)
 2. had enough guide appearance configurability
 3. were able to support depth-based coloring
 4. offered robust support for guides on blank lines
