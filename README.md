@@ -40,7 +40,7 @@ Not yet in a package database; simply clone and point `use-package` at the corre
 - On Mac, only the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/) port has stipple support (most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport)). 
 - Windows Emacs does not support stipples.
 
-Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version, evaluate:
+Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version of emacs, evaluate:
 
 ```elisp
 (set-face-stipple 'default `(,(window-font-width) 1 ,(unibyte-string 1)))
