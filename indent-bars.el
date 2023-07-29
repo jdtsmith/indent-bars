@@ -112,12 +112,12 @@ side of the bar; see `indent-bars-pad-frac' and
 
 ;;;;; Bar Colors
 (defcustom indent-bars-color
-  '(highlight :background t :blend 0.3)
+  '(highlight :face-bg t :blend 0.3)
   "The main indent bar color.
 The format is a list of 1 required element, followed by an
 optional plist (keyword/value pairs):
 
-  (main_color [:background :blend])
+  (main_color [:face-bg :blend])
 
 where:
 
@@ -126,7 +126,7 @@ where:
     which the foreground color will be used as the primary bar
     color, or an explicit color (a string).
 
-  BACKGROUND: A boolean controlling interpretation of the
+  FACE-BG: A boolean controlling interpretation of the
     MAIN_COLOR face (if configured).  If non-nil, the background
     color of the face will be used as the main bar color instead
     of its foreground.
@@ -147,9 +147,9 @@ where:
 	 (plist :tag "Options"
 		:inline t
 		:options
-		((:background (boolean
-			       :tag "Use Face's Background Color"
-			       :value t))
+		((:face-bg (boolean
+			    :tag "Use Face's Background Color"
+			    :value t))
 		 (:blend (float
 			  :tag "Blend Factor"
 			  :value 0.5
@@ -163,7 +163,7 @@ where:
 If non-nil, depth-based coloring is performed.  This should be a
 plist with keys:
 
-    (:regexp :background :palette :blend)
+    (:regexp :face-bg :palette :blend)
 
 with:
 
@@ -174,7 +174,7 @@ with:
     each matching face will then constitute the depth color
     palette (see also PALETTE, which this option overrides).
 
-  BACKGROUND: A boolean.  If non-nil, use the background color
+  FACE-BG: A boolean.  If non-nil, use the background color
     from the faces matching REGEXP for the palette instead of
     their foreground colors.
 
@@ -183,10 +183,10 @@ with:
     over this setting.  The format is a list of faces (symbols)
     or colors (strings) to be used as a color cycle for coloring
     indentations at increasing levels.  Each face can optionally
-    be specified as a cons cell (face . 'background) to specify
-    using that face's background color instead of its foreground.
+    be specified as a cons cell (face . 'bg) to specify using
+    that face's background color instead of its foreground.
 
-      (face_or_color | (face . 'background) ...)
+      (face_or_color | (face . 'bg) ...)
 
     While this list can contain a single element, it makes little
     sense to do so.  The depth palette will be used cyclically,
@@ -213,7 +213,7 @@ indentation level, if configured; see
 		 (plist :tag "Depth-Coloring"
 			:options
 			((:regexp (regexp :tag "Face regexp"))
-			 (:background
+			 (:face-bg
 			  (boolean
 			   :value t
 			   :tag "Use Matching Face's Background Colors"))
@@ -224,8 +224,7 @@ indentation level, if configured; see
 					  (cons :tag "Background from Face"
 						:format "Background from %v"
 						face
-						(const :format "\n"
-						       :value background)))))
+						(const :format "\n" :value bg)))))
 			 (:blend
 			  (float :tag "Blend Fraction into Main Color"
 				 :value 0.5
@@ -243,7 +242,8 @@ current line's indentation depth level.
 
 Format:
 
-    nil | (:color :face :background :blend :width :pad :pattern :zigzag)
+    nil | (:color :face :face-bg :background :blend
+           :width :pad :pattern :zigzag)
 
 If nil, no highlighting will be applied to bars at the current
 depth of the line at point.  Otherwise, a plist describes what
@@ -255,7 +255,9 @@ take effect.
 With COLOR or FACE set, all bars at the current depth will be
 highlighted in the appropriate color, either COLOR, or, if FACE
 is set, FACE's foreground or background color (the latter if
-BACKGROUND is non-nil).
+FACE-BG is non-nil).  If BACKGROUND is set to a color, this will
+be used for the background color of the current bar (i.e. not the
+stipple color).
 
 If BLEND is provided, it is a blend fraction between 0 and 1 for
 blending the highlight color with the existing (depth-based or
@@ -274,7 +276,8 @@ defaults for any missing values; see these variables."
 		 :options
 		 ((:color (color :tag "Highlight Color"))
 		  (:face (face :tag "Color from Face"))
-		  (:background (boolean :tag "Use Face's Background Color"))
+		  (:face-bg (boolean :tag "Use Face's Background Color"))
+		  (:background (color :tag "Background Color of Current Bar"))
 		  (:blend (float :tag "Blend Fraction into Existing Color")
 			  :value 0.5
 			  :match (lambda (_ val) (and (<= val 1) (>= val 0)))
@@ -320,11 +323,9 @@ Uses `indent-bars-color' for color and background blend config.
 If TINT and TINT-BLEND are passed, first blend the TINT color
 into the main color with the requested blend, prior to blending
 into the background color."
-  (cl-destructuring-bind (main &key background blend) indent-bars-color
+  (cl-destructuring-bind (main &key face-bg blend) indent-bars-color
     (let ((col (cond ((facep main)
-		      (funcall (if background
-				   #'face-background
-				 #'face-foreground)
+		      (funcall (if face-bg #'face-background #'face-foreground)
 			       main))
 		     ((color-defined-p main) main))))
       (if (and tint tint-blend (color-defined-p tint))
@@ -339,12 +340,12 @@ into the background color."
   "Calculate the palette of depth-based colors (a vector).
 See `indent-bars-color-by-depth'."
   (when indent-bars-color-by-depth
-    (cl-destructuring-bind (&key regexp background palette blend)
+    (cl-destructuring-bind (&key regexp face-bg palette blend)
 	indent-bars-color-by-depth
       (let ((colors
 	     (cond
 	      (regexp
-	       (indent-bars--depth-colors-from-regexp regexp background))
+	       (indent-bars--depth-colors-from-regexp regexp face-bg))
 	      (palette
 	       (delq nil
 		     (cl-loop for el in palette
@@ -367,31 +368,32 @@ nil, in which case no special current depth-coloring is used.
 See `indent-bars-highlight-current-depth' for
 configuration."
   (when indent-bars-highlight-current-depth
-    (cl-destructuring-bind (&key color face background blend &allow-other-keys)
+    (cl-destructuring-bind (&key color face face-bg blend &allow-other-keys)
 	indent-bars-highlight-current-depth
       (when-let ((color
 		  (cond
-		   ((facep face) (funcall (if background
-					      #'face-background
-					    #'face-foreground)
-					  face))
+		   ((facep face)
+		    (funcall (if face-bg #'face-background #'face-foreground)
+			     face))
 		   ((and color (color-defined-p color)) color))))
 	(if blend
-	    (if indent-bars--depth-palette ; blend into depth palette
+	    (if indent-bars--depth-palette ; blend into normal depth palette
 		(vconcat (mapcar (lambda (c)
 				   (indent-bars--blend-colors color c blend))
 				 indent-bars--depth-palette))
 	      (indent-bars--blend-colors color indent-bars--main-color blend))
 	  color)))))
 
-(defun indent-bars--depth-colors-from-regexp (regexp &optional background)
+
+
+(defun indent-bars--depth-colors-from-regexp (regexp &optional face-bg)
   "Return a list of depth colors (strings) for faces matching REGEXP.
 The first capture group in REGEXP will be interpreted as a number
 and used to sort the list numerically.  A list of the foreground
 color of the matching, sorted faces will be returned, unless
-BACKGROUND is non-nil, in which case the background color is
+FACE-BG is non-nil, in which case the background color is
 returned."
-  (mapcar (lambda (x) (funcall (if background #'face-background
+  (mapcar (lambda (x) (funcall (if face-bg #'face-background
 				 #'face-foreground)
 			       (cdr x) nil t))
           (seq-sort-by #'car
@@ -691,7 +693,14 @@ are not indicated, even if otherwise they would be."
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth 0)
+(defvar indent-bars--current-bg-color nil)
 (defvar-local indent-bars--current-depth-stipple nil)
+
+(defun indent-bars--set-current-bg-color ()
+  "Record the current bar background color."
+  (cl-destructuring-bind (&key background &allow-other-keys)
+      indent-bars-highlight-current-depth
+    (setq indent-bars--current-bg-color background)))
 
 (defun indent-bars--set-current-depth-stipple (&optional w h rot)
   "Set the current depth stipple highlight (if any).
@@ -718,13 +727,15 @@ Works by remapping the appropriate indent-bars-N face."
       (when (> depth 0)
 	(let ((face (indent-bars--face depth))
 	      (hl-col (and indent-bars--current-depth-palette
-			   (indent-bars--get-color depth 'highlight))))
-	  (when (or hl-col indent-bars--current-depth-stipple)
+			   (indent-bars--get-color depth 'highlight)))
+	      (hl-bg indent-bars--current-bg-color))
+	  (when (or hl-col hl-bg indent-bars--current-depth-stipple)
 	    (setq indent-bars--remap-face
 		  (apply #'face-remap-add-relative face
-			 `(,@(when hl-col `(:foreground ,hl-col))
-			   ,@(when indent-bars--current-depth-stipple
-			       `(:stipple ,indent-bars--current-depth-stipple)))))))))))
+		   `(,@(when hl-col `(:foreground ,hl-col))
+		     ,@(when hl-bg `(:background ,hl-bg))
+		     ,@(when indent-bars--current-depth-stipple
+			 `(:stipple ,indent-bars--current-depth-stipple)))))))))))
 
 ;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
@@ -844,6 +855,7 @@ Adapted from `highlight-indentation-mode'."
   
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
+    (indent-bars--set-current-bg-color)
     (indent-bars--set-current-depth-stipple)
     (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t)
     (setq indent-bars--current-depth 0)
@@ -864,6 +876,7 @@ Adapted from `highlight-indentation-mode'."
 	indent-bars--gutter-rot 0
 	indent-bars--current-depth-palette nil
 	indent-bars--current-depth-stipple nil
+	indent-bars--current-bg-color nil
 	indent-bars--current-depth 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
