@@ -1,7 +1,9 @@
 # Example `indent-bars` color/layout possibilities
 ## Default:
+<img width="514" alt="ib_default" src="https://github.com/jdtsmith/indent-bars/assets/93749/4f652554-bede-4aa6-bdbc-233ec843d782">
 
 ## Minimal:
+<img width="514" alt="ib_minimal" src="https://github.com/jdtsmith/indent-bars/assets/93749/e21da2d6-f6a4-4587-9640-d6a493111473">
 
 ``` emacs-lisp
    (setq
@@ -15,7 +17,8 @@
     indent-bars-display-on-blank-lines nil)
 ```
 
-## Stripes:
+## Zebra:
+<img width="514" alt="ib_zebra" src="https://github.com/jdtsmith/indent-bars/assets/93749/8cd209d2-c2ce-46e3-98a6-2e286f8ab8c5">
 
 ```emacs-lisp
   (setq
@@ -29,6 +32,7 @@
 ```
 
 ## Simple:
+<img width="514" alt="ib_simple" src="https://github.com/jdtsmith/indent-bars/assets/93749/94094b4c-a088-4672-b57e-d88dbadb28cc">
 
 ```emacs-lisp
    (setq
@@ -40,6 +44,7 @@
 ```
 
 ## Zig-zag:
+<img width="514" alt="ib_zz" src="https://github.com/jdtsmith/indent-bars/assets/93749/841dc464-8cb3-4b29-bb3c-1f7d31101800">
 
 ```emacs-lisp
   (setq
@@ -52,6 +57,7 @@
 ```
 
 ## Background zig-zag:
+<img width="514" alt="ib_bgzz" src="https://github.com/jdtsmith/indent-bars/assets/93749/01cb0624-5185-425c-96a1-19f1d632c07d">
 
 ```emacs-lisp
   (setq
