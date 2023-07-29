@@ -291,9 +291,10 @@ defaults for any missing values; see these variables."
 ;;;;; Other
 (defcustom indent-bars-spacing-override nil
   "Override for default, major-mode based indentation spacing.
-Set only if the default guessed spacing is incorrect."
+Set only if the default guessed spacing is incorrect.  Becomes
+buffer-local automatically."
   :local t
-  :type 'integer
+  :type '(choice integer (const :tag "Discover automatically" :value nil))
   :group 'indent-bars)
 
 (defcustom indent-bars-display-on-blank-lines t
