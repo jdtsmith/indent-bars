@@ -1,10 +1,9 @@
-* Some examples of ~indent-bars~ color/layout possibilities:
-** Default:
+# Example `indent-bars` color/layout possibilities
+## Default:
 
+## Minimal:
 
-** Minimal:
-
-#+begin_src emacs-lisp
+``` emacs-lisp
    (setq
     indent-bars-color '(highlight :face-bg t :blend 0.2)
     indent-bars-pattern "."
@@ -14,11 +13,11 @@
     indent-bars-color-by-depth nil
     indent-bars-highlight-current-depth nil
     indent-bars-display-on-blank-lines nil)
-#+end_src
+```
 
-** Stripes:
+## Stripes:
 
-#+begin_src emacs-lisp
+```emacs-lisp
   (setq
    indent-bars-color '(highlight :face-bg t :blend 0.25)
    indent-bars-pattern ". .. .  "
@@ -27,22 +26,22 @@
    indent-bars-pad-frac 0.1
    indent-bars-color-by-depth '(:palette ("black" "white") :blend 0.65)
    indent-bars-highlight-current-depth '(:color "red" :blend 0.15))
-#+end_src
+```
 
-** Simple:
+## Simple:
 
-#+begin_src emacs-lisp
+```emacs-lisp
    (setq
     indent-bars-pattern "."
     indent-bars-width-frac 0.5
     indent-bars-pad-frac 0.25
     indent-bars-color-by-depth nil
     indent-bars-highlight-current-depth '(:face default :blend 0.4))
-#+end_src
+```
 
-** Zig-zag:
+## Zig-zag:
 
-#+begin_src emacs-lisp
+```emacs-lisp
   (setq
    indent-bars-pattern ". . . . "
    indent-bars-width-frac 0.25
@@ -50,11 +49,11 @@
    indent-bars-zigzag 0.1
    indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 1)
    indent-bars-highlight-current-depth '(:pattern "." :pad 0.1 :width 0.45))
-#+end_src
+```
 
-** Background zig-zag:
+## Background zig-zag:
 
-#+begin_src emacs-lisp
+```emacs-lisp
   (setq
    indent-bars-color '(highlight :face-bg t :blend 0.2)
    indent-bars-pattern ".*.*.*.*"
@@ -63,4 +62,4 @@
    indent-bars-zigzag 0.1
    indent-bars-color-by-depth '(:palette ("red" "green" "orange" "cyan") :blend 1)
    indent-bars-highlight-current-depth '(:background "gray10"))
-#+end_src
+```
