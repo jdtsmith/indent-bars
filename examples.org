@@ -1,4 +1,6 @@
 * Some examples of ~indent-bars~ color/layout possibilities:
+** Default:
+
 
 ** Minimal:
 
