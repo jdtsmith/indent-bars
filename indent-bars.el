@@ -431,17 +431,16 @@ color, if setup (see `indent-bars-highlight-current-depth')."
 (defun indent-bars--create-stipple-face (w h rot)
   "Create and set the default `indent-bars-stipple' face.
 Create for character size W x H with offset ROT."
-  (face-spec-set 'indent-bars-stipple
-		 `((t
-		    (:inherit nil :stipple ,(indent-bars--stipple w h rot))))))
+  (face-spec-set
+   'indent-bars-stipple
+   `((t
+      (:inherit nil :stipple ,(indent-bars--stipple w h rot))))))
 
-(defun indent-bars--calculate-face-spec (depth &optional current-highlight)
+(defun indent-bars--calculate-face-spec (depth)
   "Calculate the face spec for indentation bar at an indentation DEPTH.
-DEPTH starts at 1.  If CURRENT-HIGHLIGHT is non-nil, use the
-current depth highlight color."
-  (let* () ; no depth config just use main
-    `((t . ( :inherit indent-bars-stipple
-	     :foreground ,(indent-bars--get-color depth current-highlight))))))
+DEPTH starts at 1."
+  `((t . ( :inherit indent-bars-stipple
+	   :foreground ,(indent-bars--get-color depth)))))
 
 (defun indent-bars--create-faces (num &optional redefine)
   "Create bar faces up to depth NUM, redefining them if REDEFINE is non-nil.
