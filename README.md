@@ -67,7 +67,9 @@ The fast *stipple* method used for drawing bars enables lots of [interesting pat
 
 Stipples are repeating patterns anchored to the entire emacs frame.  `indent-bars` basically "opens windows" on this fixed pattern to "reveal" the bars.  To get the bars in the right place, `indent-bars` must consider the starting horizontal pixel position of the current window, and adjust the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
 
-There is one corner case, however: showing the *same buffer* side by side can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*.  Options are living with this, or (for Emacs >=29) cloning an indirect buffer (which has other advantages, like an independent region).  Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
+There is one rare corner case, however: showing the *same buffer* side by side in Emacs version which support pixel-level window width/offsets (e.g. emacs-mac) can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, i.e. it can't be correct for left and right buffers at the same time.  
+
+Options are living with this, or (for Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).  Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
 
 # Related Packages
 - [indent-guide](https://github.com/zk-phi/indent-guide): An older package that uses overlays with `|` characters.  Some reports of performance concerns.  Incompatible with company and other related in-buffer modes.
