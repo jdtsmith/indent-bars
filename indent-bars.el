@@ -47,6 +47,7 @@
   :group 'basic-faces
   :prefix "indent-bars-")
 
+;;;;; Bar Shape
 (defcustom indent-bars-width-frac 0.25
   "The width of the indent bar as a fraction of the character width."
   :type '(float :tag "Width Fraction"
@@ -109,6 +110,7 @@ side of the bar; see `indent-bars-pad-frac' and
 		 :type-error "Fraction must be between -1 and 1"))
   :group 'indent-bars)
 
+;;;;; Bar Colors
 (defcustom indent-bars-color
   '(highlight :background t :blend 0.3)
   "The main indent bar color.
@@ -283,6 +285,7 @@ defaults for any missing values; see these variables."
 		  (:zigzag (float :tag "Zig-Zag")))))
   :group 'indent-bars)
 
+;;;;; Other
 (defcustom indent-bars-spacing-override nil
   "Override for default, major-mode based indentation spacing.
 Set only if the default guessed spacing is incorrect."
