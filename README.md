@@ -26,14 +26,22 @@ There are ([many](#related-packages)) existing packages that provide indentation
 
 # Install/config
 
-Not yet in a package database; simply clone and point `use-package` at the correct path (or use [straight](https://github.com/radian-software/straight.el), etc.).
+Not yet in a package database; simply clone and point `use-package` at the correct path.
 
 ```elisp
 (use-package indent-bars
   :load-path "~/code/emacs/indent-bars"
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
+## Straight
 
+To clone with `use-package` and `straight`, add to config:
+
+```elisp
+(use-package indent-bars
+  :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
+  :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
+```
 ## Compatibility 
 
 For `indent-bars` to work, your port and version of emacs must correctly support the `:stipple` face attribute.  **Most do.**
