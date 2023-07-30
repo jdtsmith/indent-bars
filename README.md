@@ -34,13 +34,18 @@ Not yet in a package database; simply clone and point `use-package` at the corre
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 
-*Note*: For `indent-bars` to work, your port and version of emacs must correctly support the `:stipple` face attribute.  **Most do.**
+## Compatibility 
+
+For `indent-bars` to work, your port and version of emacs must correctly support the `:stipple` face attribute.  **Most do.**
 
 - All known UNIX/GNU Linux versions support stipples. 
-- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/) port has stipple support (most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport)). 
+- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support. 
 - Windows Emacs does not apparently support stipples.
+- `:stipple` is not supported (to my knowledge) on terminal emacs.
 
-Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version of emacs, evaluate:
+[^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport))
+
+Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version of emacs, enter (via `M-:`):
 
 ```elisp
 (set-face-stipple 'default `(,(window-font-width) 1 ,(unibyte-string 1)))
