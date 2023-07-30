@@ -92,7 +92,7 @@ Stipples are repeating patterns anchored to the entire emacs frame.  `indent-bar
 
 ### Testing Stipples
 
-If you are experiencing issues with bar display, and would like to determine if stipples are working correctly in your version of emacs, enter (in the `*scratch*` buffer, hitting `C-x C-e` just after the last `)`):
+If you are experiencing issues with vertical bar display (missing, garbled, etc.), and would like to determine if stipples are working correctly in your build of emacs, enter (in the `*scratch*` buffer, first `M-x font-lock-mode` to disable fontification, then hitting `C-x C-e` just after the last `)`):
 
 ```elisp
 (let* ((w (window-font-width))
