@@ -55,6 +55,18 @@
    indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 1)
    indent-bars-highlight-current-depth '(:pattern "." :pad 0.1 :width 0.45))
 ```
+## Zig-zag Smooth:
+<img width="514" alt="zz_smooth" src="https://github.com/jdtsmith/indent-bars/assets/93749/645cb211-63cf-44c0-9e72-ff58f1ad5039">
+
+```emacs-lisp
+(setq
+ indent-bars-pattern ".*.*.*.*.*.*.*.*"
+ indent-bars-width-frac 0.25
+ indent-bars-pad-frac 0.2
+ indent-bars-zigzag 0.1
+ indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 0.5)
+ indent-bars-highlight-current-depth '(:face default :blend 0.7))
+```
 
 ## Background zig-zag:
 <img width="514" alt="ib_bgzz" src="https://github.com/jdtsmith/indent-bars/assets/93749/01cb0624-5185-425c-96a1-19f1d632c07d">
