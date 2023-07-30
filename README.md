@@ -92,17 +92,23 @@ Stipples are repeating patterns anchored to the entire emacs frame.  `indent-bar
 
 ### Testing Stipples
 
-If you are having issues and would like to determine if stipples are working correctly in your version of emacs, enter (via `M-:` or in the `*scratch*` buffer, hitting `C-x C-e` just after it):
+If you are experiencing issues with bar display, and would like to determine if stipples are working correctly in your version of emacs, enter (in the `*scratch*` buffer, hitting `C-x C-e` just after the last `)`):
 
 ```elisp
-(let ((w (window-font-width)))
-  (set-face-stipple
-   'default
-   `(,w 1 ,(apply #'unibyte-string
-		  (append (make-list (1- (/ (+ w 7) 8)) ?\0) '(1))))))
+(let* ((w (window-font-width))
+       (stipple `(,w 1 ,(apply #'unibyte-string
+			       (append (make-list (1- (/ (+ w 7) 8)) ?\0)
+				       '(1))))))
+  (insert "\n" (propertize (concat  (make-string 15 ?\s)
+				    "THIS IS A TEST"
+				    (make-string 15 ?\s))
+                           'face `(:background "red" :foreground "blue" :stipple ,stipple))))
 ```
 
-and you should see a "jailbar" pattern in the default foreground color across all windows.
+which should then look something like:
+
+<img width="668" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/dd0f65f5-3cdc-4865-a66d-41365cecadd0">
+
 
 ### Per-buffer stipple offsets
 To get the bars in the right place, `indent-bars` must consider the starting horizontal pixel position of the current window, and adjust the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
