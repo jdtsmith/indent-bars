@@ -53,13 +53,7 @@ For `indent-bars` to work, your port and version of emacs must correctly support
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
-Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version of emacs, enter (via `M-:`):
-
-```elisp
-(set-face-stipple 'default `(,(window-font-width) 1 ,(unibyte-string 1)))
-```
-
-and you should see a "jailbar" pattern in the default foreground color across all windows.
+Please [open an issue](../../issues) with any updates/corrections to this list.   See also [Testing Stipples](#testing-stipples).
 
 # Customization
 `M-x customize-group indent-bars` is the easiest way to customize everything about the appearence and function of `indent-bars`.  Note: when changing any of these variables while `indent-bars` is on, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.  See some [examples](examples.md).
@@ -93,7 +87,24 @@ The heaviest operation (though still fairly efficient) is **blank-line highlight
 ## Stipples
 The fast *stipple* method used for drawing bars enables lots of [interesting patterns](examples.md).
 
-Stipples are repeating patterns anchored to the entire emacs frame.  `indent-bars` basically "opens windows" on this fixed pattern to "reveal" the bars.  To get the bars in the right place, `indent-bars` must consider the starting horizontal pixel position of the current window, and adjust the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
+Stipples are repeating patterns anchored to the entire emacs frame.  `indent-bars` basically "opens windows" on this fixed pattern to "reveal" the bars.  
+
+### Testing Stipples
+
+If you are having issues and would like to determine if stipples are working correctly in your version of emacs, enter (via `M-:` or in the `*scratch*` buffer, hitting `C-x C-e` just after it):
+
+```elisp
+(let ((w (window-font-width)))
+  (set-face-stipple
+   'default
+   `(,w 1 ,(apply #'unibyte-string
+		  (append (make-list (1- (/ (+ w 7) 8)) ?\0) '(1))))))
+```
+
+and you should see a "jailbar" pattern in the default foreground color across all windows.
+
+### Per-buffer stipple offsets
+To get the bars in the right place, `indent-bars` must consider the starting horizontal pixel position of the current window, and adjust the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
 
 There is one rare corner case, however: showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets (e.g. emacs-mac) can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, i.e. it can't be correct for left and right buffers at the same time.  
 
