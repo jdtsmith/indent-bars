@@ -43,7 +43,7 @@ For `indent-bars` to work, your port and version of emacs must correctly support
 - Windows Emacs does not apparently support stipples.
 - `:stipple` is not supported (to my knowledge) on terminal emacs.
 
-[^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport))
+[^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
 Please [open an issue](../../issues) with any updates/corrections to this list.  If you'd like to determine if stipples are working correctly in your version of emacs, enter (via `M-:`):
 
