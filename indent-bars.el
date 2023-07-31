@@ -895,13 +895,20 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars-teardown)
   (indent-bars-setup))
 
+(defun indent-bars-setup-and-remove ()
+  "Setup indent bars and remove from `after-make-frame-functions'."
+  (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
+  (indent-bars-setup))
+
 ;;;###autoload
 (define-minor-mode indent-bars-mode
   "Indicate indentation with configurable bars."
   :global nil
   :group 'indent-bars
   (if indent-bars-mode
-      (indent-bars-setup)
+      (if (daemonp)
+	  (add-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
+	(indent-bars-setup))
     (indent-bars-teardown)))
 
 (provide 'indent-bars)

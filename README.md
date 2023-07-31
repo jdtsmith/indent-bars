@@ -43,14 +43,6 @@ To clone with `use-package` and `straight`, add to config:
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 
-## With `--daemon`
-If you open files via emacsclient which start emacs, and for which `indent-bars` will be enabled using the emacs daemon, you may need to delay loading until after the server-start, e.g.:
-
-```elisp
-  :hook
-  (server-after-make-frame-hook . (lambda () (add-hook 'prog-mode-hook  'indent-bars-mode)))
-```
-
 ## Compatibility 
 
 For `indent-bars` to work, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**
