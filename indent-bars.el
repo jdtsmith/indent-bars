@@ -828,8 +828,13 @@ Adapted from `highlight-indentation-mode'."
 	(add-hook 'font-lock-extend-region-functions
 		  #'indent-bars--extend-blank-line-regions 95 t))))
 
+(defvar indent-bars-mode)
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
+  (when indent-tabs-mode
+    (setq indent-bars-mode nil)
+    (error "Indent-bars does not support indent-tabs-mode=t; disabling"))
+  
   ;; Spacing
   (setq indent-bars-spacing (indent-bars--guess-spacing))
 
