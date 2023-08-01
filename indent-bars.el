@@ -670,11 +670,11 @@ are not indicated, even if otherwise they would be."
 	(when (> (setq ctxbars
 		       (1- (max (/ (current-indentation) indent-bars-spacing)
 				(progn
-				  (goto-char (1+ end)) ; end always eol
+				  (goto-char end) ; end at bol following
 				  (/ (current-indentation) indent-bars-spacing)))))
 		 0)
 	  (goto-char beg)
-	  (while (<= (point) end)
+	  (while (<= (point) (1- end)) 	;note: end extends 1 char beyond blank line range
 	    (let* ((bp (line-beginning-position))
 		   (ep (line-end-position))
 		   (len (- ep bp))
@@ -821,7 +821,7 @@ Adapted from `highlight-indentation-mode'."
 	   (1 (indent-bars--display)))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
-      (let ((re (rx bol (* (or ?\s ?\t ?\n)) eol)))
+      (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n)))
 	(setq indent-bars--font-lock-blank-line-keywords
 	      `((,re (0 (indent-bars--handle-blank-lines)))))
 	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
