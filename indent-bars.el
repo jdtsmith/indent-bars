@@ -25,12 +25,13 @@
 ;;; Commentary:
 
 ;; indent-bars highlights indentation with configurable font-lock
-;; based vertical bars.  The color and appearance (weight, pattern,
-;; position within the character, zigzag, etc.) are all configurable.
-;; Includes the option for depth-varying colors and highlighting the
-;; indentation level of the current line.  Bars span blank lines, by
-;; default.  indent-bars works in any mode using fixed, space-based
-;; indentation.
+;; based vertical bars, using stipples.  The color and appearance
+;; (weight, pattern, position within the character, zigzag, etc.) are
+;; all configurable.  Includes the option for depth-varying colors and
+;; highlighting the indentation level of the current line.  Bars span
+;; blank lines, by default.  indent-bars works in any mode using
+;; fixed, space-based indentation.  In the terminal (or on request) it
+;; uses vertical bar characters instead of stipple patterns.
 
 
 ;;; Code:
@@ -273,9 +274,7 @@ at the current level will be altered as well.  Note that
 defaults for any missing values; see these variables.
 
 Note: on terminal, or if `indent-bars-prefer-character' is
-non-nil, any stipple appearance parameters will be ignored, and
-instead the character `indent-bars-no-stipple-current-depth-char'
-will be used if this setting is non-nil."
+non-nil, any stipple appearance parameters will be ignored."
   :type '(choice
 	  (const :tag "No Current Highlighting" :value nil)
 	  (plist :tag "Highlight Current Depth"
@@ -305,20 +304,13 @@ will be used if this setting is non-nil."
   "Use characters instead of stipple to draw bars.
 Normally characters are used on terminal only.  A non-nil value
 specifies using character bars exclusively.  See
-`indent-bars-no-stipple-char' and
-`indent-bars-no-stipple-current-depth-char'."
+`indent-bars-no-stipple-char'."
   :type 'boolean
   :group 'indent-bars)
 
 (defcustom indent-bars-no-stipple-char ?\│
   "Character to display when stipple is unavailable (as in the terminal)."
   :type 'char
-  :group 'indent-bars)
-
-(defcustom indent-bars-no-stipple-current-depth-char ?\┃
-  "Character to display for current depth when stipple is unavailable.
-If nil, defaults to `indent-bars-no-stipple-char'."
-  :type '(choice char (const :value nil :tag "Use main no-stipple character"))
   :group 'indent-bars)
 
 (defcustom indent-bars-unspecified-bg-color "black"
