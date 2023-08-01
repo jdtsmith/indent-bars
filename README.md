@@ -48,10 +48,10 @@ To clone with `use-package` and `straight`, add to config:
 For `indent-bars` to work, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**
 
 - All known UNIX/GNU Linux versions support stipples.
-- "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but display them incorrectly as of Emacs 29.
-- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support. 
-- Windows Emacs does not apparently support stipples.
-- `:stipple` is not supported (to my knowledge) on terminal emacs.
+- "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but had a display bug that caused them to appear incorrectly (as reverse video) and lead to [crashes](#6); this was fixed in Emacs  [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html).
+- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.
+- Windows Emacs does not (apparently) support stipples.
+- `:stipple` is not supported on terminal emacs.
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
