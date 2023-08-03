@@ -270,7 +270,12 @@ If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the bar pattern
 at the current level will be altered as well.  Note that
 `indent-bars-width-frac', `indent-bars-pad-frac',
 `indent-bars-pattern', and `indent-bars-zigzag' will be used as
-defaults for any missing values; see these variables."
+defaults for any missing values; see these variables.
+
+Note: on terminal, or if `indent-bars-prefer-character' is
+non-nil, any stipple appearance parameters will be ignored, and
+instead the character `indent-bars-no-stipple-current-depth-char'
+will be used if this setting is non-nil."
   :type '(choice
 	  (const :tag "No Current Highlighting" :value nil)
 	  (plist :tag "Highlight Current Depth"
@@ -289,7 +294,46 @@ defaults for any missing values; see these variables."
 		  (:zigzag (float :tag "Zig-Zag")))))
   :group 'indent-bars)
 
+
 ;;;;; Other
+(defcustom indent-bars-display-on-blank-lines t
+  "Whether to display bars on blank lines."
+  :type 'boolean
+  :group 'indent-bars)
+
+(defcustom indent-bars-prefer-character nil
+  "Use characters instead of stipple to draw bars.
+Normally characters are used on terminal only.  A non-nil value
+specifies using character bars exclusively.  See
+`indent-bars-no-stipple-char' and
+`indent-bars-no-stipple-current-depth-char'."
+  :type 'boolean
+  :group 'indent-bars)
+
+(defcustom indent-bars-no-stipple-char ?\│
+  "Character to display when stipple is unavailable (as in the terminal)."
+  :type 'char
+  :group 'indent-bars)
+
+(defcustom indent-bars-no-stipple-current-depth-char ?\┃
+  "Character to display for current depth when stipple is unavailable.
+If nil, defaults to `indent-bars-no-stipple-char'."
+  :type '(choice char (const :value nil :tag "Use main no-stipple character"))
+  :group 'indent-bars)
+
+(defcustom indent-bars-unspecified-bg-color "black"
+  "Color to use as the frame background color if unspecified.
+Unless actively set, most terminal frames do not have a
+background color specified.  This setting controls the background
+color to use for color blending in that case."
+  :type 'color
+  :group 'indent-bars)
+
+(defcustom indent-bars-unspecified-fg-color "white"
+  "Color to use as the default foreground color if unspecified."
+  :type 'color
+  :group 'indent-bars)
+
 (defcustom indent-bars-spacing-override nil
   "Override for default, major-mode based indentation spacing.
 Set only if the default guessed spacing is incorrect.  Becomes
@@ -298,17 +342,19 @@ buffer-local automatically."
   :type '(choice integer (const :tag "Discover automatically" :value nil))
   :group 'indent-bars)
 
-(defcustom indent-bars-display-on-blank-lines t
-  "Whether to display bars on blank lines."
-  :type 'boolean
-  :group 'indent-bars)
-
 ;;;; Colors
 (defvar indent-bars--main-color nil)
 (defvar indent-bars--depth-palette nil)
 (defvar indent-bars--current-depth-palette nil
   "Palette for highlighting current depth.
 May be nil, a color string or a vector of colors strings.")
+
+(defun indent-bars--frame-background-color()
+  "Return the frame background color."
+  (let ((fb (frame-parameter nil 'background-color)))
+    (cond ((not fb) "white")
+	  ((string= fb "unspecified-bg") indent-bars-unspecified-bg-color)
+	  (t fb))))
 
 (defun indent-bars--blend-colors (c1 c2 fac)
   "Return a fractional color between two colors C1 and C2.
@@ -335,7 +381,7 @@ into the background color."
       (if blend
 	  (setq col
 		(indent-bars--blend-colors
-		 col (frame-parameter nil 'background-color) blend)))
+		 col (indent-bars--frame-background-color) blend)))
       col)))
 
 (defun indent-bars--depth-palette ()
@@ -378,6 +424,8 @@ configuration."
 		    (funcall (if face-bg #'face-background #'face-foreground)
 			     face))
 		   ((and color (color-defined-p color)) color))))
+	(if (string= color "unspecified-fg")
+	    (setq color indent-bars-unspecified-fg-color))
 	(if blend
 	    (if indent-bars--depth-palette ; blend into normal depth palette
 		(vconcat (mapcar (lambda (c)
@@ -395,8 +443,7 @@ and used to sort the list numerically.  A list of the foreground
 color of the matching, sorted faces will be returned, unless
 FACE-BG is non-nil, in which case the background color is
 returned."
-  (mapcar (lambda (x) (funcall (if face-bg #'face-background
-				 #'face-foreground)
+  (mapcar (lambda (x) (funcall (if face-bg #'face-background #'face-foreground)
 			       (cdr x) nil t))
           (seq-sort-by #'car
 		       (lambda (a b) (cond
@@ -434,8 +481,7 @@ color, if setup (see `indent-bars-highlight-current-depth')."
 Create for character size W x H with offset ROT."
   (face-spec-set
    'indent-bars-stipple
-   `((t
-      (:inherit nil :stipple ,(indent-bars--stipple w h rot))))))
+   `((t ( :inherit nil :stipple ,(indent-bars--stipple w h rot))))))
 
 (defun indent-bars--calculate-face-spec (depth)
   "Calculate the face spec for indentation bar at an indentation DEPTH.
@@ -470,6 +516,43 @@ font-lock properties."
   (let ((font-lock-extra-managed-props
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
+
+;;;; No stipple (e.g. terminal)
+(defvar indent-bars--no-stipple-chars nil)
+;; (defvar indent-bars--no-stipple-current-depth-char nil)
+
+(defun indent-bars--no-stipple-char (depth)
+  "Return the no-stipple bar character for DEPTH."
+  (if (> depth (length indent-bars--no-stipple-chars))
+      (indent-bars--create-no-stipple-chars depth))
+  (aref indent-bars--no-stipple-chars (1- depth)))
+
+(defun indent-bars--create-no-stipple-chars (num)
+  "Setup bar characters for bar faces up to depth NUM.
+Used when not using stipple display (on terminal, or by request;
+see `indent-bars-prefer-character')."
+  (setq indent-bars--no-stipple-chars
+	(vconcat
+	 (nreverse
+	  (cl-loop with l = (length indent-bars--no-stipple-chars)
+		   for d from num downto 1
+		   collect
+		   (or  (and (< d l) (aref indent-bars--no-stipple-chars (1- d)))
+			(propertize (string indent-bars-no-stipple-char)
+				    'face (indent-bars--face d))))))))
+
+(defun indent-bars--no-stipple-blank-string (off nbars bar-from)
+  "Return a string suitable for blank line display without stipple.
+OFF is character offset for the first guide, NBARS is the desired
+number of bars to add, and BAR-FROM is the starting index of the
+first bar (>=1)"
+  (concat (make-string off ?\s)
+	  (cl-loop with sps = (make-string (1- indent-bars-spacing) ?\s)
+		   concat (indent-bars--no-stipple-char depth)
+		   for depth from bar-from to (+ bar-from nbars -2)
+		   concat sps)
+	  "\n"))
+
 
 ;;;; Display
 (defvar-local indent-bars-spacing nil)
@@ -579,51 +662,57 @@ Uses configuration variables `indent-bars-width-frac',
 `indent-bars-zigzag', unless PAD-FRAC, WIDTH-FRAC, PATTERN,
 and/or ZIGZAG are set (the latter overriding the config
 variables, which see)."
-  (let* ((rowbytes (/ (+ w 7) 8))
-	 (pattern (or pattern indent-bars-pattern))
-	 (pat (if (< h (length pattern)) (substring pattern 0 h) pattern))
-	 (plen (length pat))
-	 (chunk (/ (float h) plen))
-	 (small (floor chunk))
-	 (large (ceiling chunk))
-	 (pad-frac (or pad-frac indent-bars-pad-frac))
-	 (pad (round (* w pad-frac)))
-	 (zigzag (or zigzag indent-bars-zigzag))
-	 (zz (if zigzag (round (* w zigzag)) 0))
-	 (zeroes (make-string rowbytes ?\0))
-	 (width-frac (or width-frac indent-bars-width-frac))
-	 (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
-		    (list (indent-bars--row-data w pad rot width-frac)) ; one row
-		  (cl-loop for last-fill-char = nil then x
-			   for x across pat
-			   for n = small then (if (and (/= x ?\s) (= n small))
-						  large
-						small)
-			   for zoff = zz then (if (and last-fill-char
-						       (/= x ?\s)
-						       (/= x last-fill-char))
-						  (- zoff) zoff)
-			   for row = (if (= x ?\s) zeroes
-				       (indent-bars--row-data w (+ pad zoff)
-							      rot width-frac))
-			   append (cl-loop repeat n collect row)))))
-    (list w (length dlist) (string-join dlist))))
+  (unless (or (not (display-graphic-p)) indent-bars-prefer-character)
+    (let* ((rowbytes (/ (+ w 7) 8))
+	   (pattern (or pattern indent-bars-pattern))
+	   (pat (if (< h (length pattern)) (substring pattern 0 h) pattern))
+	   (plen (length pat))
+	   (chunk (/ (float h) plen))
+	   (small (floor chunk))
+	   (large (ceiling chunk))
+	   (pad-frac (or pad-frac indent-bars-pad-frac))
+	   (pad (round (* w pad-frac)))
+	   (zigzag (or zigzag indent-bars-zigzag))
+	   (zz (if zigzag (round (* w zigzag)) 0))
+	   (zeroes (make-string rowbytes ?\0))
+	   (width-frac (or width-frac indent-bars-width-frac))
+	   (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
+		      (list (indent-bars--row-data w pad rot width-frac)) ; one row
+		    (cl-loop for last-fill-char = nil then x
+			     for x across pat
+			     for n = small then (if (and (/= x ?\s) (= n small))
+						    large
+						  small)
+			     for zoff = zz then (if (and last-fill-char
+							 (/= x ?\s)
+							 (/= x last-fill-char))
+						    (- zoff) zoff)
+			     for row = (if (= x ?\s) zeroes
+					 (indent-bars--row-data w (+ pad zoff)
+								rot width-frac))
+			     append (cl-loop repeat n collect row)))))
+      (list w (length dlist) (string-join dlist)))))
 
-(defun indent-bars--draw (start end &optional bar-from obj)
-  "Set bar text properties from START to END, starting at bar number BAR-FROM.
-BAR-FROM is one by default.  If passed, properties are set in
-OBJ, otherwise in the buffer.  OBJ is returned."
-  (cl-loop for pos = start then (+ pos indent-bars-spacing) while (< pos end)
-	   for barnum from (or bar-from 1)
-	   do (put-text-property pos (1+ pos)
-				 'face (indent-bars--face barnum) obj))
+(defun indent-bars--draw (start end &optional bar-from obj no-stipple)
+  "Set bar face in the appropriate locations from START to END.
+Starts at bar number BAR-FROM, one by default.  If passed,
+properties are set from START to END in OBJ, otherwise in the
+buffer.  If NO-STIPPLE is non-nil, rather than setting the bar
+face, instead apply a display character string.  OBJ is
+returned."
+  (let ((prop (if no-stipple 'display 'face))
+	(fun (if no-stipple #'indent-bars--no-stipple-char #'indent-bars--face)))
+      (cl-loop for pos = start then (+ pos indent-bars-spacing) while (< pos end)
+	       for barnum from (or bar-from 1)
+	       do (put-text-property pos (1+ pos) prop (funcall fun barnum) obj)))
   obj)
 
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
   (save-excursion
     (goto-char (match-beginning 1))
-    (indent-bars--draw (+ (line-beginning-position) indent-bars-spacing) (match-end 1)))
+    (indent-bars--draw (+ (line-beginning-position) indent-bars-spacing) (match-end 1) nil nil
+		       (or (not (display-graphic-p)) indent-bars-prefer-character)))
   nil)
 
 ;;;; Font Lock
@@ -651,26 +740,24 @@ OBJ, otherwise in the buffer.  OBJ is returned."
 (defun indent-bars--handle-blank-lines ()
   "Display the appropriate bars on regions of one or more blank-only lines.
 Only called by font-lock if `indent-bars-display-on-blank-lines'
-is non-nil.  Uses surrounding line indentation to determine
-additional bars to display on each line, and uses a string
-display property on the final newline if necessary to display the
-needed bars.  Blank lines at the beginning or end of the buffer
-are not indicated, even if otherwise they would be."
+is non-nil.  Called on multi-line blank line regions.  Uses the
+surrounding line indentation to determine additional bars to
+display on each line, and applies a string display property on
+the final newline if necessary to display the needed bars.
+
+Note: blank lines at the beginning or end of the buffer are not
+indicated, even if otherwise they would be."
   (let* ((beg (match-beginning 0))
 	 (end (match-end 0))
+	 (no-stipple (or indent-bars-prefer-character (not (display-graphic-p))))
 	 ctxbars)
     (when (and (/= end (point-max)) (/= beg (point-min)))
       (save-excursion
-	;; (message "BL: %d[%d]->%d[%d]" beg (/ (current-indentation) indent-bars-spacing)
-	;; 	 end
-	;; 	 (progn
-	;; 	   (goto-char end)
-	;; 	   (/ (current-indentation) indent-bars-spacing)))
-	(goto-char (1- beg)) 		;beg always bol
+	(goto-char (1- beg)) 		;beg is always bol
 	(when (> (setq ctxbars
 		       (1- (max (/ (current-indentation) indent-bars-spacing)
 				(progn
-				  (goto-char end) ; end at bol following
+				  (goto-char (1+ end)) ; end is always eol
 				  (/ (current-indentation) indent-bars-spacing)))))
 		 0)
 	  (goto-char beg)
@@ -679,16 +766,19 @@ are not indicated, even if otherwise they would be."
 		   (ep (line-end-position))
 		   (len (- ep bp))
 		   (nbars (/ (max 0 (1- len)) indent-bars-spacing)))
-	      ;; (message "len: %d nbars: %d ctxbars:%d" len nbars ctxbars)
 	      ;; Draw "real" bars in existing blank
-	      (if (> nbars 0) (indent-bars--draw (+ bp indent-bars-spacing) ep))
+	      (if (> nbars 0) (indent-bars--draw (+ bp indent-bars-spacing)
+						 ep nil nil no-stipple))
 	      ;; Add fake bars via display
-	      (when (> ctxbars nbars) 
+	      (when (> ctxbars nbars)
 		(let* ((off (- (* (1+ nbars) indent-bars-spacing) len))
-		       (nsp (1+ (- (* ctxbars indent-bars-spacing) len)))
-		       (s (concat (make-string nsp ?\s) "\n")))
-		  (indent-bars--draw off nsp (1+ nbars) s)
-		  (put-text-property ep (1+ ep) 'display s)))
+		       (s (if no-stipple
+			      (indent-bars--no-stipple-blank-string
+			       off (- ctxbars nbars) (1+ nbars))
+			    (let ((nsp (1+ (- (* ctxbars indent-bars-spacing) len))))
+			      (indent-bars--draw off nsp (1+ nbars)
+						 (concat (make-string nsp ?\s) "\n"))))))
+		  (put-text-property ep (1+ ep) 'display s))) ;place display on the \n
 	      (beginning-of-line 2)))))
       nil)))
 
@@ -821,7 +911,7 @@ Adapted from `highlight-indentation-mode'."
 	   (1 (indent-bars--display)))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
-      (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n)))
+      (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n))) ; multi-line blank region
 	(setq indent-bars--font-lock-blank-line-keywords
 	      `((,re (0 (indent-bars--handle-blank-lines)))))
 	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
@@ -848,6 +938,9 @@ Adapted from `highlight-indentation-mode'."
 				    (indent-bars--stipple-rot (frame-char-width)))
   (indent-bars--create-faces 9 'reset)	; N.B.: extends as needed
 
+  ;; No Stipple (e.g. terminal)
+  (indent-bars--create-no-stipple-chars 9)
+  
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
   (indent-bars--resize-stipple)		; just in case
@@ -869,6 +962,8 @@ Adapted from `highlight-indentation-mode'."
 
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
+  (face-spec-set 'indent-bars-stipple nil 'reset)
+  (cl-loop for f in indent-bars--faces do (face-spec-set f nil 'reset))
   (font-lock-remove-keywords nil indent-bars--font-lock-keywords)
   (font-lock-remove-keywords nil indent-bars--font-lock-blank-line-keywords)
   (font-lock-flush)
