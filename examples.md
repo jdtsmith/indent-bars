@@ -81,3 +81,16 @@
    indent-bars-color-by-depth '(:palette ("red" "green" "orange" "cyan") :blend 1)
    indent-bars-highlight-current-depth '(:background "gray10"))
 ```
+
+
+## In terminal:
+
+```emacs-lisp
+  (setq
+   indent-bars-color '(highlight :face-bg t :blend 0.75)
+   indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 1)
+   indent-bars-unspecified-fg-color "white"
+   indent-bars-unspecified-bg-color "black")"
+```
+
+Note: `indent-bars-prefer-character` need not be set unless you prefer always to use character display.
