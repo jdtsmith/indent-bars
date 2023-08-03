@@ -84,6 +84,7 @@
 
 
 ## In terminal:
+<img width="505" alt="ib_term" src="https://github.com/jdtsmith/indent-bars/assets/93749/d2f51fa7-5993-4c34-93b2-effef32a469d">
 
 ```emacs-lisp
   (setq
