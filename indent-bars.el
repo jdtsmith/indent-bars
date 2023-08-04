@@ -994,7 +994,10 @@ Adapted from `highlight-indentation-mode'."
   :group 'indent-bars
   (if indent-bars-mode
       (if (daemonp)
-	  (add-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
+	  (let ((buf (current-buffer)))
+	    (add-hook 'after-make-frame-functions
+		      (lambda () (with-current-buffer buf (indent-bars-setup-and-remove)))
+		      nil t))
 	(indent-bars-setup))
     (indent-bars-teardown)))
 
