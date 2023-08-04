@@ -19,6 +19,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 # FAQ's
 
 - **I don't see anything/bars are garbled!**  Not all Emacsen support stipples; see [Compatibility](#compatibility).
+- **When I view the same buffer side by side, the bars jump around!** This is a known issue for versions of Emacs with arbitrary window widths; see [Per-buffer stipple offsets](#per-buffer-stipple-offsets).
 - **How can I find out if my Emacs supports stipples?!**  See [Testing Stipples](#testing-stipples).
 - **These bars are too instrusive!** Reduce the `:blend` value in `indent-bars-color` closer to zero. Consider disabling `indent-bars-color-by-depth`.
 - **I can barely see the bars!** Increase the `:blend` value in `indent-bars-color` closer to one.
@@ -137,7 +138,7 @@ To get the stipple bars in the right place, `indent-bars` must consider the star
 
 There is one rare corner case, however: showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets (e.g. emacs-mac) can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, not per-window.  I.e. it can't be correct for the same buffer in left and right windows at the same time.
 
-Options are living with this, or (for Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).  Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
+Options are living with this, switching to [character-based bars](#non-stipple-display), or (for Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).  Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
 
 ### Advantages/Disadvantages
 
