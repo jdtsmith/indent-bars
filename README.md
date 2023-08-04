@@ -23,7 +23,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 - **How can I find out if my Emacs supports stipples?!**  See [Testing Stipples](#testing-stipples).
 - **These bars are too instrusive!** Reduce the `:blend` value in `indent-bars-color` closer to zero. Consider disabling `indent-bars-color-by-depth`.
 - **I can barely see the bars!** Increase the `:blend` value in `indent-bars-color` closer to one.
-- **I want completely unique indent guidebars so as to flex on my work colleagues!**: check the [Examples](examples.md) for some ideas.  The sky is the limit.
+- **I want completely unique indent guidebars so as to flex on my colleagues!** check the [Examples](examples.md) for some ideas.  The sky is the limit.
 - **I use Emacs on the terminal, you insensitive clod!** `indent-bars` will just work for you (though you don't get any fancy bar patterns).
 - **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.**  Maybe [this]([url](https://github.com/jdtsmith/indent-bars/blob/main/examples.md#minimal)) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with `indent-bars-prefer-character`.  
 
