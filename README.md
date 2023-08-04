@@ -46,6 +46,14 @@ To clone with `use-package` and `straight`:
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 
+## With `--daemon`
+If you open files via emacsclient which start emacs, and for which `indent-bars` will be enabled using the emacs daemon, you may need to delay loading until after the server-start, e.g.:
+
+```elisp
+  :hook
+  (server-after-make-frame-hook . (lambda () (add-hook 'prog-mode-hook  'indent-bars-mode)))
+```
+
 ## Compatibility 
 
 For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**  It can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to always do so; see [Non-stipple Display](#non-stipple-display).
