@@ -2,7 +2,7 @@
 
 Fast, configurable indentation guide-bars for Emacs.
 
-<img align="right" width="514" alt="ib_default" src="https://github.com/jdtsmith/indent-bars/assets/93749/4f652554-bede-4aa6-bdbc-233ec843d782">
+<img align="right" width="498" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/c0cb709a-7bf8-4986-973d-f9ff81b980f1">
 
 This package provides vertical indentation _guide bars_, with the following features:
 
