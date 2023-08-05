@@ -145,7 +145,7 @@ Note that Emacs 28 and earlier have a bug which results in cloned buffers sharin
 
 For terminals, (and everywhere, if `indent-bars-prefer-character` is set), `indent-bars` will not attempt stipple display, but instead use simple characters (e.g. `│`; see [an example](examples.md#in-terminal)).
 
-Note that in mixed gui/terminal sessions of the same Emacs version, you may need to `M-x indent-bars-reset` when switching a given buffer between graphical and terminal frames.
+Note that in mixed gui/terminal sessions of the same Emacs process, you need to `M-x indent-bars-reset` when switching a given buffer between graphical and terminal frames.
 
 ### Advantages/Disadvantages
 
