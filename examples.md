@@ -94,4 +94,4 @@
    indent-bars-unspecified-bg-color "black")"
 ```
 
-Note: `indent-bars-prefer-character` need not be set unless you prefer always to use character display.
+Note: `indent-bars-prefer-character` need not be set unless you prefer to use character display in GUI as well.
