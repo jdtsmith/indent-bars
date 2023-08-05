@@ -125,14 +125,21 @@ which should then look something like:
 
 <img width="668" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/dd0f65f5-3cdc-4865-a66d-41365cecadd0">
 
-If you determine that stipples do not work in your Emacs, consider upgrading to a version which suppor them, or setting `indent-bars-prefer-character=t`.
+If you determine that stipples do not work in your Emacs, consider upgrading to a version which supports them, or setting `indent-bars-prefer-character=t`.
 
 #### Per-buffer stipple offsets
-To get the stipple bars in the right place, `indent-bars` must consider the starting horizontal pixel position of the current window, and adjust the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
+To get the stipple bars in the right place, `indent-bars` must consider the starting horizontal pixel position of the current window, and "rotate" the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
 
 There is one rare corner case, however: showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets (e.g. emacs-mac) can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, not per-window.  I.e. it can't be correct for the same buffer in left and right windows at the same time.
 
-Options are living with this, switching to [character-based bars](#non-stipple-display), or (for Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).  Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
+Options are:
+
+1. Living with it
+2. Using a build of emacs that always starts windows on the character boundary
+3. Switching to [character-based bars](#non-stipple-display)
+4. (For Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).
+
+Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
 
 ### Non-stipple display
 
