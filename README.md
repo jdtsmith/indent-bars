@@ -100,12 +100,6 @@ The heaviest operation (though still fairly efficient) is **blank-line highlight
 
 ## Display
 
-### Non-stipple display
-
-For terminals, (and everywhere, if `indent-bars-prefer-character` is set), `indent-bars` will not attempt stipple display, but instead use simple characters (e.g. `│`; see [an example](examples.md#in-terminal)).
-
-Note that in mixed gui/terminal sessions of the same Emacs version, you may need to `M-x indent-bars-reset` when switching a given buffer between graphical and terminal frames.
-
 ### Stipples
 
 Stipples are repeating patterns anchored to the full emacs frame.  `indent-bars` basically "opens windows" on this fixed pattern to "reveal" the bars.
@@ -139,6 +133,12 @@ To get the stipple bars in the right place, `indent-bars` must consider the star
 There is one rare corner case, however: showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets (e.g. emacs-mac) can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, not per-window.  I.e. it can't be correct for the same buffer in left and right windows at the same time.
 
 Options are living with this, switching to [character-based bars](#non-stipple-display), or (for Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).  Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
+
+### Non-stipple display
+
+For terminals, (and everywhere, if `indent-bars-prefer-character` is set), `indent-bars` will not attempt stipple display, but instead use simple characters (e.g. `│`; see [an example](examples.md#in-terminal)).
+
+Note that in mixed gui/terminal sessions of the same Emacs version, you may need to `M-x indent-bars-reset` when switching a given buffer between graphical and terminal frames.
 
 ### Advantages/Disadvantages
 
