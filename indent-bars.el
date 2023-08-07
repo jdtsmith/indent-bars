@@ -266,14 +266,15 @@ If BLEND is provided, it is a blend fraction between 0 and 1 for
 blending the specified highlight color with the
 existing (depth-based or main) bar color; see `indent-bars-color'
 for its meaning.  BLEND=1 indicates using the full, unblended
-highlight color (i.e., the same as omitting BLEND).
+highlight color (and is the same as omitting BLEND).
 
 As a special case, if BLEND is provided, but neither COLOR nor
-FACE is, this indicates using for the current depth highlight
-a (presumably distinct) blend factor with the frame background of
-the original colors specified in `indent-bars-color-by-depth' or
-`indent-bars-color'.  In this manner the current-depth highlight
-can be made a more or less visible version of the same color.
+FACE is, this indicates using a (presumably distinct) blend
+factor between the default color and the frame background for the
+current depth highlight.  The original colors are specified in
+`indent-bars-color-by-depth' or `indent-bars-color'.  In this
+manner the current-depth highlight can be made a more (or less)
+prominent version of the default coloring.
 
 If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the bar pattern
 at the current level will be altered as well.  Note that
