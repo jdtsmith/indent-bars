@@ -509,43 +509,6 @@ font-lock properties."
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
 
-;;;; No stipple (e.g. terminal)
-(defvar indent-bars--no-stipple-chars nil)
-;; (defvar indent-bars--no-stipple-current-depth-char nil)
-
-(defun indent-bars--no-stipple-char (depth)
-  "Return the no-stipple bar character for DEPTH."
-  (if (> depth (length indent-bars--no-stipple-chars))
-      (indent-bars--create-no-stipple-chars depth))
-  (aref indent-bars--no-stipple-chars (1- depth)))
-
-(defun indent-bars--create-no-stipple-chars (num)
-  "Setup bar characters for bar faces up to depth NUM.
-Used when not using stipple display (on terminal, or by request;
-see `indent-bars-prefer-character')."
-  (setq indent-bars--no-stipple-chars
-	(vconcat
-	 (nreverse
-	  (cl-loop with l = (length indent-bars--no-stipple-chars)
-		   for d from num downto 1
-		   collect
-		   (or  (and (< d l) (aref indent-bars--no-stipple-chars (1- d)))
-			(propertize (string indent-bars-no-stipple-char)
-				    'face (indent-bars--face d))))))))
-
-(defun indent-bars--no-stipple-blank-string (off nbars bar-from)
-  "Return a string suitable for blank line display without stipple.
-OFF is character offset for the first guide, NBARS is the desired
-number of bars to add, and BAR-FROM is the starting index of the
-first bar (>=1)"
-  (concat (make-string off ?\s)
-	  (cl-loop with sps = (make-string (1- indent-bars-spacing) ?\s)
-		   concat (indent-bars--no-stipple-char depth)
-		   for depth from bar-from to (+ bar-from nbars -2)
-		   concat sps)
-	  "\n"))
-
-
 ;;;; Display
 (defvar-local indent-bars-spacing nil)
 
@@ -706,6 +669,43 @@ returned."
     (indent-bars--draw (+ (line-beginning-position) indent-bars-spacing) (match-end 1) nil nil
 		       (or (not (display-graphic-p)) indent-bars-prefer-character)))
   nil)
+
+;;;; No stipple (e.g. terminal)
+(defvar indent-bars--no-stipple-chars nil)
+;; (defvar indent-bars--no-stipple-current-depth-char nil)
+
+(defun indent-bars--no-stipple-char (depth)
+  "Return the no-stipple bar character for DEPTH."
+  (if (> depth (length indent-bars--no-stipple-chars))
+      (indent-bars--create-no-stipple-chars depth))
+  (aref indent-bars--no-stipple-chars (1- depth)))
+
+(defun indent-bars--create-no-stipple-chars (num)
+  "Setup bar characters for bar faces up to depth NUM.
+Used when not using stipple display (on terminal, or by request;
+see `indent-bars-prefer-character')."
+  (setq indent-bars--no-stipple-chars
+	(vconcat
+	 (nreverse
+	  (cl-loop with l = (length indent-bars--no-stipple-chars)
+		   for d from num downto 1
+		   collect
+		   (or  (and (< d l) (aref indent-bars--no-stipple-chars (1- d)))
+			(propertize (string indent-bars-no-stipple-char)
+				    'face (indent-bars--face d))))))))
+
+(defun indent-bars--no-stipple-blank-string (off nbars bar-from)
+  "Return a string suitable for blank line display without stipple.
+OFF is character offset for the first guide, NBARS is the desired
+number of bars to add, and BAR-FROM is the starting index of the
+first bar (>=1)"
+  (concat (make-string off ?\s)
+	  (cl-loop with sps = (make-string (1- indent-bars-spacing) ?\s)
+		   concat (indent-bars--no-stipple-char depth)
+		   for depth from bar-from to (+ bar-from nbars -2)
+		   concat sps)
+	  "\n"))
+
 
 ;;;; Font Lock
 (defvar-local indent-bars--font-lock-keywords nil)
