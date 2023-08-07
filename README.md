@@ -137,9 +137,9 @@ Options are:
 1. Living with it
 2. Using a build of emacs that always starts windows on the character boundary
 3. Switching to [character-based bars](#non-stipple-display)
-4. (For Emacs >=29) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).
+4. (For Emacs >=29[^2]) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).
 
-Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
+[^2]: Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
 
 ### Non-stipple display
 
@@ -159,9 +159,6 @@ Note that in mixed gui/terminal sessions of the same Emacs process, you need to 
 
 - Works equally for terminal and GUI.
 - Works even for emacs ports which do not support or mishandle stipple display (see [Compatibility](#compatibility)).
-
-
-
 
 # Related Packages
 
