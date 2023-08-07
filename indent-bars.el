@@ -989,6 +989,7 @@ Adapted from `highlight-indentation-mode'."
 	indent-bars--gutter-rot 0
 	indent-bars--current-depth-palette nil
 	indent-bars--current-depth-stipple nil
+	indent-bars--no-stipple-chars nil
 	indent-bars--current-bg-color nil
 	indent-bars--current-depth 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
