@@ -84,6 +84,7 @@
 
 ## Minimal colorpop:
 Showcasing `:blend`-only current coloring.
+
 <img width="602" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/ef02e099-798c-4eb7-947a-6fe144a9104d">
 
 ```emacs-lisp
