@@ -353,10 +353,10 @@ Set to a list of asymbols, or an alist of language symbols and list of string ."
 			:value-type (repeat :tag "Types" (string :tag "Type"))))
   :group 'indent-bars)
 
-(defcustom indent-bars-no-descend-comments-or-string t
-  "Configure bar behavior in line-spanning comments and strings.
+(defcustom indent-bars-no-descend--string t
+  "Configure bar behavior inside strings.
 If non-nil, bars will go no deeper than their starting line
-inside comments & strings."
+inside multi-line strings."
   :type 'boolean
   :group 'indent-bars)
 
@@ -721,28 +721,32 @@ The TYPES are as configured in `indent-bars-treesit-support'."
   (seq-contains-p indent-bars--ts-node-types
 		  (treesit-node-type n) #'string=))
 
+(defvar indent-bars--string-content "string_content")
+(defsubst indent-bars--indent-at-node (node)
+  "Return the current indentation at the start of NODE."
+  (save-excursion (goto-char (treesit-node-start node))
+		  (current-indentation)))
+
 (defun indent-bars--current-indentation-depth ()
-  "Current indentation depth.
+  "Calculate current indentation depth.
 If treesit support is enabled, searches for parent nodes with
 types as specified in `indent-bars-treesit-support' for the
-current language, and, if found, limits the indentation depth to
-the parent node's, plus one."
-  (let ((d (/ (current-indentation) indent-bars-spacing))
-	(p (point)) scs)
-    (if (and indent-bars-no-descend-comments-or-string
-	     (setq scs (nth 8 (syntax-ppss))))
-	(min d (/ (save-excursion (goto-char scs) (current-indentation))
-		  indent-bars-spacing))
-      (if-let ((indent-bars--ts-node-types)
-	       ((/= p (point-min)))
-	       (node (treesit-parent-until
-		      (treesit-node-on (1- p) p indent-bars--ts-lang)
-		      #'indent-bars--treesit-node-match t)))
-	  (min d
-	       (1+ (/ (save-excursion (goto-char (treesit-node-start node))
-				      (current-indentation))
-		      indent-bars-spacing)))
-	d))))
+current buffer's language, and, if found, limits the indentation
+depth to the parent node's, plus one.  If
+`indent-bars-no-descend-string' is non-nil, look for enclosing
+string and mark indent depth no deeper than one more than the
+starting line's depth."
+  (let* ((d (/ (current-indentation) indent-bars-spacing))
+	 (p (point)))
+    (when-let (((/= p (point-min)))
+	       (node (treesit-node-on (1- p) p indent-bars--ts-lang)))
+      (if (and indent-bars-no-descend-string
+	       (string= (treesit-node-type node) indent-bars--string-content))
+	  (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
+	(if-let ((indent-bars--ts-node-types)
+		 (ctx (treesit-parent-until node #'indent-bars--treesit-node-match t)))
+	    (min d (1+ (/ (indent-bars--indent-at-node ctx) indent-bars-spacing)))
+	  d)))))
 
 ;;;; No stipple (e.g. terminal)
 (defvar indent-bars--no-stipple-chars nil)
