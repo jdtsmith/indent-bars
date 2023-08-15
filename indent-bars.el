@@ -185,10 +185,10 @@ with:
     over this setting.  The format is a list of faces (symbols)
     or colors (strings) to be used as a color cycle for coloring
     indentations at increasing levels.  Each face can optionally
-    be specified as a cons cell (face . 'bg) to specify using
+    be specified as a cons cell (face . \\='bg) to specify using
     that face's background color instead of its foreground.
 
-      (face_or_color | (face . 'bg) ...)
+      (face_or_color | (face . \\='bg) ...)
 
     While this list can contain a single element, it makes little
     sense to do so.  The depth palette will be used cyclically,
