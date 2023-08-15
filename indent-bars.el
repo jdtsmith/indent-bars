@@ -42,6 +42,7 @@
 (require 'outline)
 (require 'font-lock)
 (require 'compat)
+(require 'treesit nil t)
 
 ;;;; Customization
 (defgroup indent-bars nil
@@ -341,6 +342,22 @@ Set only if the default guessed spacing is incorrect.  Becomes
 buffer-local automatically."
   :local t
   :type '(choice integer (const :tag "Discover automatically" :value nil))
+  :group 'indent-bars)
+
+(defcustom indent-bars-treesit-support nil
+  "Enable support for treesitter and configure matches.
+Set to a list of asymbols, or an alist of language symbols and list of string ."
+  :type '(choice (const :tag "No tree-sitter support" nil)
+		 (alist :tag "Alist of node types"
+			:key-type (symbol :tag "Language")
+			:value-type (repeat :tag "Types" (string :tag "Type"))))
+  :group 'indent-bars)
+
+(defcustom indent-bars-no-descend-comments-or-string t
+  "Configure bar behavior in line-spanning comments and strings.
+If non-nil, bars will go no deeper than their starting line
+inside comments & strings."
+  :type 'boolean
   :group 'indent-bars)
 
 ;;;; Colors
@@ -685,10 +702,47 @@ returned."
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
   (save-excursion
-    (goto-char (match-beginning 1))
-    (indent-bars--draw (+ (line-beginning-position) indent-bars-spacing) (match-end 1) nil nil
-		       (or (not (display-graphic-p)) indent-bars-prefer-character)))
+    (goto-char (match-end 1))
+    (let ((d (indent-bars--current-indentation-depth))
+	  (b (match-beginning 1)))
+      (if (> d 0)
+	  (indent-bars--draw (+ b indent-bars-spacing)
+			     (+ b (* d indent-bars-spacing)) nil nil
+			     (or (not (display-graphic-p)) indent-bars-prefer-character)))))
   nil)
+
+;;;; Tree-sitter
+(defvar-local indent-bars--ts-node-types nil)
+(defvar-local indent-bars--ts-lang nil)
+
+(defun indent-bars--treesit-node-match (n)
+  "Return if node N has matching type, nil otherwise.
+The TYPES are as configured in `indent-bars-treesit-support'."
+  (seq-contains-p indent-bars--ts-node-types
+		  (treesit-node-type n) #'string=))
+
+(defun indent-bars--current-indentation-depth ()
+  "Current indentation depth.
+If treesit support is enabled, searches for parent nodes with
+types as specified in `indent-bars-treesit-support' for the
+current language, and, if found, limits the indentation depth to
+the parent node's, plus one."
+  (let ((d (/ (current-indentation) indent-bars-spacing))
+	(p (point)) scs)
+    (if (and indent-bars-no-descend-comments-or-string
+	     (setq scs (nth 8 (syntax-ppss))))
+	(min d (/ (save-excursion (goto-char scs) (current-indentation))
+		  indent-bars-spacing))
+      (if-let ((indent-bars--ts-node-types)
+	       ((/= p (point-min)))
+	       (node (treesit-parent-until
+		      (treesit-node-on (1- p) p indent-bars--ts-lang)
+		      #'indent-bars--treesit-node-match t)))
+	  (min d
+	       (1+ (/ (save-excursion (goto-char (treesit-node-start node))
+				      (current-indentation))
+		      indent-bars-spacing)))
+	d))))
 
 ;;;; No stipple (e.g. terminal)
 (defvar indent-bars--no-stipple-chars nil)
@@ -767,10 +821,10 @@ indicated, even if otherwise they would be."
       (save-excursion
 	(goto-char (1- beg)) 		;beg is always bol
 	(when (> (setq ctxbars
-		       (1- (max (/ (current-indentation) indent-bars-spacing)
+		       (1- (max (indent-bars--current-indentation-depth)
 				(progn
 				  (goto-char (1+ end)) ; end is always eol
-				  (/ (current-indentation) indent-bars-spacing)))))
+				  (indent-bars--current-indentation-depth)))))
 		 0)
 	  (goto-char beg)
 	  (while (<= (point) (1- end)) 	;note: end extends 1 char beyond blank line range
@@ -822,7 +876,7 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 (defun indent-bars--highlight-current-depth ()
   "Refresh current indentation depth highlight.
 Works by remapping the appropriate indent-bars-N face."
-  (let ((depth (/ (current-indentation) indent-bars-spacing)))
+  (let ((depth (indent-bars--current-indentation-depth)))
     (when (not (= depth indent-bars--current-depth))
       (if indent-bars--remap-face 	; out with the old
 	  (face-remap-remove-relative indent-bars--remap-face))
@@ -960,17 +1014,26 @@ Adapted from `highlight-indentation-mode'."
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
 
-  ;; Font-lock
-  (indent-bars--setup-font-lock)
-  (font-lock-flush)
-  
+  ;; Treesitter
+  (when-let (((and (fboundp #'treesit-available-p)
+		   (treesit-available-p)
+		   indent-bars-treesit-support))
+	     (lang (treesit-language-at (point-min)))
+	     (types (alist-get lang indent-bars-treesit-support)))
+    (setq indent-bars--ts-lang lang
+	  indent-bars--ts-node-types types))
+
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
     (indent-bars--set-current-bg-color)
     (indent-bars--set-current-depth-stipple)
     (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t)
     (setq indent-bars--current-depth 0)
-    (indent-bars--highlight-current-depth)))
+    (indent-bars--highlight-current-depth))
+
+  ;; Font-lock
+  (indent-bars--setup-font-lock)
+  (font-lock-flush))
 
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
