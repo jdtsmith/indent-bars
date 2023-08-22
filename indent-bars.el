@@ -734,9 +734,10 @@ string and mark indent depth no deeper than one more than the
 starting line's depth."
   (let* ((d (/ (current-indentation) indent-bars-spacing))
 	 (p (point)))
-    (when-let (((/= p (point-min)))
-	       (node (treesit-node-on (1- p) p indent-bars--ts-lang)))
-      (or
+    (or
+     (when-let ((indent-bars--ts-query)
+		((/= p (point-min)))
+		(node (treesit-node-on (1- p) p indent-bars--ts-lang)))
        (if (and indent-bars-no-descend-string
 		(string= (treesit-node-type node) indent-bars--string-content))
 	   (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
@@ -744,8 +745,8 @@ starting line's depth."
 		  (ctx (treesit-query-capture
 			indent-bars--ts-lang indent-bars--ts-query
 			(treesit-node-start node) (treesit-node-end node) t)))
-	     (min d (1+ (/ (indent-bars--indent-at-node (car ctx)) indent-bars-spacing)))))
-       d))))
+	     (min d (1+ (/ (indent-bars--indent-at-node (car ctx)) indent-bars-spacing))))))
+     d)))
 
 ;;;; No stipple (e.g. terminal)
 (defvar indent-bars--no-stipple-chars nil)
