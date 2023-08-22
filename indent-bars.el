@@ -740,13 +740,14 @@ starting line's depth."
 	 (p (point)))
     (when-let (((/= p (point-min)))
 	       (node (treesit-node-on (1- p) p indent-bars--ts-lang)))
-      (if (and indent-bars-no-descend-string
-	       (string= (treesit-node-type node) indent-bars--string-content))
-	  (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
-	(if-let ((indent-bars--ts-node-types)
-		 (ctx (treesit-parent-until node #'indent-bars--treesit-node-match t)))
-	    (min d (1+ (/ (indent-bars--indent-at-node ctx) indent-bars-spacing)))
-	  d)))))
+      (or
+       (if (and indent-bars-no-descend-string
+		(string= (treesit-node-type node) indent-bars--string-content))
+	   (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
+	 (if-let ((indent-bars--ts-node-types)
+		  (ctx (treesit-parent-until node #'indent-bars--treesit-node-match t)))
+	     (min d (1+ (/ (indent-bars--indent-at-node ctx) indent-bars-spacing)))))
+       d))))
 
 ;;;; No stipple (e.g. terminal)
 (defvar indent-bars--no-stipple-chars nil)
@@ -831,7 +832,7 @@ indicated, even if otherwise they would be."
 				  (indent-bars--current-indentation-depth)))))
 		 0)
 	  (goto-char beg)
-	  (while (<= (point) (1- end)) 	;note: end extends 1 char beyond blank line range
+	  (while (<= (point) (1- end)) ;note: end extends 1 char beyond blank line range
 	    (let* ((bp (line-beginning-position))
 		   (ep (line-end-position))
 		   (len (- ep bp))
