@@ -353,7 +353,7 @@ Set to a list of asymbols, or an alist of language symbols and list of string ."
 			:value-type (repeat :tag "Types" (string :tag "Type"))))
   :group 'indent-bars)
 
-(defcustom indent-bars-no-descend--string t
+(defcustom indent-bars-no-descend-string t
   "Configure bar behavior inside strings.
 If non-nil, bars will go no deeper than their starting line
 inside multi-line strings."
