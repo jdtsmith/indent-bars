@@ -712,14 +712,8 @@ returned."
   nil)
 
 ;;;; Tree-sitter
-(defvar-local indent-bars--ts-node-types nil)
 (defvar-local indent-bars--ts-lang nil)
-
-(defun indent-bars--treesit-node-match (n)
-  "Return if node N has matching type, nil otherwise.
-The TYPES are as configured in `indent-bars-treesit-support'."
-  (seq-contains-p indent-bars--ts-node-types
-		  (treesit-node-type n) #'string=))
+(defvar-local indent-bars--ts-query nil)
 
 (defvar indent-bars--string-content "string_content")
 (defsubst indent-bars--indent-at-node (node)
@@ -744,9 +738,11 @@ starting line's depth."
        (if (and indent-bars-no-descend-string
 		(string= (treesit-node-type node) indent-bars--string-content))
 	   (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
-	 (if-let ((indent-bars--ts-node-types)
-		  (ctx (treesit-parent-until node #'indent-bars--treesit-node-match t)))
-	     (min d (1+ (/ (indent-bars--indent-at-node ctx) indent-bars-spacing)))))
+	 (if-let ((indent-bars--ts-query)
+		  (ctx (treesit-query-capture
+			indent-bars--ts-lang indent-bars--ts-query
+			(treesit-node-start node) (treesit-node-end node) t)))
+	     (min d (1+ (/ (indent-bars--indent-at-node (car ctx)) indent-bars-spacing)))))
        d))))
 
 ;;;; No stipple (e.g. terminal)
@@ -1027,7 +1023,8 @@ Adapted from `highlight-indentation-mode'."
 	     (lang (treesit-language-at (point-min)))
 	     (types (alist-get lang indent-bars-treesit-support)))
     (setq indent-bars--ts-lang lang
-	  indent-bars--ts-node-types types))
+	  indent-bars--ts-query
+	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))
 
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
@@ -1060,7 +1057,8 @@ Adapted from `highlight-indentation-mode'."
 	indent-bars--current-depth-stipple nil
 	indent-bars--no-stipple-chars nil
 	indent-bars--current-bg-color nil
-	indent-bars--current-depth 0)
+	indent-bars--current-depth 0
+	indent-bars--ts-query nil)
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
