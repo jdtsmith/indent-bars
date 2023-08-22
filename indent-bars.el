@@ -883,7 +883,7 @@ ROT are as in `indent-bars--stipple', and have similar default values."
   "Refresh current indentation depth highlight.
 Works by remapping the appropriate indent-bars-N face."
   (let ((depth (indent-bars--current-indentation-depth)))
-    (when (not (= depth indent-bars--current-depth))
+    (when (and depth (not (= depth indent-bars--current-depth)))
       (if indent-bars--remap-face 	; out with the old
 	  (face-remap-remove-relative indent-bars--remap-face))
       (setq indent-bars--current-depth depth)
