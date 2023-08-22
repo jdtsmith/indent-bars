@@ -824,7 +824,8 @@ indicated, even if otherwise they would be."
 	 ctxbars)
     (when (and (/= end (point-max)) (/= beg (point-min)))
       (save-excursion
-	(goto-char (1- beg)) 		;beg is always bol
+	(goto-char (1- beg))
+	(beginning-of-line 1)
 	(when (> (setq ctxbars
 		       (1- (max (indent-bars--current-indentation-depth)
 				(progn
