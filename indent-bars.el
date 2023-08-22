@@ -345,12 +345,14 @@ buffer-local automatically."
   :group 'indent-bars)
 
 (defcustom indent-bars-treesit-support nil
-  "Enable support for treesitter and configure matches.
-Set to a list of asymbols, or an alist of language symbols and list of string ."
+  "Enable support for treesitter, and configure it.
+Set to an alist of language symbols and node symbols
+corresponding to wrapping types (typically lists,parameters,
+etc.)."
   :type '(choice (const :tag "No tree-sitter support" nil)
 		 (alist :tag "Alist of node types"
 			:key-type (symbol :tag "Language")
-			:value-type (repeat :tag "Types" (string :tag "Type"))))
+			:value-type (repeat :tag "Types" (symbol :tag "Type"))))
   :group 'indent-bars)
 
 (defcustom indent-bars-no-descend-string t
