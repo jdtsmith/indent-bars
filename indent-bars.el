@@ -719,9 +719,10 @@ returned."
 
 (defvar indent-bars--string-content "string_content")
 (defsubst indent-bars--indent-at-node (node)
-  "Return the current indentation at the start of NODE."
-  (save-excursion (goto-char (treesit-node-start node))
-		  (current-indentation)))
+  "Return the current indentation at the start of NODE.
+Moves point."
+  (goto-char (treesit-node-start node))
+  (current-indentation))
 
 (defun indent-bars--current-indentation-depth ()
   "Calculate current indentation depth.
@@ -732,6 +733,8 @@ depth to the parent node's, plus one.  If
 `indent-bars-no-descend-string' is non-nil, look for enclosing
 string and mark indent depth no deeper than one more than the
 starting line's depth."
+enclosing string and mark indent depth no deeper than one more
+than the starting line's depth.  May move point."
   (let* ((d (/ (current-indentation) indent-bars-spacing))
 	 (p (point)))
     (or
@@ -881,7 +884,7 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 (defun indent-bars--highlight-current-depth ()
   "Refresh current indentation depth highlight.
 Works by remapping the appropriate indent-bars-N face."
-  (let ((depth (indent-bars--current-indentation-depth)))
+  (let ((depth (save-excursion (indent-bars--current-indentation-depth))))
     (when (and depth (not (= depth indent-bars--current-depth)))
       (if indent-bars--remap-face 	; out with the old
 	  (face-remap-remove-relative indent-bars--remap-face))
