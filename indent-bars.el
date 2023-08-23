@@ -714,7 +714,7 @@ returned."
   nil)
 
 ;;;; Tree-sitter
-(defvar-local indent-bars--ts-lang nil)
+(defvar-local indent-bars--ts-parser nil)
 (defvar-local indent-bars--ts-query nil)
 
 (defvar indent-bars--string-content "string_content")
@@ -729,10 +729,8 @@ Moves point."
 If treesit support is enabled, searches for parent nodes with
 types as specified in `indent-bars-treesit-support' for the
 current buffer's language, and, if found, limits the indentation
-depth to the parent node's, plus one.  If
-`indent-bars-no-descend-string' is non-nil, look for enclosing
-string and mark indent depth no deeper than one more than the
-starting line's depth."
+depth to the topmost matching parent node's, plus one.  If
+`indent-bars-no-descend-string' is non-nil, also look for
 enclosing string and mark indent depth no deeper than one more
 than the starting line's depth.  May move point."
   (let* ((d (/ (current-indentation) indent-bars-spacing))
@@ -740,15 +738,16 @@ than the starting line's depth.  May move point."
     (or
      (when-let ((indent-bars--ts-query)
 		((/= p (point-min)))
-		(node (treesit-node-on (1- p) p indent-bars--ts-lang)))
+		(node (treesit-node-on (1- p) p indent-bars--ts-parser)))
        (if (and indent-bars-no-descend-string
 		(string= (treesit-node-type node) indent-bars--string-content))
-	   (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
-	 (if-let ((indent-bars--ts-query)
-		  (ctx (treesit-query-capture
-			indent-bars--ts-lang indent-bars--ts-query
+	   (min d (1+ (/ (indent-bars--indent-at-node node)
+			 indent-bars-spacing)))
+	 (if-let ((ctx (treesit-query-capture
+			indent-bars--ts-parser indent-bars--ts-query
 			(treesit-node-start node) (treesit-node-end node) t)))
-	     (min d (1+ (/ (indent-bars--indent-at-node (car ctx)) indent-bars-spacing))))))
+	     (min d (1+ (/ (indent-bars--indent-at-node (car ctx))
+			   indent-bars-spacing))))))
      d)))
 
 ;;;; No stipple (e.g. terminal)
@@ -1028,7 +1027,8 @@ Adapted from `highlight-indentation-mode'."
 		   indent-bars-treesit-support))
 	     (lang (treesit-language-at (point-min)))
 	     (types (alist-get lang indent-bars-treesit-support)))
-    (setq indent-bars--ts-lang lang
+    (setq indent-bars--ts-parser
+	  (cl-find lang (treesit-parser-list) :key #'treesit-parser-language)
 	  indent-bars--ts-query
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))
 
