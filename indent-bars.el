@@ -372,13 +372,14 @@ here, and they need not be valid types for any particular
 grammar.  Only applicable if `indent-bars-display-on-blank-lines'
 is set."
   :type '(choice (const :tag "None" nil)
-		 (list :tag "Node types" string))
+		 (repeat :tag "Node types" string))
   :group 'indent-bars)
 
 (defcustom indent-bars-no-descend-string t
   "Configure bar behavior inside strings.
 If non-nil, bars will go no deeper than their starting line
-inside multi-line strings."
+inside multi-line strings.  Strings are identified with
+tree-sitter; see `indent-bars-ts-string-type'."
   :type 'boolean
   :group 'indent-bars)
 
@@ -734,7 +735,7 @@ returned."
   nil)
 
 ;;;; Tree-sitter
-(defvar-local indent-bars--ts-string-type 'string)
+(defvar-local indent-bars-ts-string-type 'string)
 
 (defvar-local indent-bars--ts-parser nil)
 (defvar-local indent-bars--ts-query nil)
@@ -1067,7 +1068,7 @@ Adapted from `highlight-indentation-mode'."
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (when indent-bars-no-descend-string
       (setq indent-bars--ts-string-query
-	    (treesit-query-compile lang `([(,indent-bars--ts-string-type)] @s)))))
+	    (treesit-query-compile lang `([(,indent-bars-ts-string-type)] @s)))))
 
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
