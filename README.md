@@ -15,6 +15,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 - Properly handles font size changes.
 - Optional zero-cost current-depth bar highlighting, permitting bar color and/or appearance changes.
 - Optional support for drawing bars on blank lines.
+- Optional tree-sitter support, for context-aware bar depth.
 
 # FAQ's
 
@@ -44,6 +45,21 @@ To clone with `use-package` and `straight`:
 (use-package indent-bars
   :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
+```
+
+## With tree-sitter support
+
+```elisp
+(use-package indent-bars
+  :load-path "~/code/emacs/indent-bars"
+  :custom
+  
+  (indent-bars-treesit-support t)
+  (indent-bars-treesit-wrap '((python argument_list parameters
+				      list list_comprehension
+				      dictionary dictionary_comprehension
+				      parenthesized_expression subscript)))
+  :hook ((python-base-mode yaml-mode) . indent-bars-mode))
 ```
 
 ## Compatibility 
@@ -83,6 +99,10 @@ The main customization variables:
 - `indent-bars-prefer-character`: Use *characters* to display the vertical bar instead of stipples.  This occurs automatically on non-graphical displays (terminals), but this variable can be used to always prefer character-based display.
 - `indent-bars-no-stipple-char`: The character to use when stipples are unavailable or disabled. Defaults to the vertical box character `│`.  Other good options include `┃`, `┋`, and `║`.
 - `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
+- `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to help determine appropriate bar depth.
+- `indent-bars-treesit-wrap`: A mapping of language and wrap types, to avoid adding extra bars (e.g. in wrapped function arguments).
+- `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types to inhibit styling blank lines, like "module". 
+- `indent-bars-no-descend-string`: Whether to inhibit increasing depth inside of (tree-sitter determined) strings. 
 
 See the documentation of each variable for more details.
 
@@ -97,6 +117,12 @@ The heaviest operation (though still fairly efficient) is **blank-line highlight
 ## Indentation
 
 `indent-bars` only works with space-based indentation, i.e. `indent-tabs-mode=nil`.  Note that many modes enable this by default.
+
+## Tree-sitter
+
+`indent-bars` can optionally use tree-sitter when configured in supported files to improve the calculation of bar depth.  For example, many modes wrap function definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars there.  It also can be used to identify strings, and to tweak the behavior of blank line display.  See options above.
+
+**Note**: This requires Emacs 29 built with tree-sitter support, and the appropriate tree-sitter grammars installed for languages of interest.
 
 ## Display
 
