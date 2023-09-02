@@ -759,10 +759,11 @@ Moves point."
 If treesit support is enabled, searches for parent nodes with
 types specified in `indent-bars-treesit-wrap' for the current
 buffer's language, and, if found, limits the indentation depth to
-one more than the topmost matching parent node's depth.  If
-`indent-bars-no-descend-string' is non-nil, also look for
-enclosing string and mark indent depth no deeper than one more
-than the starting line's depth.  May move point."
+one more than the topmost matching parent node's initial line's
+indentation depth.  If `indent-bars-no-descend-string' is
+non-nil, also look for enclosing string and mark indent depth no
+deeper than one more than the starting line's depth.  May move
+point."
   (let* ((d (/ (current-indentation) indent-bars-spacing))
 	 (p (point)))
     (or
