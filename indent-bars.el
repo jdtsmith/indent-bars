@@ -336,6 +336,11 @@ color to use for color blending in that case."
   :type 'color
   :group 'indent-bars)
 
+(defcustom indent-bars-skip-leftmost-column t
+  "Whether to skip displaying a bar at the leftmost column."
+  :type 'boolean
+  :group 'indent-bars)
+
 (defcustom indent-bars-spacing-override nil
   "Override for default, major-mode based indentation spacing.
 Set only if the default guessed spacing is incorrect.  Becomes
@@ -708,19 +713,69 @@ variables, which see)."
 			     append (cl-loop repeat n collect row)))))
       (list w (length dlist) (string-join dlist)))))
 
-(defun indent-bars--draw (start end &optional bar-from obj no-stipple)
+(defsubst indent-bars--maybe-finalize-tab (cur-tab start obj initial)
+  "Finalize current tab by inserting as display property.
+CUR-TAB, START, OBJ, and INITIAL as in in draw.  Return t if a
+tab was finalized."
+  (when (>= cur-tab 0)
+    (put-text-property (+ start cur-tab) (+ start cur-tab 1)
+		       'display obj initial)
+    t))
+
+(defun indent-bars--draw (start end &optional bar-from obj no-stipple initial-tabs)
   "Set bar face in the appropriate locations from START to END.
 Starts at bar number BAR-FROM, one by default.  If passed,
 properties are set from START to END in OBJ, otherwise in the
 buffer.  If NO-STIPPLE is non-nil, rather than setting the bar
-face, instead apply a display character string.  OBJ is
-returned."
+face, instead apply a display character string.  INITIAL-TABS, if
+provided, is the number of tab characters at the start of the
+line or string.  If needed, these will be replaced with
+space-based display strings with the correct bars properties.  If
+INITIAL-TABS is passed, start must be the line or string
+beginning position.  OBJ is returned."
   (let ((prop (if no-stipple 'display 'face))
 	(fun (if no-stipple #'indent-bars--no-stipple-char #'indent-bars--face)))
-      (cl-loop for pos = start then (+ pos indent-bars-spacing) while (< pos end)
-	       for barnum from (or bar-from 1)
-	       do (put-text-property pos (1+ pos) prop (funcall fun barnum) obj)))
+    (if initial-tabs
+	(cl-loop
+	 with tab-spaces = (* initial-tabs tab-width)
+	 with end = (+ end (- tab-spaces initial-tabs)) ; expand tabs
+	 with initial-obj = obj
+	 with cur-tab = -1
+	 with true-start = (if (and (not obj)
+				    indent-bars-skip-leftmost-column)
+			       (+ start indent-bars-spacing)
+			     start)
+	 for pos = true-start then (+ pos indent-bars-spacing) while (< pos end)
+	 for ind = (- pos start)
+	 for barnum from (or bar-from 1) do
+	 (if (< ind tab-spaces)		; still within the tabs
+	     (let ((tab-num (/ ind tab-width)))
+	       (when (> tab-num cur-tab) ; New tab
+		 (indent-bars--maybe-finalize-tab cur-tab start obj initial-obj)
+		 (setq obj (make-string tab-width ?\s)
+		       cur-tab tab-num)))
+	   ;; beyond the tabs
+	   (if (indent-bars--maybe-finalize-tab cur-tab start obj initial-obj)
+	       (setq obj initial-obj cur-tab -1)))
+	 (if (>= cur-tab 0) (setq pos (mod ind tab-width)))
+	 (put-text-property pos (1+ pos) prop (funcall fun barnum) obj)
+	 finally (indent-bars--maybe-finalize-tab cur-tab start obj initial-obj))
+      ;; Normal space-only indent
+      (if (and (not obj) indent-bars-skip-leftmost-column)
+	  (setq start (+ start indent-bars-spacing)))
+      (cl-loop
+       for pos = start then (+ pos indent-bars-spacing) while (< pos end)
+       for barnum from (or bar-from 1) do
+       (put-text-property pos (1+ pos) prop (funcall fun barnum) obj))))
   obj)
+
+(defsubst indent-bars--initial-tabs (g)
+  "The number of initial tabs in the most recent match's substring G.
+Returns nil if `indent-tabs-mode' is not set.  BEG and END are
+the match corresponding match string G."
+  (when (and indent-tabs-mode
+	     (string-match "^\t+" (match-string g)))
+    (- (match-end 0) (match-beginning 0))))
 
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
@@ -731,7 +786,8 @@ returned."
       (if (> d 0)
 	  (indent-bars--draw (+ b indent-bars-spacing)
 			     (+ b (* d indent-bars-spacing)) nil nil
-			     (or (not (display-graphic-p)) indent-bars-prefer-character)))))
+			     (or (not (display-graphic-p)) indent-bars-prefer-character)
+			     (indent-bars--initial-tabs 1)))))
   nil)
 
 ;;;; Tree-sitter
@@ -808,9 +864,8 @@ number of bars to add, and BAR-FROM is the starting index of the
 first bar (>=1)"
   (concat (make-string off ?\s)
 	  (cl-loop with sps = (make-string (1- indent-bars-spacing) ?\s)
-		   concat (indent-bars--no-stipple-char depth)
 		   for depth from bar-from to (+ bar-from nbars -2)
-		   concat sps)
+		   concat (indent-bars--no-stipple-char depth) sps)
 	  "\n"))
 
 
@@ -819,23 +874,6 @@ first bar (>=1)"
 (defvar indent-bars--font-lock-blank-line-keywords nil)
 
 (defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
-(defun indent-bars--extend-blank-line-regions ()
-  "Extend the region about to be font-locked to include stretches of blank lines."
-  ;; (message "request to extend: %d->%d" font-lock-beg font-lock-end)
-  (let ((changed nil) (chars " \n"))
-    (goto-char font-lock-beg)
-    (when (< (skip-chars-backward chars) 0)
-      (unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
-      (when (< (point) font-lock-beg)
-	(setq changed t font-lock-beg (point))))
-    (goto-char font-lock-end)
-    (when (> (skip-chars-forward chars) 0)
-      (unless (bolp) (beginning-of-line 1))
-      (when (> (point) font-lock-end)
-	(setq changed t font-lock-end (point))))
-    ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
-    changed))
-
 (defun indent-bars--handle-blank-lines ()
   "Display the appropriate bars on regions of one or more blank-only lines.
 Only called by font-lock if `indent-bars-display-on-blank-lines'
@@ -874,13 +912,20 @@ of those types (e.g. module)."
 	    (let* ((bp (line-beginning-position))
 		   (ep (line-end-position))
 		   (len (- ep bp))
-		   (nbars (/ (max 0 (1- len)) indent-bars-spacing)))
-	      ;; Draw "real" bars in existing blank text
-	      (if (> nbars 0) (indent-bars--draw (+ bp indent-bars-spacing)
-						 ep nil nil no-stipple))
-	      ;; Add fake bars, via display
-	      (when (> ctxbars nbars)
-		(let* ((off (- (* (1+ nbars) indent-bars-spacing) len))
+		   (nbars (cond ; including (possible) bar at bol!
+			   ((> len indent-bars-spacing)
+			    (1+ (/ (1- len) indent-bars-spacing)))
+			   ((> len 0) 1)
+			   (t 0))))
+	      ;; Draw "real" bars on existing blanks
+	      (if (> nbars 0)
+		  (indent-bars--draw bp ep nil nil no-stipple
+				     (indent-bars--initial-tabs  0)))
+	      ;; Add fake bars via display property on the line's terminating newline
+	      (when (>= ctxbars nbars)
+		(let* ((off (- (* nbars indent-bars-spacing) len))
+		       (off (if (and indent-bars-skip-leftmost-column (= nbars 0))
+				(+ off indent-bars-spacing) off))
 		       (s (if no-stipple
 			      (indent-bars--no-stipple-blank-string
 			       off (- ctxbars nbars) (1+ nbars))
@@ -890,6 +935,23 @@ of those types (e.g. module)."
 		  (put-text-property ep (1+ ep) 'display s))) ;place display on the \n
 	      (beginning-of-line 2)))))
       nil)))
+
+(defun indent-bars--extend-blank-line-regions ()
+  "Extend the region about to be font-locked to include stretches of blank lines."
+  ;; (message "request to extend: %d->%d" font-lock-beg font-lock-end)
+  (let ((changed nil) (chars " \t\n"))
+    (goto-char font-lock-beg)
+    (when (< (skip-chars-backward chars) 0)
+      (unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
+      (when (< (point) font-lock-beg)
+	(setq changed t font-lock-beg (point))))
+    (goto-char font-lock-end)
+    (when (> (skip-chars-forward chars) 0)
+      (unless (bolp) (beginning-of-line 1))
+      (when (> (point) font-lock-end)
+	(setq changed t font-lock-end (point))))
+    ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
+    changed))
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth 0)
@@ -1007,6 +1069,8 @@ Adapted from `highlight-indentation-mode'."
     yaml-indent-offset)
    ((and (derived-mode-p 'elixir-mode) (boundp 'elixir-smie-indent-basic))
     elixir-smie-indent-basic)
+   ((and (derived-mode-p 'lisp-data-mode) (boundp 'lisp-body-indent))
+    lisp-body-indent)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
@@ -1016,7 +1080,13 @@ Adapted from `highlight-indentation-mode'."
     (setq indent-bars-orig-unfontify-region font-lock-unfontify-region-function))
   (setq-local font-lock-unfontify-region-function #'indent-bars--unfontify)
   (setq indent-bars--font-lock-keywords
-	`((,(rx-to-string `(seq bol (group (>= ,(1+ indent-bars-spacing) ?\s)) nonl))
+	`((,(rx-to-string `(seq bol
+				(group
+				 ,(if (and (not indent-tabs-mode)
+					   indent-bars-skip-leftmost-column)
+				      `(>= ,(1+ indent-bars-spacing) ?\s)
+				    '(+ (any ?\t ?\s))))
+				nonl))
 	   (1 (indent-bars--display)))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
@@ -1030,10 +1100,6 @@ Adapted from `highlight-indentation-mode'."
 (defvar indent-bars-mode)
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
-  (when indent-tabs-mode
-    (setq indent-bars-mode nil)
-    (error "Indent-bars does not support indent-tabs-mode=t; disabling"))
-  
   ;; Spacing
   (setq indent-bars-spacing (indent-bars--guess-spacing))
 
