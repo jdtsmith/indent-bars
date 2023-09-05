@@ -42,7 +42,7 @@
 (require 'outline)
 (require 'font-lock)
 (require 'compat)
-(require 'treesit nil t)
+(require 'treesit nil t) ; treesit is optional
 
 ;;;; Customization
 (defgroup indent-bars nil
