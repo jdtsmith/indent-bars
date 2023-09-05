@@ -1098,7 +1098,7 @@ Adapted from `highlight-indentation-mode'."
 					   indent-bars-skip-leftmost-column)
 				      `(>= ,(1+ indent-bars-spacing) ?\s)
 				    '(+ (any ?\t ?\s))))
-				nonl))
+				(not (any ?\t ?\s ?\n))))
 	   (1 (indent-bars--display)))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
