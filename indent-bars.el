@@ -605,7 +605,9 @@ properties or characters; see `indent-bars-prefer-character'."
 			      (propertize " " 'face (indent-bars--face depth))))
 	   (make-string (1- indent-bars-spacing) ?\s))
 	  (if width
-	      (make-string (- width (+ off (* indent-bars-spacing nbars) -1)) ?\s))))
+	      (make-string (- width
+			      (+ off nbars (* (1- nbars) (1- indent-bars-spacing))))
+			   ?\s))))
 
 (defun indent-bars--tab-display (p off bar-from max)
   "Display up to MAX bars on the tab at P, offseting them by OFF.
