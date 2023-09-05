@@ -816,6 +816,54 @@ see `indent-bars-prefer-character')."
 			(propertize (string indent-bars-no-stipple-char)
 				    'face (indent-bars--face d))))))))
 
+;;;; Tree-sitter
+(defvar-local indent-bars-ts-string-type 'string)
+(defvar-local indent-bars--ts-parser nil)
+(defvar-local indent-bars--ts-query nil)
+(defvar-local indent-bars--ts-string-query nil)
+
+(defsubst indent-bars--ts-node-query (node query)
+  "Capture node(s) spanning NODE matching QUERY.
+QUERY is a compiled treesit query."
+  (treesit-query-capture
+   indent-bars--ts-parser query
+   (treesit-node-start node) (treesit-node-end node) t))
+
+(defsubst indent-bars--indent-at-node (node)
+  "Return the current indentation at the start of NODE.
+Moves point."
+  (goto-char (treesit-node-start node))
+  (current-indentation))
+
+(defun indent-bars--current-indentation-depth (&optional on-bar)
+  "Calculate current indentation depth.
+If ON-BAR is non-nil, report a line with content beginning on a
+bar position at that position.  If treesit support is enabled,
+searches for parent nodes with types specified in
+`indent-bars-treesit-wrap' for the current buffer's language,
+and, if found, limits the indentation depth to one more than the
+topmost matching parent node's initial line's indentation depth.
+If `indent-bars-no-descend-string' is non-nil, also look for
+enclosing string and mark indent depth no deeper than one more
+than the starting line's depth.  May move point."
+  (let* ((c (current-indentation))
+	 (d (indent-bars--depth c))
+	 (p (point))
+	 (dnew (when-let ((indent-bars--ts-query)
+			  ((/= p (point-min)))
+			  (node (treesit-node-on (1- p) p indent-bars--ts-parser)))
+		 (if (and indent-bars-no-descend-string
+			  (indent-bars--ts-node-query
+			   node indent-bars--ts-string-query))
+		     (1+ (indent-bars--depth (indent-bars--indent-at-node node)))
+		   (when-let ((ctx (indent-bars--ts-node-query
+				    node indent-bars--ts-query)))
+		     (1+ (indent-bars--depth
+			  (indent-bars--indent-at-node (car ctx)))))))))
+    (if dnew (setq d (min dnew d)))
+    (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
+	(cl-incf d) d)))
+
 ;;;; Font Lock
 (defvar-local indent-bars--font-lock-keywords nil)
 (defvar indent-bars--font-lock-blank-line-keywords nil)
@@ -887,48 +935,6 @@ of those types (e.g. module)."
       (goto-char b)
       (when (> n 0) (indent-bars--draw-line n b e))))
   nil)
-
-;;;; Tree-sitter
-(defvar-local indent-bars-ts-string-type 'string)
-(defvar-local indent-bars--ts-parser nil)
-(defvar-local indent-bars--ts-query nil)
-(defvar-local indent-bars--ts-string-query nil)
-
-(defsubst indent-bars--ts-node-query (node query)
-  "Capture node(s) spanning NODE matching QUERY.
-QUERY is a compiled treesit query."
-  (treesit-query-capture
-   indent-bars--ts-parser query
-   (treesit-node-start node) (treesit-node-end node) t))
-
-(defsubst indent-bars--indent-at-node (node)
-  "Return the current indentation at the start of NODE.
-Moves point."
-  (goto-char (treesit-node-start node))
-  (current-indentation))
-
-(defun indent-bars--current-indentation-depth ()
-  "Calculate current indentation depth.
-If treesit support is enabled, searches for parent nodes with
-types specified in `indent-bars-treesit-wrap' for the current
-buffer's language, and, if found, limits the indentation depth to
-one more than the topmost matching parent node's initial line's
-indentation depth.  If `indent-bars-no-descend-string' is
-non-nil, also look for enclosing string and mark indent depth no
-deeper than one more than the starting line's depth.  May move
-point."
-  (let* ((d (indent-bars--depth (current-indentation)))
-	 (p (point)))
-    (or
-     (when-let ((indent-bars--ts-query)
-		((/= p (point-min)))
-		(node (treesit-node-on (1- p) p indent-bars--ts-parser)))
-       (if (and indent-bars-no-descend-string
-		(indent-bars--ts-node-query node indent-bars--ts-string-query))
-	   (min d (1+ (indent-bars--depth (indent-bars--indent-at-node node))))
-	 (when-let ((ctx (indent-bars--ts-node-query node indent-bars--ts-query)))
-	   (min d (1+ (indent-bars--depth (indent-bars--indent-at-node (car ctx))))))))
-     d)))
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth 0)
