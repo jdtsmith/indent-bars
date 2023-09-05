@@ -16,7 +16,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 - Properly handles font size changes.
 - Optional low-cost current-depth bar highlighting, permitting bar color and/or appearance changes.
 - Optional support for drawing bars on blank lines.
-- Optional tree-sitter support, for context-aware bar depth in strings and wrapped entities like function parameters.
+- Optional tree-sitter support, for context-aware bar depth in strings and wrapped entities like function arguments.
 
 # FAQ's
 
