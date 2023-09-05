@@ -956,7 +956,11 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 (defun indent-bars--highlight-current-depth ()
   "Refresh current indentation depth highlight.
 Works by remapping the appropriate indent-bars-N face."
-  (let ((depth (save-excursion (indent-bars--current-indentation-depth))))
+  (let* ((c (current-indentation))
+	 (depth (indent-bars--depth c)))
+    (if (and (>= c indent-bars--offset)
+	     (= (mod (- c indent-bars--offset) indent-bars-spacing) 0))
+	(cl-incf depth))  ; right on a bar: bump depth up
     (when (and depth (not (= depth indent-bars--current-depth)))
       (if indent-bars--remap-face 	; out with the old
 	  (face-remap-remove-relative indent-bars--remap-face))
@@ -969,10 +973,10 @@ Works by remapping the appropriate indent-bars-N face."
 	  (when (or hl-col hl-bg indent-bars--current-depth-stipple)
 	    (setq indent-bars--remap-face
 		  (apply #'face-remap-add-relative face
-		   `(,@(when hl-col `(:foreground ,hl-col))
-		     ,@(when hl-bg `(:background ,hl-bg))
-		     ,@(when indent-bars--current-depth-stipple
-			 `(:stipple ,indent-bars--current-depth-stipple)))))))))))
+			 `(,@(when hl-col `(:foreground ,hl-col))
+			   ,@(when hl-bg `(:background ,hl-bg))
+			   ,@(when indent-bars--current-depth-stipple
+			       `(:stipple ,indent-bars--current-depth-stipple)))))))))))
 
 ;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
