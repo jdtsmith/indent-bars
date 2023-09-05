@@ -336,9 +336,12 @@ color to use for color blending in that case."
   :type 'color
   :group 'indent-bars)
 
-(defcustom indent-bars-skip-leftmost-column t
-  "Whether to skip displaying a bar at the leftmost column."
-  :type 'boolean
+(defcustom indent-bars-starting-column nil
+  "The starting column on which to display the first bar.
+Set to nil, for the default behavior (first bar at the first
+indent level) or an integer value for some other column."
+  :type '(choice (const :tag "Default: 1st indent position" nil)
+		 (integer :tag "Specified column"))
   :group 'indent-bars)
 
 (defcustom indent-bars-spacing-override nil
@@ -574,9 +577,18 @@ font-lock properties."
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
 
-;;;; Display
+;;;; Indentation
 (defvar-local indent-bars-spacing nil)
+(defvar-local indent-bars--offset nil)
+(defsubst indent-bars--depth (len)
+  "Number of possible bars for initial blank string of length LEN.
+Note that the first bar is expected at `indent-bars-starting-column'."
+  (setq len (- len indent-bars--offset))
+  (cond ((>= len indent-bars-spacing) (/ (1+ len) indent-bars-spacing))
+	((> len 0) 1)
+	(t 0)))
 
+;;;; Display
 (defsubst indent-bars--block (n)
   "Create a block of N low-order 1 bits."
   (- (ash 1 n) 1))
@@ -1101,7 +1113,8 @@ Adapted from `highlight-indentation-mode'."
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
   ;; Spacing
-  (setq indent-bars-spacing (indent-bars--guess-spacing))
+  (setq indent-bars-spacing (indent-bars--guess-spacing)
+	indent-bars--offset (or indent-bars-starting-column indent-bars-spacing))
 
   ;; Colors
   (setq indent-bars--main-color (indent-bars--main-color)
