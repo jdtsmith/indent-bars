@@ -1061,9 +1061,8 @@ Adapted from `highlight-indentation-mode'."
   (setq indent-bars--font-lock-keywords
 	`((,(rx-to-string `(seq bol
 				(group
-				 ,(if (and (not indent-tabs-mode)
-					   indent-bars-skip-leftmost-column)
-				      `(>= ,(1+ indent-bars-spacing) ?\s)
+				 ,(if (not indent-tabs-mode)
+				      `(>= ,(1+ indent-bars--offset) ?\s)
 				    '(+ (any ?\t ?\s))))
 				(not (any ?\t ?\s ?\n))))
 	   (1 (indent-bars--display)))))
