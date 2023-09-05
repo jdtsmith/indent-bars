@@ -1180,7 +1180,8 @@ Adapted from `highlight-indentation-mode'."
       (if (and (daemonp) (not (frame-parameter nil 'client)))
 	  (let ((buf (current-buffer)))
 	    (add-hook 'after-make-frame-functions
-		      (lambda () (with-current-buffer buf (indent-bars-setup-and-remove)))
+		      (lambda () (with-current-buffer buf
+				   (indent-bars-setup-and-remove)))
 		      nil t))
 	(indent-bars-setup))
     (indent-bars-teardown)))
