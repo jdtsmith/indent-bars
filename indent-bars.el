@@ -625,13 +625,14 @@ ROT should be less than W."
 
 ;; ** Notes on the stipples:
 ;;
-;; indent-bars uses a selectively-revealed stipple pattern with a
-;; width equivalent to the (presumed fixed) width of characters to
-;; efficiently draw bars.  A stipple pattern is drawn as a fixed
-;; repeating bit pattern, with its lowest bits and earlier bytes
-;; leftmost.  It is drawn with respect to the *entire frame*, with its
-;; first bit aligned with the first (leftmost) frame pixel.  Turning
-;; on :stipple for a character merely "opens a window" on that
+;; indent-bars by default uses a selectively-revealed stipple pattern
+;; with a width equivalent to the (presumed fixed) width of individual
+;; characters to efficiently draw bars.  A stipple pattern is drawn as
+;; a fixed repeating bit pattern, with its lowest bits and earlier
+;; bytes leftmost.  It is drawn with respect to the *entire frame*,
+;; with its first bit aligned with the first (leftmost) frame pixel.
+;; 
+;; Turning on :stipple for a character merely "opens a window" on that
 ;; frame-filling, repeating stipple pattern.  Since the pattern starts
 ;; outside the body (in literally the first frame pixel, typically in
 ;; the fringe), you must consider the shift between the first pixel of
@@ -684,7 +685,7 @@ ROT should be less than W."
 ;;    buffers.  Fixed in Emacs 29.
 
 (defun indent-bars--stipple (w h rot
-			     &optional width-frac pad-frac pattern zigzag)
+			       &optional width-frac pad-frac pattern zigzag)
   "Calculate stipple bitmap pattern for char width W and height H.
 ROT is the number of bits to rotate the pattern around to the
 right (with wrap).
@@ -889,10 +890,11 @@ first bar (>=1)"
 (defun indent-bars--handle-blank-lines ()
   "Display the appropriate bars on regions of one or more blank-only lines.
 Only called by font-lock if `indent-bars-display-on-blank-lines'
-is non-nil.  Called on multi-line blank line regions.  Uses the
-surrounding line indentation to determine additional bars to
-display on each line, and applies a string display property on
-the final newline if necessary to display the needed bars.
+is non-nil.  Called on complete multi-line blank line regions.
+Uses the surrounding line indentation to determine additional
+bars to display on each line, and applies a string display
+property on the final newline if necessary to display the needed
+bars.
 
 Note: blank lines at the beginning or end of the buffer are not
 indicated, even if otherwise they would be.  If
