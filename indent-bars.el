@@ -964,11 +964,7 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 (defun indent-bars--highlight-current-depth ()
   "Refresh current indentation depth highlight.
 Works by remapping the appropriate indent-bars-N face."
-  (let* ((c (current-indentation))
-	 (depth (indent-bars--depth c)))
-    (if (and (>= c indent-bars--offset)
-	     (= (mod (- c indent-bars--offset) indent-bars-spacing) 0))
-	(cl-incf depth))  ; right on a bar: bump depth up
+  (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
     (when (and depth (not (= depth indent-bars--current-depth)))
       (if indent-bars--remap-face 	; out with the old
 	  (face-remap-remove-relative indent-bars--remap-face))
