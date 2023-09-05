@@ -637,12 +637,12 @@ display properties set to fill out the remaining bars, if any."
 					       bar (- nbars bar -1)))
 	(cl-incf bar bcount)
 	(cl-incf vp (* bcount indent-bars-spacing)))
-      (setq start (+ (/ vp tab-width) (mod vp tab-width)))) ;tabs and the more
+      (cl-incf start (+ (mod vp tab-width) (/ vp tab-width))))
     (when (<= bar nbars) ; still bars to show
       (if indent-bars--no-stipple
 	  (setq prop 'display fun #'indent-bars--no-stipple-char)
 	(setq prop 'face fun #'indent-bars--face))
-      (let ((pos start))
+      (let ((pos (if tabs start (+ start indent-bars--offset))))
 	(while (and (<= bar nbars) (< pos end))
 	  (put-text-property pos (1+ pos) prop (funcall fun bar))
 	  (cl-incf bar)
@@ -650,7 +650,7 @@ display properties set to fill out the remaining bars, if any."
 	(if (and invent (<= bar nbars)) ; STILL bars to show: invent them
 	    (put-text-property
 	     end (1+ end) 'display
-	     (concat (indent-bars--blank-string (- pos end) (- nbars bar) bar nil)
+	     (concat (indent-bars--blank-string (- pos end) (- nbars bar -1) bar nil)
 		     "\n")))))))
 
 ;;;; Stipple Display
