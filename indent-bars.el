@@ -632,7 +632,7 @@ display properties set to fill out the remaining bars, if any."
 	 (vp indent-bars--offset)
 	 (bar 1) prop fun tnum bcount)
     (when tabs
-      (while (and (< bar nbars) (< (setq tnum (/ vp tab-width)) tabs))
+      (while (and (<= bar nbars) (< (setq tnum (/ vp tab-width)) tabs))
 	(setq bcount (indent-bars--tab-display (+ start tnum) (mod vp tab-width)
 					       bar (- nbars bar -1)))
 	(cl-incf bar bcount)
