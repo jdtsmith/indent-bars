@@ -125,7 +125,13 @@ The heaviest operations (though still quite efficient) are **tree-sitter** based
 
 ## Tree-sitter
 
-`indent-bars` can optionally use tree-sitter when configured in supported files to improve the calculation of bar depth.  For example, many modes wrap function calls and definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars there.  It can also be used to identify strings, and to tweak the behavior of blank line display.  See options above.
+`indent-bars` can optionally use tree-sitter when configured in supported files to improve the calculation of bar depth.  For example, many modes wrap function calls and definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars there.  It can also be used to identify strings, and to tweak the behavior of blank line display.  See options above.  
+
+I.e. turn this:
+<img width="580" alt="Untitled" src="https://github.com/jdtsmith/indent-bars/assets/93749/f1cb2489-92ee-443d-b941-6237b386ca6f">
+
+into this:
+<img width="580" alt="Untitled 2" src="https://github.com/jdtsmith/indent-bars/assets/93749/b0c26c5b-6b38-475f-9bb8-9f1b1f5e54f0">
 
 **Note**: This requires Emacs 29 built with tree-sitter support, and the appropriate tree-sitter grammars installed for languages of interest.
 
