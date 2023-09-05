@@ -580,6 +580,8 @@ font-lock properties."
 ;;;; Indentation
 (defvar-local indent-bars-spacing nil)
 (defvar-local indent-bars--offset nil)
+(defvar-local indent-bars--no-stipple nil)
+
 (defsubst indent-bars--depth (len)
   "Number of possible bars for initial blank string of length LEN.
 Note that the first bar is expected at `indent-bars-starting-column'."
@@ -588,7 +590,70 @@ Note that the first bar is expected at `indent-bars-starting-column'."
 	((> len 0) 1)
 	(t 0)))
 
-;;;; Display
+(defun indent-bars--blank-string (off nbars bar-from &optional width)
+  "Return a blank string with bars displayed.
+OFF is character offset for the first bar, NBARS is the desired
+number of bars to add, and BAR-FROM is the starting index of the
+first bar (>=1).  WIDTH is the string width to return, right
+padding with space if needed.  Bars are displayed using stipple
+properties or characters; see `indent-bars-prefer-character'."
+  (concat (make-string off ?\s)
+	  (string-join
+	   (cl-loop for depth from bar-from to (+ bar-from nbars -1)
+		    collect (if indent-bars--no-stipple
+				(indent-bars--no-stipple-char depth)
+			      (propertize " " 'face (indent-bars--face depth))))
+	   (make-string (1- indent-bars-spacing) ?\s))
+	  (if width
+	      (make-string (- width (+ off (* indent-bars-spacing nbars) -1)) ?\s))))
+
+(defun indent-bars--tab-display (p off bar-from max)
+  "Display up to MAX bars on the tab at P, offseting them by OFF.
+Bars are spaced by `indent-bars-spacing'.  BAR-FROM is the bar
+number for the first bar.  Returns the number of bars actually
+displayed."
+  (let* ((nb (min max (/ (- tab-width off -1) indent-bars-spacing)))
+	 (str (indent-bars--blank-string off nb bar-from tab-width)))
+    (put-text-property p (+ p 1) 'display str)
+    nb))
+
+(defun indent-bars--draw-line (nbars start end &optional invent)
+  "Draw NBARS bars on the line between START and END.
+START is assumed to be on a line beginning position.  Drawing
+starts at `indent-bars-starting-column'.  Tabs at the line
+beginning are replaced with display properties, if
+`indent-tabs-mode' is enabled.  If INVENT is non-nil and the
+line's length is insufficient to display all NBARS bars, bars
+will be invented.  That is, the line's final newline, which is
+only in this case expected to be located at END, will have
+display properties set to fill out the remaining bars, if any."
+  (let* ((tabs (when (and indent-tabs-mode (looking-at "^\t+"))
+		 (- (match-end 0) (match-beginning 0))))
+	 (vp indent-bars--offset)
+	 (bar 1) prop fun tnum bcount)
+    (when tabs
+      (while (and (< bar nbars) (< (setq tnum (/ vp tab-width)) tabs))
+	(setq bcount (indent-bars--tab-display (+ start tnum) (mod vp tab-width)
+					       bar (- nbars bar -1)))
+	(cl-incf bar bcount)
+	(cl-incf vp (* bcount indent-bars-spacing)))
+      (setq start (+ (/ vp tab-width) (mod vp tab-width)))) ;tabs and the more
+    (when (<= bar nbars) ; still bars to show
+      (if indent-bars--no-stipple
+	  (setq prop 'display fun #'indent-bars--no-stipple-char)
+	(setq prop 'face fun #'indent-bars--face))
+      (let ((pos start))
+	(while (and (<= bar nbars) (< pos end))
+	  (put-text-property pos (1+ pos) prop (funcall fun bar))
+	  (cl-incf bar)
+	  (cl-incf pos indent-bars-spacing))
+	(if (and invent (<= bar nbars)) ; STILL bars to show: invent them
+	    (put-text-property
+	     end (1+ end) 'display
+	     (concat (indent-bars--blank-string (- pos end) (- nbars bar) bar nil)
+		     "\n")))))))
+
+;;;; Stipple Display
 (defsubst indent-bars--block (n)
   "Create a block of N low-order 1 bits."
   (- (ash 1 n) 1))
@@ -726,86 +791,103 @@ variables, which see)."
 			     append (cl-loop repeat n collect row)))))
       (list w (length dlist) (string-join dlist)))))
 
-(defsubst indent-bars--maybe-finalize-tab (cur-tab start obj initial)
-  "Finalize current tab by inserting as display property.
-CUR-TAB, START, OBJ, and INITIAL as in in draw.  Return t if a
-tab was finalized."
-  (when (>= cur-tab 0)
-    (put-text-property (+ start cur-tab) (+ start cur-tab 1)
-		       'display obj initial)
-    t))
+;;;; No stipple characters (e.g. terminal)
+(defvar indent-bars--no-stipple-chars nil)
 
-(defun indent-bars--draw (start end &optional bar-from obj no-stipple initial-tabs)
-  "Set bar face in the appropriate locations from START to END.
-Starts at bar number BAR-FROM, one by default.  If passed,
-properties are set from START to END in OBJ, otherwise in the
-buffer.  If NO-STIPPLE is non-nil, rather than setting the bar
-face, instead apply a display character string.  INITIAL-TABS, if
-provided, is the number of tab characters at the start of the
-line or string.  If needed, these will be replaced with
-space-based display strings with the correct bars properties.  If
-INITIAL-TABS is passed, start must be the line or string
-beginning position.  OBJ is returned."
-  (let ((prop (if no-stipple 'display 'face))
-	(fun (if no-stipple #'indent-bars--no-stipple-char #'indent-bars--face)))
-    (if initial-tabs
-	(cl-loop
-	 with tab-spaces = (* initial-tabs tab-width)
-	 with end = (+ end (- tab-spaces initial-tabs)) ; expand tabs
-	 with initial-obj = obj
-	 with cur-tab = -1
-	 with true-start = (if (and (not obj)
-				    indent-bars-skip-leftmost-column)
-			       (+ start indent-bars-spacing)
-			     start)
-	 for pos = true-start then (+ pos indent-bars-spacing) while (< pos end)
-	 for ind = (- pos start)
-	 for barnum from (or bar-from 1) do
-	 (if (< ind tab-spaces)		; still within the tabs
-	     (let ((tab-num (/ ind tab-width)))
-	       (when (> tab-num cur-tab) ; New tab
-		 (indent-bars--maybe-finalize-tab cur-tab start obj initial-obj)
-		 (setq obj (make-string tab-width ?\s)
-		       cur-tab tab-num)))
-	   ;; beyond the tabs
-	   (if (indent-bars--maybe-finalize-tab cur-tab start obj initial-obj)
-	       (setq obj initial-obj cur-tab -1)))
-	 (if (>= cur-tab 0) (setq pos (mod ind tab-width)))
-	 (put-text-property pos (1+ pos) prop (funcall fun barnum) obj)
-	 finally (indent-bars--maybe-finalize-tab cur-tab start obj initial-obj))
-      ;; Normal space-only indent
-      (if (and (not obj) indent-bars-skip-leftmost-column)
-	  (setq start (+ start indent-bars-spacing)))
-      (cl-loop
-       for pos = start then (+ pos indent-bars-spacing) while (< pos end)
-       for barnum from (or bar-from 1) do
-       (put-text-property pos (1+ pos) prop (funcall fun barnum) obj))))
-  obj)
+(defun indent-bars--no-stipple-char (depth)
+  "Return the no-stipple bar character for DEPTH."
+  (if (> depth (length indent-bars--no-stipple-chars))
+      (indent-bars--create-no-stipple-chars depth))
+  (aref indent-bars--no-stipple-chars (1- depth)))
 
-(defsubst indent-bars--initial-tabs (g)
-  "The number of initial tabs in the most recent match's substring G.
-Returns nil if `indent-tabs-mode' is not set.  BEG and END are
-the match corresponding match string G."
-  (when (and indent-tabs-mode
-	     (string-match "^\t+" (match-string g)))
-    (- (match-end 0) (match-beginning 0))))
+(defun indent-bars--create-no-stipple-chars (num)
+  "Setup bar characters for bar faces up to depth NUM.
+Used when not using stipple display (on terminal, or by request;
+see `indent-bars-prefer-character')."
+  (setq indent-bars--no-stipple-chars
+	(vconcat
+	 (nreverse
+	  (cl-loop with l = (length indent-bars--no-stipple-chars)
+		   for d from num downto 1
+		   collect
+		   (or  (and (< d l) (aref indent-bars--no-stipple-chars (1- d)))
+			(propertize (string indent-bars-no-stipple-char)
+				    'face (indent-bars--face d))))))))
+
+;;;; Font Lock
+(defvar-local indent-bars--font-lock-keywords nil)
+(defvar indent-bars--font-lock-blank-line-keywords nil)
+
+(defun indent-bars--handle-blank-lines ()
+  "Display the appropriate bars on regions of one or more blank-only lines.
+Only called by font-lock if `indent-bars-display-on-blank-lines'
+is non-nil.  Called on complete multi-line blank line regions.
+Uses the surrounding line indentation to determine additional
+bars to display on each line, and applies a string display
+property on the final newline if necessary to display the needed
+bars.
+
+Note: blank lines at the beginning or end of the buffer are not
+indicated, even if otherwise they would be.  If
+`indent-bars-treesit-ignore-blank-lines-types' is configured,
+ignore blank lines whose starting positions are spanned by nodes
+of those types (e.g. module)."
+  (let* ((beg (match-beginning 0))
+	 (end (match-end 0))
+	 ctxbars)
+    (save-excursion
+      (goto-char (1- beg))
+      (beginning-of-line 1)
+      (when (and
+	     (not (and indent-bars--ts-parser ; ignore certain blank lines
+		   indent-bars-treesit-ignore-blank-lines-types
+		   (when-let ((n (treesit-node-on beg beg)))
+		     (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
+				     (treesit-node-type n)))))
+	     (> (setq ctxbars		; surrounding context bars
+		      (max (indent-bars--current-indentation-depth)
+			   (progn
+			     (goto-char (1+ end)) ; end is always eol
+			     (indent-bars--current-indentation-depth))))
+		0))
+	(goto-char beg)
+	(while (< (point) end) ;note: end extends 1 char beyond blank line range
+	  (let* ((bp (line-beginning-position))
+		 (ep (line-end-position)))
+	    (unless (= ep (point-max))
+	      (indent-bars--draw-line ctxbars bp ep 'invent))
+	    (beginning-of-line 2)))))))
+
+(defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
+(defun indent-bars--extend-blank-line-regions ()
+  "Extend the region about to be font-locked to include stretches of blank lines."
+  ;; (message "request to extend: %d->%d" font-lock-beg font-lock-end)
+  (let ((changed nil) (chars " \t\n"))
+    (goto-char font-lock-beg)
+    (when (< (skip-chars-backward chars) 0)
+      (unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
+      (when (< (point) font-lock-beg)
+	(setq changed t font-lock-beg (point))))
+    (goto-char font-lock-end)
+    (when (> (skip-chars-forward chars) 0)
+      (unless (bolp) (beginning-of-line 1))
+      (when (> (point) font-lock-end)
+	(setq changed t font-lock-end (point))))
+    ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
+    changed))
 
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
   (save-excursion
-    (goto-char (match-end 1))
-    (let ((d (indent-bars--current-indentation-depth))
-	  (b (match-beginning 1)))
-      (if (> d 0)
-	  (indent-bars--draw (+ b indent-bars-spacing)
-			     (+ b (* d indent-bars-spacing)) nil nil
-			     (or (not (display-graphic-p)) indent-bars-prefer-character)
-			     (indent-bars--initial-tabs 1)))))
+    (let ((b (match-beginning 1))
+	  (e (match-end 1))
+	  (n (indent-bars--current-indentation-depth)))
+      (goto-char b)
+      (when (> n 0) (indent-bars--draw-line n b e))))
   nil)
 
 ;;;; Tree-sitter
 (defvar-local indent-bars-ts-string-type 'string)
-
 (defvar-local indent-bars--ts-parser nil)
 (defvar-local indent-bars--ts-query nil)
 (defvar-local indent-bars--ts-string-query nil)
@@ -833,7 +915,7 @@ indentation depth.  If `indent-bars-no-descend-string' is
 non-nil, also look for enclosing string and mark indent depth no
 deeper than one more than the starting line's depth.  May move
 point."
-  (let* ((d (/ (current-indentation) indent-bars-spacing))
+  (let* ((d (indent-bars--depth (current-indentation)))
 	 (p (point)))
     (or
      (when-let ((indent-bars--ts-query)
@@ -841,131 +923,10 @@ point."
 		(node (treesit-node-on (1- p) p indent-bars--ts-parser)))
        (if (and indent-bars-no-descend-string
 		(indent-bars--ts-node-query node indent-bars--ts-string-query))
-	   (min d (1+ (/ (indent-bars--indent-at-node node) indent-bars-spacing)))
+	   (min d (1+ (indent-bars--depth (indent-bars--indent-at-node node))))
 	 (when-let ((ctx (indent-bars--ts-node-query node indent-bars--ts-query)))
-	   (min d (1+ (/ (indent-bars--indent-at-node (car ctx)) indent-bars-spacing))))))
+	   (min d (1+ (indent-bars--depth (indent-bars--indent-at-node (car ctx))))))))
      d)))
-
-;;;; No stipple (e.g. terminal)
-(defvar indent-bars--no-stipple-chars nil)
-;; (defvar indent-bars--no-stipple-current-depth-char nil)
-
-(defun indent-bars--no-stipple-char (depth)
-  "Return the no-stipple bar character for DEPTH."
-  (if (> depth (length indent-bars--no-stipple-chars))
-      (indent-bars--create-no-stipple-chars depth))
-  (aref indent-bars--no-stipple-chars (1- depth)))
-
-(defun indent-bars--create-no-stipple-chars (num)
-  "Setup bar characters for bar faces up to depth NUM.
-Used when not using stipple display (on terminal, or by request;
-see `indent-bars-prefer-character')."
-  (setq indent-bars--no-stipple-chars
-	(vconcat
-	 (nreverse
-	  (cl-loop with l = (length indent-bars--no-stipple-chars)
-		   for d from num downto 1
-		   collect
-		   (or  (and (< d l) (aref indent-bars--no-stipple-chars (1- d)))
-			(propertize (string indent-bars-no-stipple-char)
-				    'face (indent-bars--face d))))))))
-
-(defun indent-bars--no-stipple-blank-string (off nbars bar-from)
-  "Return a string suitable for blank line display without stipple.
-OFF is character offset for the first guide, NBARS is the desired
-number of bars to add, and BAR-FROM is the starting index of the
-first bar (>=1)"
-  (concat (make-string off ?\s)
-	  (cl-loop with sps = (make-string (1- indent-bars-spacing) ?\s)
-		   for depth from bar-from to (+ bar-from nbars -2)
-		   concat (indent-bars--no-stipple-char depth) sps)
-	  "\n"))
-
-
-;;;; Font Lock
-(defvar-local indent-bars--font-lock-keywords nil)
-(defvar indent-bars--font-lock-blank-line-keywords nil)
-
-(defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
-(defun indent-bars--handle-blank-lines ()
-  "Display the appropriate bars on regions of one or more blank-only lines.
-Only called by font-lock if `indent-bars-display-on-blank-lines'
-is non-nil.  Called on complete multi-line blank line regions.
-Uses the surrounding line indentation to determine additional
-bars to display on each line, and applies a string display
-property on the final newline if necessary to display the needed
-bars.
-
-Note: blank lines at the beginning or end of the buffer are not
-indicated, even if otherwise they would be.  If
-`indent-bars-treesit-ignore-blank-lines-types' is configured,
-ignore blank lines whose starting positions are spanned by nodes
-of those types (e.g. module)."
-  (let* ((beg (match-beginning 0))
-	 (end (match-end 0))
-	 (no-stipple (or indent-bars-prefer-character (not (display-graphic-p))))
-	 ctxbars)
-    (when (and (/= end (point-max)) (/= beg (point-min)))
-      (save-excursion
-	(goto-char (1- beg))
-	(beginning-of-line 1)
-	(when (and
-	       (not
-		(and indent-bars--ts-parser indent-bars-treesit-ignore-blank-lines-types
-		     (when-let ((n (treesit-node-on beg beg)))
-		       (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
-				       (treesit-node-type n)))))
-	       (> (setq ctxbars
-			(1- (max (indent-bars--current-indentation-depth)
-				 (progn
-				   (goto-char (1+ end)) ; end is always eol
-				   (indent-bars--current-indentation-depth)))))
-		  0))
-	  (goto-char beg)
-	  (while (<= (point) (1- end)) ;note: end extends 1 char beyond blank line range
-	    (let* ((bp (line-beginning-position))
-		   (ep (line-end-position))
-		   (len (- ep bp))
-		   (nbars (cond ; including (possible) bar at bol!
-			   ((> len indent-bars-spacing)
-			    (1+ (/ (1- len) indent-bars-spacing)))
-			   ((> len 0) 1)
-			   (t 0))))
-	      ;; Draw "real" bars on existing blanks
-	      (if (> nbars 0)
-		  (indent-bars--draw bp ep nil nil no-stipple
-				     (indent-bars--initial-tabs  0)))
-	      ;; Add fake bars via display property on the line's terminating newline
-	      (when (>= ctxbars nbars)
-		(let* ((off (- (* nbars indent-bars-spacing) len))
-		       (off (if (and indent-bars-skip-leftmost-column (= nbars 0))
-				(+ off indent-bars-spacing) off))
-		       (s (if no-stipple
-			      (indent-bars--no-stipple-blank-string
-			       off (- ctxbars nbars) (1+ nbars))
-			    (let ((nsp (1+ (- (* ctxbars indent-bars-spacing) len))))
-			      (indent-bars--draw off nsp (1+ nbars)
-						 (concat (make-string nsp ?\s) "\n"))))))
-		  (put-text-property ep (1+ ep) 'display s))) ;place display on the \n
-	      (beginning-of-line 2)))))
-      nil)))
-
-(defun indent-bars--extend-blank-line-regions ()
-  "Extend the region about to be font-locked to include stretches of blank lines."
-  ;; (message "request to extend: %d->%d" font-lock-beg font-lock-end)
-  (let ((changed nil) (chars " \t\n"))
-    (goto-char font-lock-beg)
-    (when (< (skip-chars-backward chars) 0)
-      (unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
-      (when (< (point) font-lock-beg)
-	(setq changed t font-lock-beg (point))))
-    (goto-char font-lock-end)
-    (when (> (skip-chars-forward chars) 0)
-      (unless (bolp) (beginning-of-line 1))
-      (when (> (point) font-lock-end)
-	(setq changed t font-lock-end (point))))
-    ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
-    changed))
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth 0)
@@ -1129,6 +1090,7 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars--create-faces 9 'reset)	; N.B.: extends as needed
 
   ;; No Stipple (e.g. terminal)
+  (setq indent-bars--no-stipple (or (not (display-graphic-p)) indent-bars-prefer-character))
   (indent-bars--create-no-stipple-chars 9)
   
   ;; Resize
