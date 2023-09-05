@@ -1054,7 +1054,7 @@ Adapted from `highlight-indentation-mode'."
     elixir-smie-indent-basic)
    ((and (derived-mode-p 'lisp-data-mode) (boundp 'lisp-body-indent))
     lisp-body-indent)
-   ((derived-mode-p 'go-ts-mode) tab-width)
+   ((or (derived-mode-p 'go-ts-mode) (derived-mode-p 'go-mode)) tab-width)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
