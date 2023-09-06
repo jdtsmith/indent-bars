@@ -865,47 +865,65 @@ than the starting line's depth.  May move point."
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
 	(cl-incf d) d)))
 
+(defun indent-bars--ignore-blank (beg)
+  "See if blank lines at BEG should be ignored using tree-sitter.
+Blank lines to ignore are those with types in
+`indent-bars-treesit-ignore-blank-lines-types'."
+  (and indent-bars--ts-parser
+       indent-bars-treesit-ignore-blank-lines-types
+       (when-let ((n (treesit-node-on beg beg)))
+	 (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
+			 (treesit-node-type n)))))
+
 ;;;; Font Lock
 (defvar-local indent-bars--font-lock-keywords nil)
 (defvar indent-bars--font-lock-blank-line-keywords nil)
 
+(defun indent-bars--display ()
+  "Display indentation bars based on line contents."
+  (save-excursion
+    (let ((b (match-beginning 1))
+	  (e (match-end 1))
+	  (n (indent-bars--current-indentation-depth)))
+      (goto-char b)
+      (when (> n 0) (indent-bars--draw-line n b e))))
+  nil)
+
+(defsubst indent-bars--context-bars (end)
+  "Maximum number of bars at point and END.
+Moves point."
+  (max (indent-bars--current-indentation-depth)
+       (progn
+	 (goto-char (1+ end))		; end is always eol
+	 (indent-bars--current-indentation-depth))))
+
 (defun indent-bars--handle-blank-lines ()
   "Display the appropriate bars on regions of one or more blank-only lines.
-Only called by font-lock if `indent-bars-display-on-blank-lines'
-is non-nil.  Called on complete multi-line blank line regions.
-Uses the surrounding line indentation to determine additional
-bars to display on each line, and applies a string display
-property on the final newline if necessary to display the needed
-bars.
+The region is the full match region of the last match.  Only
+called by font-lock if `indent-bars-display-on-blank-lines' is
+non-nil.  Called on complete multi-line blank line regions.  Uses
+the surrounding line indentation to determine additional bars to
+display on each line, using `indent-bars--draw-line'.
 
-Note: blank lines at the beginning or end of the buffer are not
-indicated, even if otherwise they would be.  If
+Note: blank lines at the very beginning or end of the buffer are
+not indicated, even if otherwise they would be.  If
 `indent-bars-treesit-ignore-blank-lines-types' is configured,
-ignore blank lines whose starting positions are spanned by nodes
-of those types (e.g. module)."
+ignore blank lines whose starting positions are directly spanned
+by nodes of those types (e.g. module)."
   (let* ((beg (match-beginning 0))
 	 (end (match-end 0))
 	 ctxbars)
     (save-excursion
       (goto-char (1- beg))
       (beginning-of-line 1)
-      (when (and
-	     (not (and indent-bars--ts-parser ; ignore certain blank lines
-		   indent-bars-treesit-ignore-blank-lines-types
-		   (when-let ((n (treesit-node-on beg beg)))
-		     (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
-				     (treesit-node-type n)))))
-	     (> (setq ctxbars		; surrounding context bars
-		      (max (indent-bars--current-indentation-depth)
-			   (progn
-			     (goto-char (1+ end)) ; end is always eol
-			     (indent-bars--current-indentation-depth))))
-		0))
+      (when (and (not (indent-bars--ignore-blank beg))
+		 (> (setq ctxbars (indent-bars--context-bars end)) 0))
 	(goto-char beg)
 	(while (< (point) end) ;note: end extends 1 char beyond blank line range
 	  (let* ((bp (line-beginning-position))
-		 (ep (line-end-position)))
-	    (unless (= ep (point-max))
+		 (ep (line-end-position))
+		 (pm (point-max)))
+	    (unless (= ep pm)
 	      (indent-bars--draw-line ctxbars bp ep 'invent))
 	    (beginning-of-line 2)))))))
 
@@ -926,16 +944,6 @@ of those types (e.g. module)."
 	(setq changed t font-lock-end (point))))
     ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
     changed))
-
-(defun indent-bars--display ()
-  "Display indentation bars based on line contents."
-  (save-excursion
-    (let ((b (match-beginning 1))
-	  (e (match-end 1))
-	  (n (indent-bars--current-indentation-depth)))
-      (goto-char b)
-      (when (> n 0) (indent-bars--draw-line n b e))))
-  nil)
 
 ;;;; Current indentation highlight
 (defvar-local indent-bars--current-depth 0)
