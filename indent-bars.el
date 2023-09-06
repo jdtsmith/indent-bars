@@ -630,7 +630,9 @@ line's length is insufficient to display all NBARS bars, bars
 will be invented.  That is, the line's final newline, which is
 only in this case expected to be located at END, will have
 display properties set to fill out the remaining bars, if any."
-  (let* ((tabs (when (and indent-tabs-mode (looking-at "^\t+"))
+  (let* ((tabs (when (and indent-tabs-mode
+			  (save-excursion
+			    (goto-char start) (looking-at "^\t+")))
 		 (- (match-end 0) (match-beginning 0))))
 	 (vp indent-bars--offset)
 	 (bar 1) prop fun tnum bcount)
@@ -831,10 +833,10 @@ QUERY is a compiled treesit query."
    (treesit-node-start node) (treesit-node-end node) t))
 
 (defsubst indent-bars--indent-at-node (node)
-  "Return the current indentation at the start of NODE.
-Moves point."
-  (goto-char (treesit-node-start node))
-  (current-indentation))
+  "Return the current indentation at the start of NODE."
+  (save-excursion
+    (goto-char (treesit-node-start node))
+    (current-indentation)))
 
 (defun indent-bars--current-indentation-depth (&optional on-bar)
   "Calculate current indentation depth.
@@ -846,7 +848,7 @@ and, if found, limits the indentation depth to one more than the
 topmost matching parent node's initial line's indentation depth.
 If `indent-bars-no-descend-string' is non-nil, also look for
 enclosing string and mark indent depth no deeper than one more
-than the starting line's depth.  May move point."
+than the starting line's depth."
   (let* ((c (current-indentation))
 	 (d (indent-bars--depth c))
 	 (p (point))
@@ -863,7 +865,7 @@ than the starting line's depth.  May move point."
 			  (indent-bars--indent-at-node (car ctx)))))))))
     (if dnew (setq d (min dnew d)))
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
-	(cl-incf d) d)))
+	(1+ d) d)))
 
 (defun indent-bars--ignore-blank (beg)
   "See if blank lines at BEG should be ignored using tree-sitter.
@@ -881,12 +883,10 @@ Blank lines to ignore are those with types in
 
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
-  (save-excursion
-    (let ((b (match-beginning 1))
-	  (e (match-end 1))
-	  (n (indent-bars--current-indentation-depth)))
-      (goto-char b)
-      (when (> n 0) (indent-bars--draw-line n b e))))
+  (let ((b (match-beginning 1))
+	(e (match-end 1))
+	(n (indent-bars--current-indentation-depth)))
+    (when (> n 0) (indent-bars--draw-line n b e)))
   nil)
 
 (defsubst indent-bars--context-bars (end)
@@ -1110,7 +1110,8 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars--create-faces 9 'reset)	; N.B.: extends as needed
 
   ;; No Stipple (e.g. terminal)
-  (setq indent-bars--no-stipple (or (not (display-graphic-p)) indent-bars-prefer-character))
+  (setq indent-bars--no-stipple
+	(or (not (display-graphic-p)) indent-bars-prefer-character))
   (indent-bars--create-no-stipple-chars 9)
   
   ;; Resize
@@ -1132,7 +1133,8 @@ Adapted from `highlight-indentation-mode'."
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (when indent-bars-no-descend-string
       (setq indent-bars--ts-string-query
-	    (treesit-query-compile lang `([(,indent-bars-ts-string-type)] @s)))))
+	    (treesit-query-compile
+	     lang `([(,indent-bars-ts-string-type)] @s)))))
 
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
