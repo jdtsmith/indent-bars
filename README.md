@@ -6,16 +6,16 @@ Fast, configurable indentation guide-bars for Emacs.
 
 This package provides vertical indentation _guide bars_, with the following features:
 
+- Supports both space and tab-based indentation.
 - Uses stipple face properties with font-lock for ultra-fast performance (simply: *faces on spaces*).
-- Works in the terminal, using a vertical bar character instead of stipple.
-- Supports space or tab-based indentation.
-- Learns your buffer indentation spacing from the mode.
-- Bar colors can be blended with the frame background color, to reduce their intrusiveness.
+- Works in the terminal, using a vertical bar character.
+- Learns your buffer indentation spacing from the active mode.
+- Bar colors can blend with the frame background to reduce intrusiveness.
 - Bar appearance is highly configurable: width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
 - Bars have optional depth-based coloring, with a customizable cyclical color palette.
 - Properly handles font size changes.
-- Optional low-cost current-depth bar highlighting, permitting bar color and/or appearance changes.
-- Optional support for drawing bars on blank lines.
+- Current-depth bar highlighting with bar color and/or appearance changes.
+- Blank line support.
 - Optional tree-sitter support, for context-aware bar depth in strings and wrapped entities like function arguments.
 
 # FAQ's
@@ -26,7 +26,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 - **I can barely see the bars!** <br>Increase the `:blend` value in `indent-bars-color` closer to one.
 - **I want completely unique indent guidebars so as to flex on my colleagues!** <br>Check the [Examples](examples.md) for some ideas.  The sky is the limit (submit your examples).
 - **I use Emacs on the terminal, you insensitive clod!** <br>`indent-bars` will just work for you (though you don't get any fancy bar patterns).
-- **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.** <br>Maybe [this](examples.md#minimal) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with [`indent-bars-prefer-character`](#non-stipple-display).
+- **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.** <br>Maybe [this](examples.md#minimal) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with [`indent-bars-prefer-character`](#character-display).
 - **When I view the same buffer side by side, the bars jump around!** <br>This is a known issue for versions of Emacs with arbitrary pixel-width window; see [Per-buffer stipple offsets](#per-buffer-stipple-offsets).
 - **I get too many bars inside function definitions and calls**: You can use [tree-sitter to help](#tree-sitter). 
 
@@ -64,11 +64,11 @@ To clone with `use-package` and `straight`:
   :hook ((python-base-mode yaml-mode) . indent-bars-mode))
 ```
 
-See also the [Wiki page](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).  
+See also the [Wiki page](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
 
 ## Compatibility 
 
-For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**  It can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to always do so; see [Non-stipple Display](#non-stipple-display).
+For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**  It can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to always do so; see [Character Display](#character-display).
 
 Known `:stipple` support by Emacs versions:
 
@@ -80,7 +80,7 @@ Known `:stipple` support by Emacs versions:
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
-Please [open an issue](../../issues) with any updates/corrections to this list.   
+Please [open an issue](../../issues) with any updates/corrections to this list.
 
 See also [Testing Stipples](#testing-stipples).
 
@@ -105,8 +105,8 @@ The main customization variables:
 - `indent-bars-no-stipple-char`: The character to use when stipples are unavailable or disabled. Defaults to the vertical box character `│`.  Other good options include `┃`, `┋`, and `║`.
 - `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
 - `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to help determine appropriate bar depth.
-- `indent-bars-treesit-wrap`: A mapping of language and wrap types, to avoid adding extra bars e.g. in wrapped function arguments.
-- `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types to inhibit styling blank lines, like "module". 
+- `indent-bars-treesit-wrap`: A mapping of language to tree-sitter wrap types, to avoid adding extra bars e.g. in wrapped function arguments.
+- `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types to inhibit styling blank lines at, like "module". 
 - `indent-bars-no-descend-string`: Whether to inhibit increasing depth inside of (tree-sitter determined) strings. 
 
 See the documentation of each variable for more details.
@@ -117,15 +117,15 @@ See the documentation of each variable for more details.
 
 `indent-bars` was partially motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
 
-The heaviest operations (though still quite efficient) are **tree-sitter** based, and  **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with turning off.
+The heaviest operations (though still quite efficient) are **tree-sitter** support, and  **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with turning off.
 
 ## Indentation
 
-`indent-bars` works either with either space-based indentation (i.e. `indent-tabs-mode=nil`) or with tab-based.  If possible, prefer space indentation, as it is faster.
+`indent-bars` works either with space-based indentation (i.e. `indent-tabs-mode=nil`) or with tab-based.  If possible, prefer space indentation, as it is faster.  Note that some modes explicitly enable or disable `indent-tabs-mode`.
 
 ## Tree-sitter
 
-`indent-bars` can optionally use tree-sitter when configured in supported files to improve the calculation of bar depth.  For example, many modes wrap function calls and definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars there.  It can also be used to identify strings, and to tweak the behavior of blank line display.  See options above.  
+`indent-bars` can optionally use tree-sitter when configured in supported files to improve the calculation of bar depth.  For example, many modes wrap function calls and definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars in these.  It can also be used to identify strings, and to tweak the behavior of blank line display.  See options above.
 
 I.e. turn this:
 
@@ -137,17 +137,19 @@ into this:
 
 **Note**: This requires Emacs 29 built with tree-sitter support, and the appropriate tree-sitter grammars installed for languages of interest.
 
+The easiest way to discover the node types of interest is to `M-x treesit-explore-mode`, highlight the beginning a line with too many bars, and look up in the tree for the names of obvious nodes.  Add these to `indent-bars-treesit-wrap` for the language of interest.
+
 ## Display
 
 ### Stipples
 
-Stipples are repeating patterns anchored to the full emacs frame.  `indent-bars` basically "opens windows" on this fixed pattern to "reveal" the bars.
+Stipples are repeating bitmap patterns anchored to the full emacs frame.  `indent-bars` basically "opens windows" on this fixed pattern to "reveal" the bars.
 
 The fast *stipple* method used for drawing bars enables lots of [interesting patterns](examples.md).
 
 #### Testing Stipples
 
-If you are experiencing issues with bar display (missing, garbled, etc.), and would like to determine if stipples are working correctly in your build of emacs, you can test it as follows.
+If you are experiencing issues with stipple bar display (missing, garbled, etc.), and would like to determine if stipples are working correctly in your build of emacs, you can test it as follows.
 
 1. In the `*scratch*` buffer, use first `M-x font-lock-mode` to disable fontification
 2. Hit `C-x C-e` just after the last `)` in the following code:
@@ -166,18 +168,18 @@ This should then look something like:
 
 <img width="668" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/dd0f65f5-3cdc-4865-a66d-41365cecadd0">
 
-If you determine that stipples do not work in your Emacs, consider upgrading to a version which supports them, or setting `indent-bars-prefer-character=t`.
+If you determine that stipples do not work in your Emacs, consider upgrading to a version which supports them, reporting the bug, or setting `indent-bars-prefer-character=t`.
 
 #### Per-buffer stipple offsets
-To get the stipple bars to appear in the right place within a character, `indent-bars` must consider the starting horizontal pixel position of the current window, and "rotate" the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
+To get the stipple bars to appear in the correct location within their column, `indent-bars` must consider the starting horizontal pixel position of the current window, and "rotate" the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.
 
-There is one rare corner case, however: showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets (e.g. emacs-mac) can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, not per-window.  I.e. it can't be correct for the same buffer in left and right windows at the same time.
+There is one rare corner case, however: showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets (e.g. emacs-mac).  This can lead to unexpected bar positions in the non-active buffer, since the stipple offset in the remapped face applies *per-buffer*, not per-window.  I.e. it can't be correct for the same buffer in left and right windows *at the same time*.
 
 Options are:
 
-1. Living with it
-2. Using a build of emacs that always starts windows on the character boundary
-3. Switching to [character-based bars](#non-stipple-display)
+1. Living with it (simpler stipple patterns may help).
+2. Using a build of emacs that always starts windows on the character boundary.
+3. Switching to [character-based bars](#character-display).
 4. (For Emacs >=29[^2]) instead of visiting the same buffer, cloning an indirect buffer (which has other advantages, like an independent region).
 
 [^2]: Note that Emacs 28 and earlier have a bug which results in cloned buffers sharing the same face remapping list as their parent; this is fixed in Emacs 29.
