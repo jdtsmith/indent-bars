@@ -1,6 +1,4 @@
-# indent-bars
-
-Fast, configurable indentation guide-bars for Emacs.
+# indent-bars: fast, configurable indentation guide-bars for Emacs.
 
 <img align="right" width="492" alt="indent-bars example" src="https://github.com/jdtsmith/indent-bars/assets/93749/0e0def4d-14d9-46b7-9447-8945c8233929">
 
@@ -17,6 +15,15 @@ This package provides vertical indentation _guide bars_, with the following feat
 - Fast current-depth bar highlighting with bar color and/or appearance changes.
 - Blank line support.
 - Optional tree-sitter support, for context-aware bar depth in strings, wrapped entities like function arguments, and top level blank lines.
+
+## What's New
+
+- v0.1: Initial stipple-based indentation.
+- v0.2: 
+   - Support for tab-based indent modes
+   - optional character-based indent bars (automatic in terminal)
+   - tree-sitter context-aware bar depth
+   - other minor improvements.
 
 # FAQ's
 
