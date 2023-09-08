@@ -20,10 +20,12 @@ This package provides vertical indentation _guide bars_, with the following feat
 
 - v0.1: Initial stipple-based indentation.
 - v0.2: 
+   - ability to configure the starting column (including col 0)
    - Support for tab-based indent modes
    - optional character-based indent bars (automatic in terminal)
    - tree-sitter context-aware bar depth
-   - other minor improvements.
+   - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
+   - other minor improvements
 
 # FAQ's
 
