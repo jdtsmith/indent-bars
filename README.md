@@ -13,10 +13,10 @@ This package provides vertical indentation _guide bars_, with the following feat
 - Bar colors can blend with the frame background to reduce intrusiveness.
 - Bar appearance is highly configurable: width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
 - Bars have optional depth-based coloring, with a customizable cyclical color palette.
-- Properly handles font size changes.
-- Current-depth bar highlighting with bar color and/or appearance changes.
+- Font size changes are handled automatically.
+- Fast current-depth bar highlighting with bar color and/or appearance changes.
 - Blank line support.
-- Optional tree-sitter support, for context-aware bar depth in strings and wrapped entities like function arguments.
+- Optional tree-sitter support, for context-aware bar depth in strings, wrapped entities like function arguments, and top level blank lines.
 
 # FAQ's
 
@@ -55,8 +55,9 @@ To clone with `use-package` and `straight`:
 (use-package indent-bars
   :load-path "~/code/emacs/indent-bars"
   :custom
-  
   (indent-bars-treesit-support t)
+  (indent-bars-no-descend-string t)
+  (indent-bars-treesit-ignore-blank-lines-types '("module"))
   (indent-bars-treesit-wrap '((python argument_list parameters
 				      list list_comprehension
 				      dictionary dictionary_comprehension
