@@ -883,9 +883,11 @@ Blank lines to ignore are those with types in
 
 (defun indent-bars--display ()
   "Display indentation bars based on line contents."
-  (let ((b (match-beginning 1))
-	(e (match-end 1))
-	(n (indent-bars--current-indentation-depth)))
+  (let* ((b (match-beginning 1))
+	 (e (match-end 1))
+	 (n (save-excursion
+	      (goto-char b)
+	      (indent-bars--current-indentation-depth))))
     (when (> n 0) (indent-bars--draw-line n b e)))
   nil)
 
