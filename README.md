@@ -84,7 +84,7 @@ Known `:stipple` support by Emacs versions:
 
 - All known UNIX/GNU Linux versions support stipples.
 - "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but had a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6); this was fixed in Emacs  [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html).
-- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.
+- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.  `M-x version` should say `Carbon`, not `NS`.
 - Windows Emacs does not (apparently) support stipples.
 - Stipples are not supported on terminal emacs.
 
