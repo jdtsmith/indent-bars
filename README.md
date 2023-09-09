@@ -147,7 +147,13 @@ into this:
 
 **Note**: This requires Emacs 29 built with tree-sitter support, and the appropriate tree-sitter grammars installed for languages of interest.
 
-The easiest way to discover the node types of interest is to `M-x treesit-explore-mode`, highlight the beginning a line with too many bars, and look up in the tree for the names of obvious nodes.  Add these to `indent-bars-treesit-wrap` for the language of interest.
+### Configuring tree-sitter
+
+The main thing to do is configure `indent-bars-treesit-wrap` with the node types that lead to unwanted additional bars do their wrapping indentation behavior.  I recommend starting with the minimal possible set.  
+
+The easiest way to discover the node types of interest is to `M-x treesit-explore-mode`, then highlight the beginning of a line with too many bars, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did.  You can do something similar for `indent-bars-treesit-ignore-blank-lines-types` (which, please note, are configured as _strings_, unlike in `indent-bars-treesit-wrap`).
+
+Please document good tree-sitter settings for other langauges in the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
 
 ## Display
 
