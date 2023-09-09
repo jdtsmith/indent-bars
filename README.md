@@ -135,7 +135,7 @@ The heaviest operations (though still quite efficient) are **tree-sitter** suppo
 
 ## Tree-sitter
 
-`indent-bars` can optionally use tree-sitter when configured in supported files to improve the calculation of bar depth.  For example, many modes wrap function calls and definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars in these.  It can also be used to identify strings, and to tweak the behavior of blank line display.  See options above.
+`indent-bars` can optionally use tree-sitter in supported files to improve the calculation of bar depth.  For example, many modes wrap function calls and definitions to align parameters with the opening `(`.  With the help of tree-sitter, `indent-bars` can avoid adding unwanted additional bars in these.  It can also be used to avoid extra depth in strings, and to tweak the behavior of blank line display.
 
 I.e. turn this:
 
