@@ -1,6 +1,14 @@
 # Example `indent-bars` color/layout possibilities
-## Default:
+## Old Default:
 <img width="514" alt="ib_default" src="https://github.com/jdtsmith/indent-bars/assets/93749/4f652554-bede-4aa6-bdbc-233ec843d782">
+
+``` emacs-lisp
+   (setq
+    indent-bars-color '(highlight :face-bg t :blend 0.3)
+    indent-bars-pattern " . . . . ." ; play with the number of dots for your usual font size
+    indent-bars-width-frac 0.25
+    indent-bars-pad-frac 0.1)
+```
 
 ## Minimal:
 <img width="514" alt="ib_minimal" src="https://github.com/jdtsmith/indent-bars/assets/93749/e21da2d6-f6a4-4587-9640-d6a493111473">
