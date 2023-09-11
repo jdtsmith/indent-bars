@@ -825,15 +825,24 @@ see `indent-bars-prefer-character')."
 (defvar-local indent-bars--ts-query nil)
 (defvar-local indent-bars--ts-string-query nil)
 
-(defsubst indent-bars--ts-node-query (node query &optional start-only)
+(defun indent-bars--ts-node-query (node query &optional start-only first-spanning)
   "Capture node(s) spanning NODE matching QUERY.
 QUERY is a compiled treesit query.  If START-ONLY is non-nil, the
 query searches for matching nodes spanning the start of the node
-at point."
+at point.  If FIRST-SPANNING is non-nil, return the first
+matching node, but only if it fully spans the start and end range
+of NODE."
   (let* ((start (treesit-node-start node))
-	 (end (if start-only start (treesit-node-end node))))
-    (treesit-query-capture indent-bars--ts-parser query
-			   start end t)))
+	 (end (if start-only start (treesit-node-end node)))
+	 (nodes (treesit-query-capture indent-bars--ts-parser query
+				       start end t)))
+    (when (and first-spanning nodes)
+      (let ((n (car nodes)))
+	(setq nodes
+	      (and (<= (treesit-node-start n) start)
+		   (>= (treesit-node-end n) end)
+		   n))))
+    nodes))
 
 (defsubst indent-bars--indent-at-node (node)
   "Return the current indentation at the start of NODE."
@@ -863,9 +872,9 @@ than the starting line's depth."
 			   node indent-bars--ts-string-query t))
 		     (1+ (indent-bars--depth (indent-bars--indent-at-node node)))
 		   (when-let ((ctx (indent-bars--ts-node-query
-				    node indent-bars--ts-query)))
+				    node indent-bars--ts-query nil t)))
 		     (1+ (indent-bars--depth
-			  (indent-bars--indent-at-node (car ctx)))))))))
+			  (indent-bars--indent-at-node ctx))))))))
     (if dnew (setq d (min dnew d)))
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
 	(1+ d) d)))
