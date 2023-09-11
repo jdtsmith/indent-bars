@@ -832,7 +832,7 @@ query searches for matching nodes spanning the start of the node
 at point."
   (let* ((start (treesit-node-start node))
 	 (end (if start-only start (treesit-node-end node))))
-    (treesit-query-capture (treesit-buffer-root-node) query
+    (treesit-query-capture indent-bars--ts-parser query
 			   start end t)))
 
 (defsubst indent-bars--indent-at-node (node)
