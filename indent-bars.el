@@ -384,12 +384,12 @@ is set."
 		 (repeat :tag "Node types" string))
   :group 'indent-bars)
 
-(defcustom indent-bars-no-descend-string t
+(defcustom indent-bars-no-descend-string 'string
   "Configure bar behavior inside strings.
-If non-nil, bars will go no deeper than their starting line
-inside multi-line strings.  Strings are identified with
-tree-sitter; see `indent-bars-ts-string-type'."
-  :type 'boolean
+If non-nil, set to a symbol naming a tree-sitter string node type into which
+bars will go no deeper than their starting line."
+  :local t
+  :type '(choice (const :tag "Disable" nil) (symbol :tag "Node Type"))
   :group 'indent-bars)
 
 ;;;; Colors
@@ -820,7 +820,6 @@ see `indent-bars-prefer-character')."
 				    'face (indent-bars--face d))))))))
 
 ;;;; Tree-sitter
-(defvar-local indent-bars-ts-string-type 'string)
 (defvar-local indent-bars--ts-parser nil)
 (defvar-local indent-bars--ts-query nil)
 (defvar-local indent-bars--ts-string-query nil)
@@ -1128,10 +1127,6 @@ Adapted from `highlight-indentation-mode'."
 	(or (not (display-graphic-p)) indent-bars-prefer-character))
   (indent-bars--create-no-stipple-chars 9)
   
-  ;; Resize
-  (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
-  (indent-bars--resize-stipple)		; just in case
-
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
 
@@ -1146,9 +1141,9 @@ Adapted from `highlight-indentation-mode'."
 	  indent-bars--ts-query
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (when indent-bars-no-descend-string
-      (setq indent-bars--ts-string-query
-	    (treesit-query-compile
-	     lang `([(,indent-bars-ts-string-type)] @s)))))
+      (let ((query `([(,indent-bars-no-descend-string)] @s)))
+	(setq indent-bars--ts-string-query
+	      (treesit-query-compile lang query)))))
 
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
@@ -1157,6 +1152,10 @@ Adapted from `highlight-indentation-mode'."
     (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t)
     (setq indent-bars--current-depth 0)
     (indent-bars--highlight-current-depth))
+
+  ;; Resize
+  (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
+  (indent-bars--resize-stipple)		; just in case
 
   ;; Font-lock
   (indent-bars--setup-font-lock)
