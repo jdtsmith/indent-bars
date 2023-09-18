@@ -386,8 +386,10 @@ is set."
 
 (defcustom indent-bars-no-descend-string 'string
   "Configure bar behavior inside strings.
-If non-nil, set to a symbol naming a tree-sitter string node type into which
-bars will go no deeper than their starting line."
+If non-nil, set to a symbol naming a tree-sitter string node type
+into which bars will go no deeper than their starting line.  If
+this node type is invalid, a message is printed and the feature
+is disabled."
   :local t
   :type '(choice (const :tag "Disable" nil) (symbol :tag "Node Type"))
   :group 'indent-bars)
@@ -1141,9 +1143,15 @@ Adapted from `highlight-indentation-mode'."
 	  indent-bars--ts-query
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (when indent-bars-no-descend-string
-      (let ((query `([(,indent-bars-no-descend-string)] @s)))
-	(setq indent-bars--ts-string-query
-	      (treesit-query-compile lang query)))))
+      (let ((query `([(,indent-bars-no-descend-string)] @s))
+	    (pm (point-min)))
+	(setq indent-bars--ts-string-query (treesit-query-compile lang query))
+	;; Test it to be sure
+	(condition-case err
+	    (treesit-query-capture indent-bars--ts-parser indent-bars--ts-string-query pm pm t)
+	  (treesit-query-error
+	   (setq indent-bars-no-descend-string nil)
+	   (message "indent-bars: malformed string query; disabling.  See indent-bars-no-descend-string."))))))
 
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
