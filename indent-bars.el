@@ -1148,10 +1148,11 @@ Adapted from `highlight-indentation-mode'."
 	(setq indent-bars--ts-string-query (treesit-query-compile lang query))
 	;; Test it to be sure
 	(condition-case err
-	    (treesit-query-capture indent-bars--ts-parser indent-bars--ts-string-query pm pm t)
+	    (treesit-query-capture indent-bars--ts-parser
+				   indent-bars--ts-string-query pm pm t)
 	  (treesit-query-error
 	   (setq indent-bars-no-descend-string nil)
-	   (message "indent-bars: malformed string query; disabling.  See indent-bars-no-descend-string."))))))
+	   (message "indent-bars: malformed string query; disabling.  See indent-bars-no-descend-string.\n%s" err))))))
 
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
