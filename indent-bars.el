@@ -246,22 +246,25 @@ current line's indentation depth level.
 
 Format:
 
-    nil | (:color :face :face-bg :background :blend
+    nil | (:color :face :face-bg :background :blend :palette
            :width :pad :pattern :zigzag)
 
 If nil, no highlighting will be applied to bars at the current
 depth of the line at point.  Otherwise, a plist describes what
 highlighting to apply, which can include changes to color and/or
-bar pattern.  At least one of :blend, :color, :face, :width,
-:pad, :pattern, or :zigzag must be set and non-nil for this
-setting to take effect.
+bar pattern.  At least one of :blend, :color, :palette, :face,
+:width, :pad, :pattern, or :zigzag must be set and non-nil for
+this setting to take effect.
 
 By default, the highlight color will be the same as the
-underlying color.  With COLOR or FACE set, all bars at the current
-depth will be highlighted in the appropriate color, either COLOR,
-or, if FACE is set, FACE's foreground or background color (the
-latter if FACE-BG is non-nil).  If BACKGROUND is set to a color,
-this will be used for the background color of the current
+underlying color.  With PALETTE, COLOR or FACE set, all bars at
+the current depth will be highlighted in the appropriate color,
+either from an explicit PALETTE list (see
+`indent-bars-color-by-depth'), a COLOR, or, if FACE is set,
+FACE's foreground or background color (the latter if FACE-BG is
+non-nil).  If PALETTE is provided, it overrides any other
+foreground color setting.  If BACKGROUND is set to a color, this
+will be used for the background color of the current
 bar (i.e. not the stipple color).
 
 If BLEND is provided, it is a blend fraction between 0 and 1 for
@@ -272,11 +275,12 @@ highlight color (and is the same as omitting BLEND).
 
 As a special case, if BLEND is provided, but neither COLOR nor
 FACE is, this indicates using a (presumably distinct) blend
-factor between the default color and the frame background for the
-current depth highlight.  The original colors are specified in
-`indent-bars-color-by-depth' or `indent-bars-color'.  In this
-manner the current-depth highlight can be made a more (or less)
-prominent version of the default coloring.
+factor between the usual color for that bar and the frame
+background for the current depth highlight.  The original colors
+are specified in `indent-bars-color-by-depth' or
+`indent-bars-color'.  In this manner the current-depth highlight
+can be made a more (or less) prominent version of the default
+coloring.
 
 If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the bar pattern
 at the current level will be altered as well.  Note that
@@ -298,6 +302,14 @@ non-nil, any stipple appearance parameters will be ignored."
 			  :value 0.5
 			  :match (lambda (_ val) (and (<= val 1) (>= val 0)))
 			  :type-error "Factor must be between 0 and 1")
+		  (:palette
+		   (repeat :tag "Explicit Color/Face List"
+			   (choice (color :tag "Color")
+				   (face :tag "Foreground from Face")
+				   (cons :tag "Background from Face"
+					 :format "Background from %v"
+					 face
+					 (const :format "\n" :value bg)))))
 		  (:width (float :tag "Bar Width"))
 		  (:pad (float :tag "Bar Padding (from left)"))
 		  (:pattern (string :tag "Fill Pattern"))
@@ -437,6 +449,18 @@ instead of the :blend factor in `indent-bars-color'."
 		     col (indent-bars--frame-background-color) blend)))
       col)))
 
+(defun indent-bars--unpack-palette (palette)
+  "Process a face or color-based PALETTE."
+  (delq nil
+	(cl-loop for el in palette
+		 collect (cond
+			  ((and (consp el) (facep (car el)))
+			   (face-background (car el)))
+			  ((facep el)
+			   (face-foreground el))
+			  ((color-defined-p el) el)
+			  (t nil)))))
+
 (defun indent-bars--depth-palette (&optional blend-override)
   "Calculate the palette of depth-based colors (a vector).
 If BLEND-OVERRIDE is set, the main color's :blend will be ignored
@@ -450,15 +474,7 @@ background color.  See `indent-bars-color-by-depth'."
 	      (regexp
 	       (indent-bars--depth-colors-from-regexp regexp face-bg))
 	      (palette
-	       (delq nil
-		     (cl-loop for el in palette
-			      collect (cond
-				       ((and (consp el) (facep (car el)))
-					(face-background (car el)))
-				       ((facep el)
-					(face-foreground el))
-				       ((color-defined-p el) el)
-				       (t nil))))))))
+	       (indent-bars--unpack-palette palette)))))
 	(vconcat
 	 (if (or blend blend-override)
 	     (mapcar (lambda (c)
@@ -473,7 +489,7 @@ nil, in which case no special current depth-coloring is used.
 See `indent-bars-highlight-current-depth' for
 configuration."
   (when indent-bars-highlight-current-depth
-    (cl-destructuring-bind (&key color face face-bg blend &allow-other-keys)
+    (cl-destructuring-bind (&key color face face-bg blend palette &allow-other-keys)
 	indent-bars-highlight-current-depth
       (let ((color
 	     (cond
@@ -482,22 +498,28 @@ configuration."
 			face))
 	      ((and color (color-defined-p color)) color))))
 
-	(if (and blend (not color))  ; special case: re-blend originals with BG
-	    (or (indent-bars--depth-palette blend)
-		(indent-bars--main-color nil nil blend))
-	  ;; Normal case
-	  (when color
-	    (if (string= color "unspecified-fg")
-		(setq color indent-bars-unspecified-fg-color))
-	    (if blend
-		(if indent-bars--depth-palette ; blend into normal depth palette
-		    (vconcat (mapcar (lambda (c)
-				       (indent-bars--blend-colors color c blend))
-				     indent-bars--depth-palette))
-		  (indent-bars--blend-colors color indent-bars--main-color blend))
-	      color)))))))
+	(cond
+	 ;; An explicit palette
+	 (palette
+	  (vconcat (indent-bars--unpack-palette palette)))
 
-
+	 ;; A specified color (possibly to blend in)
+	 (color
+	  (if (string= color "unspecified-fg")
+	      (setq color indent-bars-unspecified-fg-color))
+	  (if blend
+	      (if indent-bars--depth-palette ; blend into normal depth palette
+		  (vconcat (mapcar (lambda (c)
+				     (indent-bars--blend-colors color c blend))
+				   indent-bars--depth-palette))
+		;; Just blend into main color
+		(indent-bars--blend-colors color indent-bars--main-color blend))
+	    color))
+	 
+	 ;; blend-only without a specified color: re-blend originals with BG
+	 (blend
+	  (or (indent-bars--depth-palette blend)
+	      (indent-bars--main-color nil nil blend))))))))
 
 (defun indent-bars--depth-colors-from-regexp (regexp &optional face-bg)
   "Return a list of depth colors (strings) for faces matching REGEXP.
