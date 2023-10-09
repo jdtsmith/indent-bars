@@ -338,11 +338,9 @@ specifies using character bars exclusively.  See
 
 (defcustom indent-bars-no-stipple-char-font-weight nil
   "Font weight to use to draw the character bars.
-If weight is nil or unspecified, a regular font is assumed.
 If non-nil, set the no-stipple character font weight accordingly."
   :type `(choice
-          (const nil)
-          (const unspecified)
+          (const :tag "Use Default Weight" nil)
           ,@(mapcar (lambda (item) (list 'const (aref item 1)))
                     font-weight-table))
   :group 'indent-bars)
@@ -577,15 +575,15 @@ color, if setup (see `indent-bars-highlight-current-depth')."
 Create for character size W x H with offset ROT."
   (face-spec-set
    'indent-bars-stipple
-   `((t ( :inherit nil :stipple ,(indent-bars--stipple w h rot))))))
+   `((t ( :inherit nil :stipple ,(indent-bars--stipple w h rot)
+	  ,@(when indent-bars-no-stipple-char-font-weight
+              `(:weight ,indent-bars-no-stipple-char-font-weight)))))))
 
 (defun indent-bars--calculate-face-spec (depth)
   "Calculate the face spec for indentation bar at an indentation DEPTH.
 DEPTH starts at 1."
-  `((t . (:inherit indent-bars-stipple
-          ,@(when indent-bars-no-stipple-char-font-weight
-              `(:weight ,indent-bars-no-stipple-char-font-weight))
-	      :foreground ,(indent-bars--get-color depth)))))
+  `((t . ( :inherit indent-bars-stipple
+	   :foreground ,(indent-bars--get-color depth)))))
 
 (defun indent-bars--create-faces (num &optional redefine)
   "Create bar faces up to depth NUM, redefining them if REDEFINE is non-nil.
