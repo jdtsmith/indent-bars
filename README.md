@@ -114,11 +114,14 @@ The main customization variables:
 - `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines.
 - `indent-bars-prefer-character`: Use *characters* to display the vertical bar instead of stipples.  This occurs automatically on non-graphical displays (terminals), but this variable can be used to always prefer character-based display.
 - `indent-bars-no-stipple-char`: The character to use when stipples are unavailable or disabled. Defaults to the vertical box character `│`.  Other good options include `┃`, `┋`, and `║`.
-- `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
+- `indent-bars-no-stipple-char-font-weight`: Optional font weight to use for the face displaying the no-stipple character.
+- `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when they are unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
 - `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to help determine appropriate bar depth.
 - `indent-bars-treesit-wrap`: A mapping of language to tree-sitter wrap types, to avoid adding extra bars e.g. in wrapped function arguments.
 - `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types to inhibit styling blank lines at, like "module". 
 - `indent-bars-no-descend-string`: Whether to inhibit increasing depth inside of (tree-sitter determined) strings. 
+
+
 
 See the documentation of each variable for more details.
 
