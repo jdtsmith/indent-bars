@@ -81,13 +81,14 @@ See [tree-sitter](#tree-sitter), and also the [Wiki page](https://github.com/jdt
 
 For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**  It can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to always do so; see [Character Display](#character-display).
 
-Known `:stipple` support by Emacs versions:
+Known `:stipple` support, by Emacs build:
 
-- All known UNIX/GNU Linux versions support stipples.
-- "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but had a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6); this was fixed in Emacs  [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html).
-- On Mac, the [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.  `M-x version` should say `Carbon`, not `NS`.
+- Linux:
+  - "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but had a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6); this was fixed in Emacs [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html) and will presumably be released with Emacs 30.
+  - Cairo builds (`--with-cairo`) have been [reported](../../issues/33#issuecomment-1768888990) not to display stipples.
+- Mac:  The [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.  `M-x version` should say `Carbon`, not `NS`.
 - Windows Emacs does not (apparently) support stipples.
-- Stipples are not supported on terminal emacs.
+- Terminal: Stipples are not supported on terminal emacs.
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
