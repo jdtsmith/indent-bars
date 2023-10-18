@@ -88,7 +88,7 @@ Known `:stipple` support, by Emacs build:
   - Cairo builds (`--with-cairo`) have been [reported](../../issues/33#issuecomment-1768888990) not to display stipples.
   - All other builds do support stipples.
 - Mac:  The [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.  `M-x version` should say `Carbon`, not `NS`.
-- Windows Emacs does not (apparently) support stipples.
+- Windows: Emacs on Windows does not (apparently) support stipples.
 - Terminal: Stipples are not supported on terminal emacs.
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
