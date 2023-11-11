@@ -163,7 +163,7 @@ Please document good tree-sitter settings for other langauges in the [Wiki](http
 
 ## Moving by columns
 
-If `indent-bars-display-on-blank-lines' is set, the newline at the end of blank lines has a `'display` property set to show the bars.  Emacs does not deal correctly with display properties containing newlines when moving by columns.  This is not normally a problem, but in one instance it is a nuisance: evil tries to "preserve" column during line moves, so can trigger this emacs misfeature.  The symptom is that point jumps a line and moves over as you move down with evil.  A solution is [here](https://github.com/jdtsmith/indent-bars/issues/22#issuecomment-1793886072). 
+If `indent-bars-display-on-blank-lines` is set, the newline at the end of blank lines has a `'display` property set to show the bars.  Emacs does not deal correctly with display properties containing newlines when moving by columns.  This is not normally a problem, but in one instance it is a nuisance: evil tries to "preserve" column during line moves, so can trigger this emacs misfeature.  The symptom is that point jumps a line and moves over as you move down with evil.  A solution is [here](https://github.com/jdtsmith/indent-bars/issues/22#issuecomment-1793886072). 
 
 ## Display
 
