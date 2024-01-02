@@ -41,7 +41,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 - **When I view the same buffer side by side, the bars jump around!** <br>This is a known issue for versions of Emacs with arbitrary pixel-width window; see [Per-buffer stipple offsets](#per-buffer-stipple-offsets).
 - **I get too many bars inside function definitions and calls**: You can use [tree-sitter to help](#tree-sitter).
 - **I want a bar in the very first column!**: set `indent-bars-starting-column` to 0.
-- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!**: update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the fast updates, set this to 0.
+- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the fast updates, set this to 0.
 
 # Install/config
 
