@@ -658,20 +658,22 @@ displayed."
 (defun indent-bars--draw-line (nbars start end &optional invent)
   "Draw NBARS bars on the line between START and END.
 START is assumed to be on a line beginning position.  Drawing
-starts at `indent-bars-starting-column'.  Tabs at the line
-beginning are replaced with display properties, if
-`indent-tabs-mode' is enabled.  If INVENT is non-nil and the
-line's length is insufficient to display all NBARS bars, bars
-will be invented.  That is, the line's final newline, which is
-only in this case expected to be located at END, will have
-display properties set to fill out the remaining bars, if any."
+starts at a column determined by `indent-bars-starting-column'.
+Tabs at the line beginning are replaced with display properties,
+if `indent-tabs-mode' is enabled.  If INVENT is non-nil and the
+line's length is insufficient to display all NBARS bars (whether
+by replacing tabs or adding properties to existing non-tab
+whitespace), bars will be \"invented\".  That is, the line's
+final newline, which is (only in this case) expected to be
+located at END, will have its display properties set to fill out
+the remaining bars, if any are needed."
   (let* ((tabs (when (and indent-tabs-mode
 			  (save-excursion
 			    (goto-char start) (looking-at "^\t+")))
 		 (- (match-end 0) (match-beginning 0))))
 	 (vp indent-bars--offset)
 	 (bar 1) prop fun tnum bcount)
-    (when tabs
+    (when tabs ; deal with initial tabs
       (while (and (<= bar nbars) (< (setq tnum (/ vp tab-width)) tabs))
 	(setq bcount (indent-bars--tab-display (+ start tnum) (mod vp tab-width)
 					       bar (- nbars bar -1)))
@@ -768,26 +770,12 @@ ROT should be less than W."
 ;; both windows.  So showing the same buffer side by side can lead to
 ;; mis-alignment in the non-active buffer.
 ;;
-;; Solutions:
-;;
-;;  - Use window hooks to update the stipple bitmap as focus or
-;;    windows change.  So at least the focused buffer looks correct.
-;;  - Otherwise, just live with it?
-;;  - Suggest using separate frames for this?
-;;  - Hide the bars be setting the stipple pattern to 0 in unfocused
-;;    windows?  But this isn't great.  The information is useful.
-;;  - Could also hide only in non-main window showing the current
-;;    buffer, with different g values.  But it will be suprising when
-;;    they vanish only when the same buffer is shown twice.
-;;  - Provide a helper command to adjust window sizes so g is
-;;    preserved (for a given w).  But two *different* buffers, both
-;;    side-by-side, make this impossible to work at the same time (if
-;;    they have different font sizes).  Maybe that's OK though, if you
-;;    are considering the current buffer only.
-;;  - Use C-x 4 c (clone-indirect-buffer-other-window).  Probably the
-;;    best solution!  But a bug in Emacs <29 means
-;;    `face-remapping-alist' is shared between indirect and master
-;;    buffers.  Fixed in Emacs 29.
+;; Solution: use window hooks to update the stipple bitmap as focus or
+;; windows change.  So at least the focused buffer looks correct.  If
+;; this is insufficient, use C-x 4 c
+;; (clone-indirect-buffer-other-window).  A bug in Emacs <29 means
+;; `face-remapping-alist' is unintentionally shared between indirect
+;; and master buffers.  Fixed in Emacs 29.
 
 (defun indent-bars--stipple (w h rot
 			       &optional width-frac pad-frac pattern zigzag)
