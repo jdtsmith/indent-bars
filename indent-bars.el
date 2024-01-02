@@ -1014,7 +1014,6 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 	(setq indent-bars--current-depth-stipple
 	      (indent-bars--stipple w h rot width pad pattern zigzag))))))
 
-(defvar-local indent-bars--highlight-last-time (current-time))
 (defvar-local indent-bars--highlight-timer nil)
 (defun indent-bars--update-current-depth-highlight (depth)
   "Update highlight for the current DEPTH.
@@ -1035,15 +1034,23 @@ DEPTH should be greater than zero."
 			 `(:stipple ,indent-bars--current-depth-stipple))))))))
 
 (defun indent-bars--highlight-current-depth ()
-  "Refresh current indentation depth highlight."
-  (when (or (zerop indent-bars-depth-update-delay)
-	    (> (float-time (time-since indent-bars--highlight-last-time))
-	       indent-bars-depth-update-delay))
-    (setq indent-bars--highlight-last-time (current-time))  
-    (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
-      (when (and depth (not (= depth indent-bars--current-depth)) (> depth 0))
-	(setq indent-bars--current-depth depth)
-	(indent-bars--update-current-depth-highlight depth)))))
+  "Refresh current indentation depth highlight.
+Rate limit set by `indent-bars-depth-update-delay'."
+  (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
+    (when (and depth (not (= depth indent-bars--current-depth)) (> depth 0))
+      (setq indent-bars--current-depth depth)
+      (if (zerop indent-bars-depth-update-delay)
+	  (indent-bars--update-current-depth-highlight depth)
+	(if-let ((tmr indent-bars--highlight-timer))
+	    (progn
+	      (timer-set-function
+	       tmr #'indent-bars--update-current-depth-highlight (list depth))
+	      (timer-set-time
+	       tmr (time-add (current-time) indent-bars-depth-update-delay))
+	      (unless (memq tmr timer-list) (timer-activate tmr)))
+	  (setq indent-bars--highlight-timer
+		(run-at-time indent-bars-depth-update-delay nil
+			     #'indent-bars--update-current-depth-highlight (list depth))))))))
 
 ;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
