@@ -26,6 +26,8 @@ This package provides vertical indentation _guide bars_, with the following feat
    - tree-sitter context-aware bar depth
    - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
    - other minor improvements
+- v0.2.2:
+  - Rate-limit updates of the current highlight depth; see `indent-bars-depth-update-delay`. 
 
 # FAQ's
 
@@ -39,6 +41,7 @@ This package provides vertical indentation _guide bars_, with the following feat
 - **When I view the same buffer side by side, the bars jump around!** <br>This is a known issue for versions of Emacs with arbitrary pixel-width window; see [Per-buffer stipple offsets](#per-buffer-stipple-offsets).
 - **I get too many bars inside function definitions and calls**: You can use [tree-sitter to help](#tree-sitter).
 - **I want a bar in the very first column!**: set `indent-bars-starting-column` to 0.
+- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!**: update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the fast updates, set this to 0.
 
 # Install/config
 
@@ -131,9 +134,9 @@ See the documentation of each variable for more details.
 
 ## Speed
 
-`indent-bars` was partially motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
+`indent-bars` was partially motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing -— *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
 
-The heaviest operations (though still quite efficient) are **tree-sitter** support, and  **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with turning off.
+The heaviest operations (though still quite efficient) are **tree-sitter** support, and  **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with turning off.  Note that in recent versions, a timer was added to rate-limit current-depth highlighting, simply to prevent "rapid flashing" during fast scrolling or other fast movements.  It's safe to disable this without any performance impact (set `indent-bars-depth-update-delay=0`). 
 
 ## Indentation
 
