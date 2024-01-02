@@ -39,6 +39,7 @@
 ;;;; Requires
 (require 'cl-lib)
 (require 'color)
+(require 'timer)
 (require 'face-remap)
 (require 'outline)
 (require 'font-lock)
@@ -238,6 +239,7 @@ indentation level, if configured; see
 				 "Factor must be between 0 and 1")))))
   :group 'indent-bars)
 
+;;;;; Depth Highlighting 
 (defcustom indent-bars-highlight-current-depth
   '(:pattern ".")			; solid bar, no color change
   "Current indentation depth bar highlight configuration.
@@ -316,6 +318,12 @@ non-nil, any stipple appearance parameters will be ignored."
 		  (:zigzag (float :tag "Zig-Zag")))))
   :group 'indent-bars)
 
+(defcustom indent-bars-depth-update-delay 0.075
+  "Minimum delay time in seconds between depth highlight updates.
+Has effect only if `indent-bars-highlight-current-depth' is
+non-nil.  Set to 0 for instant depth updates."
+  :type 'float
+  :group 'indent-bars)
 
 ;;;;; Other
 (defcustom indent-bars-display-on-blank-lines t
@@ -1006,26 +1014,36 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 	(setq indent-bars--current-depth-stipple
 	      (indent-bars--stipple w h rot width pad pattern zigzag))))))
 
+(defvar-local indent-bars--highlight-last-time (current-time))
+(defvar-local indent-bars--highlight-timer nil)
+(defun indent-bars--update-current-depth-highlight (depth)
+  "Update highlight for the current DEPTH.
+Works by remapping the appropriate indent-bars-N face.
+DEPTH should be greater than zero."
+  (if indent-bars--remap-face		; out with the old
+      (face-remap-remove-relative indent-bars--remap-face))
+  (let ((face (indent-bars--face depth))
+	(hl-col (and indent-bars--current-depth-palette
+		     (indent-bars--get-color depth 'highlight)))
+	(hl-bg indent-bars--current-bg-color))
+    (when (or hl-col hl-bg indent-bars--current-depth-stipple)
+      (setq indent-bars--remap-face
+	    (apply #'face-remap-add-relative face
+		   `(,@(when hl-col `(:foreground ,hl-col))
+		     ,@(when hl-bg `(:background ,hl-bg))
+		     ,@(when indent-bars--current-depth-stipple
+			 `(:stipple ,indent-bars--current-depth-stipple))))))))
+
 (defun indent-bars--highlight-current-depth ()
-  "Refresh current indentation depth highlight.
-Works by remapping the appropriate indent-bars-N face."
-  (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
-    (when (and depth (not (= depth indent-bars--current-depth)))
-      (if indent-bars--remap-face 	; out with the old
-	  (face-remap-remove-relative indent-bars--remap-face))
-      (setq indent-bars--current-depth depth)
-      (when (> depth 0)
-	(let ((face (indent-bars--face depth))
-	      (hl-col (and indent-bars--current-depth-palette
-			   (indent-bars--get-color depth 'highlight)))
-	      (hl-bg indent-bars--current-bg-color))
-	  (when (or hl-col hl-bg indent-bars--current-depth-stipple)
-	    (setq indent-bars--remap-face
-		  (apply #'face-remap-add-relative face
-			 `(,@(when hl-col `(:foreground ,hl-col))
-			   ,@(when hl-bg `(:background ,hl-bg))
-			   ,@(when indent-bars--current-depth-stipple
-			       `(:stipple ,indent-bars--current-depth-stipple)))))))))))
+  "Refresh current indentation depth highlight."
+  (when (or (zerop indent-bars-depth-update-delay)
+	    (> (float-time (time-since indent-bars--highlight-last-time))
+	       indent-bars-depth-update-delay))
+    (setq indent-bars--highlight-last-time (current-time))  
+    (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
+      (when (and depth (not (= depth indent-bars--current-depth)) (> depth 0))
+	(setq indent-bars--current-depth depth)
+	(indent-bars--update-current-depth-highlight depth)))))
 
 ;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
@@ -1090,7 +1108,7 @@ Adapted from `highlight-indentation-mode'."
     web-mode-markup-indent-offset)
    ((and (derived-mode-p 'web-mode) (boundp 'web-mode-html-offset)) ; old var
     web-mode-html-offset)
-   ((and (local-variable-p 'c-basic-offset) (boundp 'c-basic-offset))
+   ((and (local-variable-p 'c-basic-offset) (numberp c-basic-offset))
     c-basic-offset)
    ((and (derived-mode-p 'yaml-mode) (boundp 'yaml-indent-offset))
     yaml-indent-offset)
@@ -1178,10 +1196,11 @@ Adapted from `highlight-indentation-mode'."
   (when indent-bars-highlight-current-depth
     (indent-bars--set-current-bg-color)
     (indent-bars--set-current-depth-stipple)
-    (add-hook 'post-command-hook #'indent-bars--highlight-current-depth nil t)
+    (add-hook 'post-command-hook
+	      #'indent-bars--highlight-current-depth nil t)
     (setq indent-bars--current-depth 0)
     (indent-bars--highlight-current-depth))
-
+  
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
   (indent-bars--resize-stipple)		; just in case
