@@ -1050,7 +1050,7 @@ Rate limit set by `indent-bars-depth-update-delay'."
 	      (unless (memq tmr timer-list) (timer-activate tmr)))
 	  (setq indent-bars--highlight-timer
 		(run-at-time indent-bars-depth-update-delay nil
-			     #'indent-bars--update-current-depth-highlight (list depth))))))))
+			     #'indent-bars--update-current-depth-highlight depth)))))))
 
 ;;;; Text scaling and window hooks
 (defvar-local indent-bars--remap-stipple nil)
