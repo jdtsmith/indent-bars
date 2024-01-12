@@ -43,7 +43,7 @@
 (require 'outline)
 (require 'font-lock)
 (require 'compat)
-(require 'treesit nil t) ; treesit is optional
+
 
 ;;;; Customization
 (defgroup indent-bars nil
@@ -380,45 +380,9 @@ buffer-local automatically."
   :type '(choice integer (const :tag "Discover automatically" :value nil))
   :group 'indent-bars)
 
-;;;;; Treesitter
 (defcustom indent-bars-treesit-support nil
   "Whether to enable tree-sitter support (if available)."
   :type 'boolean
-  :group 'indent-bars)
-
-(defcustom indent-bars-treesit-wrap nil
-    "An alist of language and treesitter node type symbols to wrap.
-Inside such wrapping types, indentation bar depth will not be
-increased more than one beyond that of the containing node's
-depth.  This is typically done for lists, parameters, function
-arguments, etc., to avoid unwanted \"extra bars\".  Types must be
-valid node types for the grammar of the language indicated."
-    :type '(choice (const :tag "No wrap types" nil)
-		   (alist :tag "Alist of node types"
-			  :key-type (symbol :tag "Language")
-			  :value-type (repeat :tag "Types" (symbol :tag "Type"))))
-    :group 'indent-bars)
-
-(defcustom indent-bars-treesit-ignore-blank-lines-types nil
-  "Do not style blank lines when the type of node at start is in this list.
-Either nil, or a list of node type strings to avoid adding blank
-line styling to.  Typically \"top-level\" node types like
-\"module\", \"program\", and \"translation_unit\" would be used
-here, and they need not be valid types for any particular
-grammar.  Only applicable if `indent-bars-display-on-blank-lines'
-is set."
-  :type '(choice (const :tag "None" nil)
-		 (repeat :tag "Node types" string))
-  :group 'indent-bars)
-
-(defcustom indent-bars-no-descend-string 'string
-  "Configure bar behavior inside strings.
-If non-nil, set to a symbol naming a tree-sitter string node type
-into which bars will go no deeper than their starting line.  If
-this node type is invalid, a message is printed and the feature
-is disabled."
-  :local t
-  :type '(choice (const :tag "Disable" nil) (symbol :tag "Node Type"))
   :group 'indent-bars)
 
 ;;;; Colors
@@ -631,6 +595,26 @@ Note that the first bar is expected at `indent-bars-starting-column'."
   (cond ((>= len indent-bars-spacing) (/ (1+ len) indent-bars-spacing))
 	((> len 0) 1)
 	(t 0)))
+
+(defvar indent-bars--update-depth-function nil)
+(defun indent-bars--current-indentation-depth (&optional on-bar)
+  "Calculate current indentation depth.
+If ON-BAR is non-nil, report a line with content beginning on a
+bar position at that position.  If treesit support is enabled,
+searches for parent nodes with types specified in
+`indent-bars-treesit-wrap' for the current buffer's language,
+and, if found, limits the indentation depth to one more than the
+topmost matching parent node's initial line's indentation depth.
+If `indent-bars-no-descend-string' is non-nil, also look for
+enclosing string and mark indent depth no deeper than one more
+than the starting line's depth."
+  (let* ((c (current-indentation))
+	 (d (indent-bars--depth c)))
+    (if indent-bars--update-depth-function
+	(setq d (funcall indent-bars--update-depth-function d)))
+    (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
+	(1+ d) d)))
+
 
 (defun indent-bars--blank-string (off nbars bar-from &optional width)
   "Return a blank string with bars displayed.
@@ -848,75 +832,6 @@ see `indent-bars-prefer-character')."
 			(propertize (string indent-bars-no-stipple-char)
 				    'face (indent-bars--face d))))))))
 
-;;;; Tree-sitter
-(defvar-local indent-bars--ts-parser nil)
-(defvar-local indent-bars--ts-query nil)
-(defvar-local indent-bars--ts-string-query nil)
-
-(defun indent-bars--ts-node-query (node query &optional start-only first-spanning)
-  "Capture node(s) spanning NODE matching QUERY.
-QUERY is a compiled treesit query.  If START-ONLY is non-nil, the
-query searches for matching nodes spanning the start of the node
-at point.  If FIRST-SPANNING is non-nil, return the first
-matching node, but only if it fully spans the start and end range
-of NODE."
-  (let* ((start (treesit-node-start node))
-	 (end (if start-only start (treesit-node-end node)))
-	 (nodes (treesit-query-capture indent-bars--ts-parser query
-				       start end t)))
-    (when (and first-spanning nodes)
-      (let ((n (car nodes)))
-	(setq nodes
-	      (and (<= (treesit-node-start n) start)
-		   (>= (treesit-node-end n) end)
-		   n))))
-    nodes))
-
-(defsubst indent-bars--indent-at-node (node)
-  "Return the current indentation at the start of NODE."
-  (save-excursion
-    (goto-char (treesit-node-start node))
-    (current-indentation)))
-
-(defun indent-bars--current-indentation-depth (&optional on-bar)
-  "Calculate current indentation depth.
-If ON-BAR is non-nil, report a line with content beginning on a
-bar position at that position.  If treesit support is enabled,
-searches for parent nodes with types specified in
-`indent-bars-treesit-wrap' for the current buffer's language,
-and, if found, limits the indentation depth to one more than the
-topmost matching parent node's initial line's indentation depth.
-If `indent-bars-no-descend-string' is non-nil, also look for
-enclosing string and mark indent depth no deeper than one more
-than the starting line's depth."
-  (let* ((c (current-indentation))
-	 (d (indent-bars--depth c))
-	 (p (point))
-	 (dnew (when-let ((indent-bars--ts-query)
-			  ((/= p (point-min)))
-			  (node (treesit-node-on (1- p) p indent-bars--ts-parser)))
-		 (if (and indent-bars-no-descend-string
-			  (indent-bars--ts-node-query
-			   node indent-bars--ts-string-query t))
-		     (1+ (indent-bars--depth (indent-bars--indent-at-node node)))
-		   (when-let ((ctx (indent-bars--ts-node-query
-				    node indent-bars--ts-query nil t)))
-		     (1+ (indent-bars--depth
-			  (indent-bars--indent-at-node ctx))))))))
-    (if dnew (setq d (min dnew d)))
-    (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
-	(1+ d) d)))
-
-(defun indent-bars--ignore-blank (beg)
-  "See if blank lines at BEG should be ignored using tree-sitter.
-Blank lines to ignore are those with types in
-`indent-bars-treesit-ignore-blank-lines-types'."
-  (and indent-bars--ts-parser
-       indent-bars-treesit-ignore-blank-lines-types
-       (when-let ((n (treesit-node-on beg beg)))
-	 (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
-			 (treesit-node-type n)))))
-
 ;;;; Font Lock
 (defvar-local indent-bars--font-lock-keywords nil)
 (defvar indent-bars--font-lock-blank-line-keywords nil)
@@ -948,18 +863,14 @@ the surrounding line indentation to determine additional bars to
 display on each line, using `indent-bars--draw-line'.
 
 Note: blank lines at the very beginning or end of the buffer are
-not indicated, even if otherwise they would be.  If
-`indent-bars-treesit-ignore-blank-lines-types' is configured,
-ignore blank lines whose starting positions are directly spanned
-by nodes of those types (e.g. module)."
+not indicated, even if they otherwise would be."
   (let* ((beg (match-beginning 0))
 	 (end (match-end 0))
 	 ctxbars)
     (save-excursion
       (goto-char (1- beg))
       (beginning-of-line 1)
-      (when (and (not (indent-bars--ignore-blank beg))
-		 (> (setq ctxbars (indent-bars--context-bars end)) 0))
+      (when (> (setq ctxbars (indent-bars--context-bars end)) 0)
 	(goto-char beg)
 	(while (< (point) end) ;note: end extends 1 char beyond blank line range
 	  (let* ((bp (line-beginning-position))
@@ -1176,28 +1087,6 @@ Adapted from `highlight-indentation-mode'."
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
 
-  ;; Treesitter
-  (when-let (((and indent-bars-treesit-support
-		   (fboundp #'treesit-available-p)
-		   (treesit-available-p)))
-	     (lang (treesit-language-at (point-min)))
-	     (types (alist-get lang indent-bars-treesit-wrap)))
-    (setq indent-bars--ts-parser
-	  (cl-find lang (treesit-parser-list) :key #'treesit-parser-language)
-	  indent-bars--ts-query
-	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
-    (when indent-bars-no-descend-string
-      (let ((query `([(,indent-bars-no-descend-string)] @s))
-	    (pm (point-min)))
-	(setq indent-bars--ts-string-query (treesit-query-compile lang query))
-	;; Test it to be sure
-	(condition-case err
-	    (treesit-query-capture indent-bars--ts-parser
-				   indent-bars--ts-string-query pm pm t)
-	  (treesit-query-error
-	   (setq indent-bars-no-descend-string nil)
-	   (message "indent-bars: malformed string query; disabling.  See indent-bars-no-descend-string.\n%s" err))))))
-
   ;; Current depth highlight
   (when indent-bars-highlight-current-depth
     (indent-bars--set-current-bg-color)
@@ -1211,6 +1100,9 @@ Adapted from `highlight-indentation-mode'."
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
   (indent-bars--resize-stipple)		; just in case
 
+  ;; Treesitter
+  (if indent-bars-treesit-support (indent-bars-ts-setup))
+  
   ;; Font-lock
   (indent-bars--setup-font-lock)
   (font-lock-flush))
