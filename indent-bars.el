@@ -29,8 +29,7 @@
 ;; (weight, pattern, position within the character, zigzag, etc.) are
 ;; all configurable.  Includes the option for depth-varying colors and
 ;; highlighting the indentation level of the current line.  Bars span
-;; blank lines, by default.  Optionally uses tree-sitter to fine-tune
-;; indentation depth.  indent-bars works in any mode using fixed tab
+;; blank lines, by default.  indent-bars works in any mode using fixed tab
 ;; or space-based indentation.  In the terminal (or on request) it
 ;; uses vertical bar characters instead of stipple patterns.
 
@@ -168,7 +167,7 @@ where:
 If non-nil, depth-based coloring is performed.  This should be a
 plist with keys:
 
-    (:regexp :face-bg :palette :blend)
+    ([:regexp [:face-bg] | :palette] [:blend])
 
 with:
 
@@ -200,8 +199,8 @@ with:
     beginning of the list.
 
   BLEND: a blend factor (0..1) which controls how palette colors
-    are blended with the main color, prior to blending with the
-    frame background color (see `indent-bars-color' for
+    are blended with the main color, prior to possibly blending
+    with the frame background color (see `indent-bars-color' for
     information on how blend factors are specified).  A nil value
     causes the palette colors to be used as-is.  A unity value
     causes the palette color to be blended directly with the
@@ -258,16 +257,16 @@ bar pattern.  At least one of :blend, :color, :palette, :face,
 :width, :pad, :pattern, or :zigzag must be set and non-nil for
 this setting to take effect.
 
-By default, the highlight color will be the same as the
-underlying color.  With PALETTE, COLOR or FACE set, all bars at
-the current depth will be highlighted in the appropriate color,
-either from an explicit PALETTE list (see
-`indent-bars-color-by-depth'), a COLOR, or, if FACE is set,
-FACE's foreground or background color (the latter if FACE-BG is
+By default, the highlighted bar's color will be the same as the
+underlying bar color.  With PALETTE, COLOR or FACE set, all bars
+at the current depth will be highlighted in the appropriate
+color, either from an explicit COLOR, a PALETTE list (see
+`indent-bars-color-by-depth'), or, if FACE is set, FACE's
+foreground or background color (the latter if FACE-BG is
 non-nil).  If PALETTE is provided, it overrides any other
-foreground color setting.  If BACKGROUND is set to a color, this
-will be used for the background color of the current
-bar (i.e. not the stipple color).
+foreground color setting for the current depth highlight bar.  If
+BACKGROUND is set to a color, this will be used for the
+background color of the current depth bar.
 
 If BLEND is provided, it is a blend fraction between 0 and 1 for
 blending the specified highlight color with the
@@ -276,16 +275,15 @@ for its meaning.  BLEND=1 indicates using the full, unblended
 highlight color (and is the same as omitting BLEND).
 
 As a special case, if BLEND is provided, but neither COLOR nor
-FACE is, this indicates using a (presumably distinct) blend
-factor between the usual color for that bar and the frame
-background for the current depth highlight.  The original colors
-are specified in `indent-bars-color-by-depth' or
-`indent-bars-color'.  In this manner the current-depth highlight
-can be made a more (or less) prominent version of the default
-coloring.
+FACE is, BLEND is used as a (presumably distinct) blend factor
+between the usual color for that bar and the frame background.
+The original colors are specified in `indent-bars-color-by-depth'
+or `indent-bars-color'.  In this manner the current-depth
+highlight can be made a more (or less) prominent version of the
+default coloring.
 
-If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the bar pattern
-at the current level will be altered as well.  Note that
+If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the stipple bar
+pattern at the current level will be altered as well.  Note that
 `indent-bars-width-frac', `indent-bars-pad-frac',
 `indent-bars-pattern', and `indent-bars-zigzag' will be used as
 defaults for any missing values; see these variables.
@@ -1135,7 +1133,7 @@ Adapted from `highlight-indentation-mode'."
   (unless (eq font-lock-unfontify-region-function #'indent-bars--unfontify)
     (setq indent-bars-orig-unfontify-region font-lock-unfontify-region-function))
   (setq-local font-lock-unfontify-region-function #'indent-bars--unfontify)
-  (setq indent-bars--font-lock-keywords
+  (setq indent-bars--font-lock-keywords ; basic blank prefix detection
 	`((,(rx-to-string `(seq bol
 				(group
 				 ,(if (not indent-tabs-mode)
@@ -1145,13 +1143,14 @@ Adapted from `highlight-indentation-mode'."
 	   (1 (indent-bars--display)))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
-      (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n))) ; multi-line blank region
+      (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n))) ; multi-line blank regions
 	(setq indent-bars--font-lock-blank-line-keywords
 	      `((,re (0 (indent-bars--handle-blank-lines)))))
 	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
 	(add-hook 'font-lock-extend-region-functions
 		  #'indent-bars--extend-blank-line-regions 95 t))))
 
+(declare-function indent-bars-ts-setup "indent-bars-ts")
 (defvar indent-bars-mode)
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
