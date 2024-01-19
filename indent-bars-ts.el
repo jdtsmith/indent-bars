@@ -207,23 +207,28 @@ by nodes of those types (e.g. module)."
   "Setup indent-bars for using with treesiter."
   (when-let (((fboundp #'treesit-available-p))
 	     ((treesit-available-p))
-	     (lang (treesit-language-at (point-min)))
-	     (types (alist-get lang indent-bars-treesit-wrap)))
+	     (lang (treesit-language-at (point-min))))
     (setq indent-bars-ts--parser
-	  (cl-find lang (treesit-parser-list) :key #'treesit-parser-language)
-	  indent-bars-ts--query
-	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
+	  (cl-find lang (treesit-parser-list) :key #'treesit-parser-language))
+
+    ;; Wrap: prevent additional bars inside wrapped entities
+    (when-let ((types (alist-get lang indent-bars-treesit-wrap)))
+      (setq indent-bars-ts--wrap-query
+	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))
+	    indent-bars--update-depth-function
+	    #'indent-bars-ts--update-indentation-depth))
+
+    ;; Strings (avoid descending deeper inside strings)
     (when indent-bars-no-descend-string
       (let ((query `([(,indent-bars-no-descend-string)] @s))
 	    (pm (point-min)))
 	(setq indent-bars-ts--string-query (treesit-query-compile lang query))
-	;; Test it to be sure
+	;; Test it to be sure it works
 	(condition-case err
 	    (treesit-query-capture indent-bars-ts--parser
 				   indent-bars-ts--string-query pm pm t)
 	  (treesit-query-error
 	   (setq indent-bars-no-descend-string nil)
-	   (message "indent-bars: malformed string query; disabling.  See indent-bars-no-descend-string.\n%s" err)))))
-    (setq indent-bars--update-depth-function
-	  #'indent-bars-ts--update-indentation-depth)
-    ))
+	   (message "%s. See `indent-bars-no-descend-string'.\n%s"
+		    "indent-bars: malformed string query; disabling"
+		    err)))))
