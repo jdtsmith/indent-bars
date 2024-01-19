@@ -202,6 +202,100 @@ by nodes of those types (e.g. module)."
   (unless (indent-bars-ts--ignore-blank (match-beginning 0))
     (indent-bars--handle-blank-lines)))
 
+
+;;;; Scope
+(defvar indent-bars-ts-faded-style nil)
+
+(cl-declaim (optimize (safety 0))) ; no need for type check
+(cl-defstruct
+    (indent-bars-ts-scope
+     (:copier nil)
+     (:conc-name ibts/)
+     (:constructor ibts/create))
+  (start (make-marker)) (end (make-marker))
+  (point -1) (tick 0) query)
+
+(defvar-local ibtcs nil  ; N.B. see shorthands at bottom of file
+  "The current `indent-bars-ts-scope' struct.")
+
+(defsubst indent-bars-ts--style (pos)
+  "Return the style to use based on pos.
+Returns the deemphasized style if POS is outside the current
+treesitter scope, nil otherwise"
+  (and ibtcs (or (< pos (ibts/start ibtcs)) (> pos (ibts/end ibtcs)))
+       indent-bars-ts-faded-style))
+
+(defun indent-bars-ts--symdiff (a b)
+    "Return the symmetric difference between ranges A and B.
+A and B ranges of (start . end) conses.  Their symmetric
+difference is a list of ranges, possibly nil, that one (but not
+both) of them cover."
+    (let ((l '()))
+      (if (< (car b) (car a)) (setq b (prog1 a (setq a b))))
+      (if (< (cdr a) (car b))
+          (push a l)
+        (unless (= (car a) (car b))
+          (push (cons (car a) (car b)) l)))
+      (if (> (car b) (cdr a))
+          (push b l)
+        (unless (= (cdr a) (cdr b))
+          (push (if (> (cdr a) (cdr b))
+                    (cons (cdr b) (cdr a))
+                  (cons (cdr a) (cdr b)))
+           l)))
+      l))
+
+(defun indent-bars-ts--update-scope1 ()
+  "Perform the treesitter scope update.
+If the buffer is modified or the point has moved, re-query the
+scope bounds.  If it has changed (beyond normal marker movement),
+refontify the symmetric difference between old and new
+ranges (i.e those ranges covered by either old or new, but not
+both)."
+  (unless (and (= (point) (ibts/point ibtcs))
+	       (= (buffer-modified-tick) (ibts/tick ibtcs)))
+    ;; scope may have changed
+    (when-let ((node (treesit-node-on
+		      (max (point-min) (1- (point))) (point)
+		      indent-bars-ts--parser))
+	       (scope (indent-bars-ts--node-query
+		       node (ibts/query ibtcs) nil 'innermost)))
+      (let ((bstart (ibts/start ibtcs))
+	    (bend (ibts/end ibtcs))
+	    (tstart (treesit-node-start scope))
+	    (tend (treesit-node-end scope)))
+	(unless (and (= tstart bstart) (= tend bend))
+	  (setf (ibts/tick ibtcs) (buffer-modified-tick)
+		(ibts/point ibtcs) (point))
+	  (set-marker (ibts/start ibtcs) tstart)
+	  (set-marker (ibts/end ibtcs) tend)
+	  (cl-loop for (beg . end) in
+		   (indent-bars-ts--symdiff
+		    (cons bstart bend) (cons tstart tend))
+		   do (font-lock-flush beg end)))))))
+
+(defvar indent-bars-ts--scope-timer nil)
+(defun indent-bars-ts--update-scope ()
+  "Update treesit scope when possible."
+  (if-let ((tmr indent-bars--highlight-timer))
+      (progn
+	(timer-set-time
+	 tmr (time-add (current-time) indent-bars-ts-update-delay))
+	(unless (memq tmr timer-list) (timer-activate tmr)))
+    (setq indent-bars-ts--scope-timer
+	  (run-with-timer indent-bars-ts-update-delay nil
+			  #'indent-bars-ts--update-scope1))))
+
+;;;; Setup
+(defun indent-bars-ts--init-scope ()
+  "Initialize scope style and variables."
+  (unless (get 'indent-bars-ts-setup :init-scope)
+    (indent-bars-ts--add-customs)
+    (setq indent-bars-ts-faded-style (indent-bars--new-style))
+    (let ((indent-bars-current-style indent-bars-ts-faded-style))
+      (indent-bars--initialize-style))
+    (put 'indent-bars-ts-setup :init-scope t)))
+
 ;;;###autoload
 (defun indent-bars-ts-setup ()
   "Setup indent-bars for using with treesiter."
@@ -232,3 +326,18 @@ by nodes of those types (e.g. module)."
 	   (message "%s. See `indent-bars-no-descend-string'.\n%s"
 		    "indent-bars: malformed string query; disabling"
 		    err)))))
+
+    ;; Emphasis Scope: use alternate styling outside current scope
+    (when-let ((types (alist-get lang indent-bars-treesit-emphasis-scope)))
+      (indent-bars-ts--init-scope)
+      (setq ibtcs (ibts/create))
+      (setf (ibts/query ibtcs)
+	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))
+    
+    (setq indent-bars--style-function #'indent-bars-ts--style)))
+
+(provide 'indent-bars-ts)
+;;; indent-bars-ts.el ends here
+;; Local Variables:
+;; read-symbol-shorthands: (("ibts/" . "indent-bars-ts-scope-") ("ibtcs" . "indent-bars-ts-current-scope"))
+;; End:
