@@ -50,11 +50,10 @@
 ;; To temporarily alter the current style, it's enough to bind the
 ;; variable `indent-bars-current-style' dynamically.
 ;;
-;; Note the shorthand substitutions for style related prefixes (slot
-;; accessors and variable; see file-local-variables at the end):
+;; Note the shorthand substitution for style related slot
+;; (see file-local-variables at the end):
 ;; 
 ;;    ibs/  => indent-bars-style-
-;;    ibcs  => indent-bars-current-style
 
 ;;; Code:
 ;;;; Requires
@@ -1360,7 +1359,9 @@ Adapted from `highlight-indentation-mode'."
   (font-lock-flush)
   (font-lock-ensure)
   
-  (setq font-lock-unfontify-region-function indent-bars-orig-unfontify-region)
+  (when indent-bars-orig-unfontify-region
+    (setq font-lock-unfontify-region-function
+	  indent-bars-orig-unfontify-region))
   (setq indent-bars--gutter-rot 0
 	indent-bars--current-depth 0
 	indent-bars--styles nil)
