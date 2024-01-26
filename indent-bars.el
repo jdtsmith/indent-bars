@@ -471,13 +471,9 @@ returned."
 			  ((color-defined-p el) el)
 			  (t nil)))))
 ;;;; Style
-;; Note: many style setting functions inspect the value of
-;; `indent-bars-current-style' (AKA `ibcs', in this file _only_), to
-;; access information about the current style.  Alternative styling
-;; may be applied by dynamically binding this variable during calls to
-;; these functions.
-(defvar-local indent-bars-current-style nil ; AKA ibcs herein
-  "The active indent-bars style struct.")
+(defvar-local indent-bars-style nil
+  "The `indent-bars-style' struct for the main style.")
+
 (defvar indent-bars--styles nil
   "List of known indent-bars style structs.")
 
@@ -525,14 +521,14 @@ May be nil, a color string or a vector of colors strings.")
     style))
 
 ;;;;; Colors
-(defun indent-bars--main-color (&optional tint tint-blend blend-override)
-  "Calculate the main bar color.
+(defun indent-bars--main-color (style &optional tint tint-blend blend-override)
+  "Calculate the main bar color for STYLE.
 Uses `indent-bars-color' for color and background blend config.
 If TINT and TINT-BLEND are passed, first blend the TINT color
 into the main color with the requested blend, prior to blending
 into the background color.  If BLEND-OVERRIDE is set, use it
 instead of the :blend factor in `indent-bars-color'."
-  (cl-destructuring-bind (main &key face-bg blend) (indent-bars--style "color")
+  (cl-destructuring-bind (main &key face-bg blend) (indent-bars--style style "color")
     (let ((col (cond ((facep main)
 		      (funcall (if face-bg #'face-background #'face-foreground)
 			       main))
@@ -545,12 +541,12 @@ instead of the :blend factor in `indent-bars-color'."
 		     col (indent-bars--frame-background-color) blend)))
       col)))
 
-(defun indent-bars--depth-palette (&optional blend-override)
-  "Calculate the palette of depth-based colors (a vector).
+(defun indent-bars--depth-palette (style &optional blend-override)
+  "Calculate the palette of depth-based colors (a vector) for STYLE.
 If BLEND-OVERRIDE is set, the main color's :blend will be ignored
 and this value will be used instead, for blending into the frame
 background color.  See `indent-bars-color-by-depth'."
-  (when-let ((cbd (indent-bars--style "color-by-depth")))
+  (when-let ((cbd (indent-bars--style style "color-by-depth")))
     (cl-destructuring-bind (&key regexp face-bg palette blend) cbd
       (let ((colors
 	     (cond
@@ -561,24 +557,25 @@ background color.  See `indent-bars-color-by-depth'."
 	(vconcat
 	 (if (or blend blend-override)
 	     (mapcar (lambda (c)
-		       (indent-bars--main-color c blend blend-override))
+		       (indent-bars--main-color style c blend blend-override))
 		     colors)
 	   colors))))))
 
-(defun indent-bars--current-depth-palette ()
-  "Colors for highlighting the current depth bar.
+(defun indent-bars--current-depth-palette (style)
+  "Colors for highlighting the current depth bar for STYLE.
 A color or palette (vector) of colors is returned, which may be
 nil, in which case no special current depth-coloring is used.
 See `indent-bars-highlight-current-depth' for configuration."
-  (when-let ((hcd (indent-bars--style "highlight-current-depth")))
-    (cl-destructuring-bind (&key color face face-bg blend palette &allow-other-keys) hcd
+  (when-let ((hcd (indent-bars--style style "highlight-current-depth")))
+    (cl-destructuring-bind (&key color face face-bg
+				 blend palette &allow-other-keys)
+	hcd
       (let ((color
 	     (cond
 	      ((facep face)
 	       (funcall (if face-bg #'face-background #'face-foreground)
 			face))
 	      ((and color (color-defined-p color)) color))))
-
 	(cond
 	 ;; An explicit palette
 	 (palette
@@ -589,92 +586,90 @@ See `indent-bars-highlight-current-depth' for configuration."
 	  (if (string= color "unspecified-fg")
 	      (setq color indent-bars-unspecified-fg-color))
 	  (if blend
-	      (if-let ((palette (indent-bars--depth-palette))) ; blend into normal depth palette
+	      (if-let ((palette (indent-bars--depth-palette style))) ; blend into normal depth palette
 		  (vconcat
 		   (mapcar (lambda (c)
 			     (indent-bars--blend-colors color c blend))
 			   palette))
 		;; Just blend into main color
-		(indent-bars--blend-colors color (ibs/main-color ibcs) blend))
+		(indent-bars--blend-colors color (ibs/main-color style) blend))
 	    color))
 	 
 	 ;; blend-only without a specified color: re-blend originals with BG
 	 (blend
 	  (or (indent-bars--depth-palette blend)
-	      (indent-bars--main-color nil nil blend))))))))
+	      (indent-bars--main-color style nil nil blend))))))))
 
-(defun indent-bars--get-color (depth  &optional current-highlight)
-  "Return the color appropriate for indentation DEPTH.
+(defun indent-bars--get-color (style depth  &optional current-highlight)
+  "Return the color appropriate for indentation DEPTH in STYLE.
 If CURRENT-HIGHLIGHT is non-nil, return the appropriate highlight
 color, if setup (see `indent-bars-highlight-current-depth')."
   (let* ((palette (or (and current-highlight
-			   (ibs/current-depth-palette ibcs))
-		      (ibs/depth-palette ibcs))))
+			   (ibs/current-depth-palette style))
+		      (ibs/depth-palette style))))
     (cond
      ((vectorp palette)
       (aref palette (mod (1- depth) (length palette))))
      (palette)  ; single color
-     (t (ibs/main-color ibcs)))))
+     (t (ibs/main-color style)))))
 
 ;;;;; Faces
 (defun indent-bars--create-stipple-face (w h rot)
   "Create and set the stipple face.
 Create for character size W x H with offset ROT."
-  (face-spec-set
-   (ibs/stipple-face ibcs)
-   `((t ( :inherit nil :stipple ,(indent-bars--stipple w h rot)
-	  ,@(when indent-bars-no-stipple-char-font-weight
-              `(:weight ,indent-bars-no-stipple-char-font-weight)))))))
+  `((t ( :inherit nil :stipple ,(indent-bars--stipple w h rot)
+	 ,@(when indent-bars-no-stipple-char-font-weight
+             `(:weight ,indent-bars-no-stipple-char-font-weight))))))
 
-(defun indent-bars--calculate-face-spec (depth)
-  "Calculate the face spec for indentation bar at an indentation DEPTH.
+(defun indent-bars--calculate-face-spec (style depth)
+  "Calculate the face spec for bar at DEPTH in STYLE.
 DEPTH starts at 1."
-  `((t . ( :inherit ,(ibs/stipple-face ibcs)
-	   :foreground ,(indent-bars--get-color depth)))))
+  `((t . ( :inherit ,(ibs/stipple-face style)
+	   :foreground ,(indent-bars--get-color style depth)))))
 
-(defun indent-bars--create-faces (num &optional redefine)
-  "Create bar faces up to depth NUM, redefining them if REDEFINE is non-nil.
-Saves the vector of face symbols in variable
-`indent-bars--faces'."
-  (setf (ibs/faces ibcs)
-	(vconcat
-	 (cl-loop
-	  with tag = (ibs/tag ibcs)
-	  with tag-s = (if tag (format "-%s" tag) "")
-	  for i from 1 to num
-	  for face = (intern (format "indent-bars%s-%d" tag-s i)) do
-	  (if (and redefine (facep face)) (face-spec-reset-face face))
-	  (face-spec-set face (indent-bars--calculate-face-spec i))
-	  collect face))))
+(defun indent-bars--create-faces (style num &optional redefine)
+  "Create bar faces up to depth NUM for STYLE.
+Redefine them if REDEFINE is non-nil."
+  (vconcat
+   (cl-loop
+    with tag = (ibs/tag style)
+    with tag-s = (if tag (format "-%s" tag) "")
+    for i from 1 to num
+    for face = (intern (format "indent-bars%s-%d" tag-s i)) do
+    (if (and redefine (facep face)) (face-spec-reset-face face))
+    (face-spec-set face (indent-bars--calculate-face-spec style i))
+    collect face)))
 
-(defsubst indent-bars--face (depth)
-  "Return the bar face for bar DEPTH, creating it if necessary."
-  (when (> depth (length (ibs/faces ibcs)))
-    (indent-bars--create-faces depth))
-  (aref (ibs/faces ibcs) (1- depth)))
+(defsubst indent-bars--face (style depth)
+  "Return the bar face for bar DEPTH in STYLE.
+The face is created if necessary."
+  (when (> depth (length (ibs/faces style)))
+    (setf (ibs/faces style)
+	  (indent-bars--create-faces style depth)))
+  (aref (ibs/faces style) (1- depth)))
 
 ;;;;; No stipple characters (e.g. terminal)
-(defun indent-bars--no-stipple-char (depth)
-  "Return the no-stipple bar character for DEPTH."
-  (if (> depth (length (ibs/no-stipple-chars ibcs)))
-      (indent-bars--create-no-stipple-chars depth))
-  (aref (ibs/no-stipple-chars ibcs) (1- depth)))
+(defun indent-bars--no-stipple-char (style depth)
+  "Return the no-stipple bar character for DEPTH in STYLE."
+  (when (> depth (length (indent-bars-style-no-stipple-chars style)))
+    (setf (indent-bars-style-no-stipple-chars style)
+	  (indent-bars--create-no-stipple-chars style depth)))
+  (aref (ibs/no-stipple-chars style) (1- depth)))
 
-(defun indent-bars--create-no-stipple-chars (num)
-  "Setup bar characters for bar faces up to depth NUM.
+(defun indent-bars--create-no-stipple-chars (style num)
+  "Setup bar characters for bar faces up to depth NUM in STYLE.
 Used when not using stipple display (on terminal, or by request;
 see `indent-bars-prefer-character')."
-  (setf (ibs/no-stipple-chars ibcs)
-   (vconcat
-    (nreverse
-     (cl-loop
-      with chars = (ibs/no-stipple-chars ibcs)
-      with l = (length chars)
-      for d from num downto 1
-      collect
-      (or (and (< d l) (aref chars (1- d)))
-	  (propertize (string indent-bars-no-stipple-char)
-		      'face (indent-bars--face d))))))))
+  (vconcat
+   (nreverse
+    (cl-loop
+     with chars = (ibs/no-stipple-chars style)
+     with l = (length chars)
+     for d from num downto 1
+     collect
+     (or (and (< d l) (aref chars (1- d)))
+	 (propertize (string indent-bars-no-stipple-char)
+		     'face (indent-bars--face style d)))))))
 
 ;;;;; Package
 (defmacro indent-bars--alt-custom
@@ -741,11 +736,22 @@ NAME is a string, and ALT and be a string or nil."
   (intern (format "indent-bars%s-%s"
 		  (if alt (concat "-" alt) "") name)))
 
-(defun indent-bars--style (name)
-  "Return the value of style variable NAME.
-Determines variables based on the current active style.
-Inheritance of plists is properly handled."
-  (let* ((tag (ibs/tag ibcs))
+(defun indent-bars--style (style name)
+  "Return the value of style variable NAME for STYLE.
+Determines variables to use based on the style tag.  For style
+variable values of the form (\\='inherit|\\='no-inherit . plist),
+inheritance of the plist is handled.  If style is the symbol
+\\='any, return the first non-nil value for all styles in
+`indent-bars--styles'."
+  (if (eq style 'any)
+      (cl-some (lambda (s) (indent-bars--style1 s name))
+	       indent-bars--styles)
+    (indent-bars--style1 style name)))
+
+
+(defun indent-bars--style1 (style name)
+  "Return the value of style variable NAME for STYLE."
+  (let* ((tag (indent-bars-style-tag style))
 	 (sym (indent-bars--alt name tag))
 	 (val (symbol-value sym))
 	 (inhrt t))			; inherit by default
@@ -760,7 +766,7 @@ Inheritance of plists is properly handled."
 	(setq val (map-merge 'plist main-val val))))
     val))
 
-;;;; Indentation
+;;;; Indentation and Drawing
 (defvar-local indent-bars-spacing nil)
 (defvar-local indent-bars--offset nil)
 (defvar-local indent-bars--no-stipple nil)
@@ -788,69 +794,91 @@ depth."
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
 	(1+ d) d)))
 
+(defun indent-bars--blank-string (style off nbars bar-from
+					&optional width
+					switch-after style2)
+  "Return a blank string with bars displayed, using style STYLE.
+OFF is the character offset within the string to draw the first
+bar, NBARS is the desired number of bars to add, and BAR-FROM is
+the starting index of the first bar (>=1).  WIDTH is the total
+string width to return, right padding with space if needed.
 
-(defun indent-bars--blank-string (off nbars bar-from &optional width)
-  "Return a blank string with bars displayed.
-OFF is character offset for the first bar, NBARS is the desired
-number of bars to add, and BAR-FROM is the starting index of the
-first bar (>=1).  WIDTH is the string width to return, right
-padding with space if needed.  Bars are displayed using stipple
-properties or characters; see `indent-bars-prefer-character'."
+If SWITCH-AFTER is supplied and is an integer, switch from STYLE
+to STYLE2 after drawing that many bars.  If it is t, use
+STYLE2 for all bars.
+
+Bars are displayed using stipple properties or characters; see
+`indent-bars-prefer-character'."
   (concat (make-string off ?\s)
 	  (string-join
-	   (cl-loop for depth from bar-from to (+ bar-from nbars -1)
-		    collect (if indent-bars--no-stipple
-				(indent-bars--no-stipple-char depth)
-			      (propertize " " 'face (indent-bars--face depth))))
+	   (cl-loop
+	    for i from 0 to (1- nbars)
+	    for depth = (+ bar-from i)
+	    for sty = (if switch-after
+			  (if (or (eq switch-after t)
+				  (>= i switch-after))
+			      style2
+			    style)
+			style)
+	    collect (if indent-bars--no-stipple
+			(indent-bars--no-stipple-char sty depth)
+		      (propertize " " 'face (indent-bars--face sty depth))))
 	   (make-string (1- indent-bars-spacing) ?\s))
 	  (if width
 	      (make-string (- width
 			      (+ off nbars (* (1- nbars) (1- indent-bars-spacing))))
 			   ?\s))))
 
-(defun indent-bars--tab-display (p off bar-from max)
+(defun indent-bars--tab-display (style p off bar-from max &rest r)
   "Display up to MAX bars on the tab at P, offseting them by OFF.
-Bars are spaced by `indent-bars-spacing'.  BAR-FROM is the bar
-number for the first bar.  Returns the number of bars actually
-displayed."
+Bars are spaced by `indent-bars-spacing' and displayed with style
+STYLE.  BAR-FROM is the bar number for the first bar.  Other
+arguments R are passed to `indent-bars--blank-string'.  Returns
+the number of bars actually displayed."
   (let* ((nb (min max (/ (- tab-width off -1) indent-bars-spacing)))
-	 (str (indent-bars--blank-string off nb bar-from tab-width)))
+	 (str (apply #'indent-bars--blank-string style off nb
+		     bar-from tab-width r)))
     (put-text-property p (+ p 1) 'display str)
     nb))
 
-(defvar indent-bars--style-function nil
-  "An optional function of one argument to set the draw style.
-It should return nil for the main style, or an
-`indent-bars-style' struct, otherwise.")
-
-(defun indent-bars--draw-line (nbars start end &optional invent)
-  "Draw NBARS bars on the line between START and END.
+(defun indent-bars--draw-line (style nbars start end &optional
+				     invent switch-after style2)
+  "Draw NBARS bars on the line between positions START and END.
+Bars are drawn in style STYLE, `indent-bars-style' by default
 START is assumed to be on a line beginning position.  Drawing
 starts at a column determined by `indent-bars-starting-column'.
-Tabs at the line beginning are replaced with display properties,
-if `indent-tabs-mode' is enabled.  If INVENT is non-nil and the
-line's length is insufficient to display all NBARS bars (whether
-by replacing tabs or adding properties to existing non-tab
-whitespace), bars will be \"invented\".  That is, the line's
-final newline, which is (only in this case) expected to be
-located at END, will have its display properties set to fill out
-the remaining bars, if any are needed."
+Tabs at the line beginning have appropriate display properties
+applied if `indent-tabs-mode' is enabled.
+
+If SWITCH-AFTER is an integer, switch from STYLE to STYLE2
+after drawing that many bars.  If it is t, use STYLE2
+exclusively.
+
+If INVENT is non-nil and the line's length is insufficient to
+display all NBARS bars (whether by replacing tabs or adding
+properties to existing non-tab whitespace), bars will be
+\"invented\".  That is, the line's final newline, which is (only
+in this case) expected to be located at END, will have its
+display properties set to fill out the remaining bars, if any are
+needed."
   (let* ((tabs (when (and indent-tabs-mode
 			  (save-excursion
 			    (goto-char start) (looking-at "^\t+")))
 		 (- (match-end 0) (match-beginning 0))))
 	 (vp indent-bars--offset)
-	 (ibcs ; DYNAMIC VAR!!! pick appropriate style
-	  (or (and indent-bars--style-function
-		   (funcall indent-bars--style-function start))
-	      ibcs))
-	 (bar 1) prop fun tnum bcount)
+	 (style (or style indent-bars-style))
+	 (bar 1) prop fun tnum bars-drawn)
     (when tabs				; deal with initial tabs
       (while (and (<= bar nbars) (< (setq tnum (/ vp tab-width)) tabs))
-	(setq bcount (indent-bars--tab-display (+ start tnum) (mod vp tab-width)
-					       bar (- nbars bar -1)))
-	(cl-incf bar bcount)
-	(cl-incf vp (* bcount indent-bars-spacing)))
+	(setq bars-drawn
+	      (indent-bars--tab-display style (+ start tnum) (mod vp tab-width)
+					bar (- nbars bar -1)
+					switch-after style2))
+	(when (integerp switch-after)
+	  (cl-decf switch-after bars-drawn)
+	  (if (<= switch-after 0) (setq switch-after t))) ; switch the rest
+	(cl-incf bar bars-drawn)
+	(cl-incf vp (* bars-drawn indent-bars-spacing)))
       (cl-incf start (+ (mod vp tab-width) (/ vp tab-width))))
     (when (<= bar nbars)		; still bars to show
       (if indent-bars--no-stipple
@@ -858,13 +886,24 @@ the remaining bars, if any are needed."
 	(setq prop 'face fun #'indent-bars--face))
       (let ((pos (if tabs start (+ start indent-bars--offset))))
 	(while (and (<= bar nbars) (< pos end))
-	  (put-text-property pos (1+ pos) prop (funcall fun bar))
+	  (put-text-property pos (1+ pos)
+			     prop (funcall fun
+					   (cond ((integerp switch-after)
+						  (cl-decf switch-after)
+						  (if (<= switch-after 0)
+						      (setq switch-after t))
+						  style2)
+						 ((eq switch-after t) style2)
+						 (t style))
+					   bar))
 	  (cl-incf bar)
 	  (cl-incf pos indent-bars-spacing))
 	(if (and invent (<= bar nbars)) ; STILL bars to show: invent them
 	    (put-text-property
 	     end (1+ end) 'display
-	     (concat (indent-bars--blank-string (- pos end) (- nbars bar -1) bar nil)
+	     (concat (indent-bars--blank-string
+		      style (- pos end) (- nbars bar -1) bar nil
+		      switch-after style2)
 		     "\n")))))))
 
 ;;;; Stipple Display
@@ -1004,15 +1043,21 @@ font-lock properties."
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
 
-(defun indent-bars--display ()
-  "Display indentation bars based on line contents."
+;; local variables to be dynamically bound
+(defvar-local indent-bars--switch-after nil)
+
+(defun indent-bars--display (&optional style switch-after style2)
+  "Draw indentation bars based on line contents.
+STYLE, SWITCH-AFTER and STYLE2 are as in
+`indent-bars--draw-line'.  If STYLE is not passed, uses
+`indent-bars-style' for drawing."
   (let* ((b (match-beginning 1))
 	 (e (match-end 1))
 	 (n (save-excursion
 	      (goto-char b)
 	      (indent-bars--current-indentation-depth))))
-    (when (> n 0) (indent-bars--draw-line n b e)))
-  nil)
+    (when (> n 0) (indent-bars--draw-line style n b e nil
+					  switch-after style2))))
 
 (defsubst indent-bars--context-bars (end)
   "Maximum number of bars at point and END.
@@ -1022,16 +1067,18 @@ Moves point."
 	 (goto-char (1+ end))		; end is always eol
 	 (indent-bars--current-indentation-depth))))
 
-(defun indent-bars--handle-blank-lines ()
+(defun indent-bars--handle-blank-lines (&optional style switch-after style2)
   "Display the appropriate bars on regions of one or more blank-only lines.
 The region is the full match region of the last match.  Only
 called by font-lock if `indent-bars-display-on-blank-lines' is
 non-nil.  Called on complete multi-line blank line regions.  Uses
 the surrounding line indentation to determine additional bars to
-display on each line, using `indent-bars--draw-line'.
+display on each line, using `indent-bars--draw-line'.  STYLE,
+SWITCH-AFTER and STYLE2 are as in `indent-bars--draw-line'.
 
 Note: blank lines at the very beginning or end of the buffer are
-not indicated, even if they otherwise would be."
+not indicated, even if they otherwise would be.  This function is
+configured by default in `indent-bars--handle-blank-lines-form'."
   (let* ((beg (match-beginning 0))
 	 (end (match-end 0))
 	 ctxbars)
@@ -1045,7 +1092,8 @@ not indicated, even if they otherwise would be."
 		 (ep (line-end-position))
 		 (pm (point-max)))
 	    (unless (= ep pm)
-	      (indent-bars--draw-line ctxbars bp ep 'invent))
+	      (indent-bars--draw-line style ctxbars bp ep 'invent
+				      switch-after style2))
 	    (beginning-of-line 2)))))))
 
 (defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
@@ -1069,25 +1117,24 @@ not indicated, even if they otherwise would be."
 ;;;; Current indentation depth highlighting
 (defvar-local indent-bars--current-depth 0)
 
-(defun indent-bars--set-current-bg-color ()
-  "Record the current bar background color."
-  (cl-destructuring-bind (&key background &allow-other-keys)
-      (indent-bars--style "highlight-current-depth")
-    (setf (ibs/current-bg-color ibcs) background)))
+(defun indent-bars--current-bg-color (style)
+  "Return the current bar background color appropriate for STYLE."
+  (when-let ((hcd
+	      (indent-bars--style style "highlight-current-depth")))
+    (plist-get hcd :background)))
 
-(defun indent-bars--set-current-depth-stipple (&optional w h rot)
-  "Set the current depth stipple highlight (if any).
+(defun indent-bars--current-depth-stipple (style &optional w h rot)
+  "Return the current depth stipple highlight (if any) for STYLE.
 One of the keywords :width, :pad, :pattern, or :zigzag must be
 set in `indent-bars-highlight-current-depth' config.  W, H, and
 ROT are as in `indent-bars--stipple', and have similar default values."
   (cl-destructuring-bind (&key width pad pattern zigzag &allow-other-keys)
-      (indent-bars--style "highlight-current-depth")
+      (indent-bars--style style "highlight-current-depth")
     (when (or width pad pattern zigzag)
       (let* ((w (or w (window-font-width)))
 	     (h (or h (window-font-height)))
 	     (rot (or rot (indent-bars--stipple-rot w))))
-	(setf (ibs/current-depth-stipple ibcs)
-	      (indent-bars--stipple w h rot width pad pattern zigzag))))))
+	(indent-bars--stipple w h rot width pad pattern zigzag)))))
 
 (defun indent-bars--update-current-depth-highlight (depth)
   "Update highlight for the current DEPTH.
@@ -1097,8 +1144,7 @@ greater than zero."
   (dolist (s indent-bars--styles)
     (if (ibs/remap s)			; out with the old
 	(face-remap-remove-relative (ibs/remap s)))
-    (let* ((ibcs s) ; DYNAMIC VAR!!!
-	   (face (indent-bars--face depth))
+    (let* ((face (indent-bars--face s depth))
 	   (hl-col (and (ibs/current-depth-palette s)
 			(indent-bars--get-color depth 'highlight)))
 	   (hl-bg (ibs/current-bg-color s)))
@@ -1151,16 +1197,16 @@ will be calculated."
   (dolist (s indent-bars--styles)
     (if (ibs/remap s)
 	(face-remap-remove-relative (ibs/remap s)))
-    (let* ((ibcs s) ; DYNAMIC VAR!!
-	   (w (or w (window-font-width)))
+    (let* ((w (or w (window-font-width)))
 	   (rot (or rot (indent-bars--stipple-rot w)))
 	   (h (window-font-height)))
       (setf (ibs/remap s)
 	    (face-remap-add-relative
 	     (ibs/stipple-face s)
 	     :stipple (indent-bars--stipple w h rot)))
-      (when (ibs/current-depth-stipple ibcs)
-	(indent-bars--set-current-depth-stipple w h rot)
+      (when (ibs/current-depth-stipple s)
+	(setf (ibs/current-depth-stipple s)
+	      (indent-bars--current-depth-stipple s w h rot))
 	(setq indent-bars--current-depth 0)
 	(indent-bars--highlight-current-depth)))))
 
@@ -1276,18 +1322,11 @@ Adapted from `highlight-indentation-mode'."
 	(or (not (display-graphic-p)) indent-bars-prefer-character))
 
   ;; Style (color + stipple)
-  (setq ibcs (indent-bars--new-style)) 	; default style
-  (indent-bars--initialize-style)
+  (indent-bars--initialize-style	; default style
+   (setq indent-bars-style (indent-bars--new-style)))
 
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
-  
-  ;; Current depth
-  (when (indent-bars--style "highlight-current-depth")
-    (add-hook 'post-command-hook
-	      #'indent-bars--highlight-current-depth nil t)
-    (setq indent-bars--current-depth 0)
-    (indent-bars--highlight-current-depth))
 
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
@@ -1295,6 +1334,13 @@ Adapted from `highlight-indentation-mode'."
 
   ;; Treesitter
   (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
+
+  ;; Current depth
+  (when (indent-bars--style 'any "highlight-current-depth")
+    (add-hook 'post-command-hook
+	      #'indent-bars--highlight-current-depth nil t)
+    (setq indent-bars--current-depth 0)
+    (indent-bars--highlight-current-depth))
   
   ;; Font-lock
   (indent-bars--setup-font-lock)
@@ -1354,5 +1400,5 @@ Adapted from `highlight-indentation-mode'."
 
 ;;; indent-bars.el ends here
 ;; Local Variables:
-;; read-symbol-shorthands: (("ibs/" . "indent-bars-style-") ("ibcs" . "indent-bars-current-style"))
+;; read-symbol-shorthands: (("ibs/" . "indent-bars-style-"))
 ;; End:
