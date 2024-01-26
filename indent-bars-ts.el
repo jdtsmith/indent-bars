@@ -300,9 +300,11 @@ both)."
 			  #'indent-bars-ts--update-scope1))))
 
 ;;;; Setup
-(defun indent-bars-ts--init-scope ()
-  "Initialize scope style and variables."
-  (unless (get 'indent-bars-ts-setup :init-scope)
+(defun indent-bars-ts--init-scope (&optional force)
+  "Initialize scope style and variables.
+If FORCE is non-nil, initialize even if this has already been
+performed."
+  (unless (or force (get 'indent-bars-ts-setup :init-scope))
     (indent-bars-ts--add-customs)
     (indent-bars--initialize-style
      (setq indent-bars-ts-out-scope-style (indent-bars--new-style)))
