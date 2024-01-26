@@ -9,9 +9,9 @@
 ;;    (avoiding "too many bars" in e.g. argument lists)
 ;;  - Uses treesitter to avoid adding bars to blank lines in strings
 ;;    or other configurable node types.
-;;  - Enable alternate faded styling for bars outside the treesitter
-;;    "scope", where scope is defined as the wrapping elements
-;;    configured in `indent-bars-ts`.
+;;  - Enable alternate out-of-scop styling for bars outside the
+;;    treesitter "scope", where scope is defined as the wrapping
+;;    elements configured in `indent-bars-treesitscope`.
 
 ;; For Developers:
 ;;
@@ -34,17 +34,17 @@
   :group 'indent-bars
   :prefix "indent-bars-ts-")
 
-(defgroup indent-bars-ts-style nil
-  "Customization group for indent-bars treesitter styling."
+(defgroup indent-bars-ts-oos-style nil
+  "Customization group for indent-bars treesitter out-of-scope styling."
   :group 'indent-bars
-  :prefix "indent-bars-ts-")
+  :prefix "indent-bars-ts-oos-")
 
 ;;;;; Alternate Style Variables
 (defun indent-bars-ts--add-customs ()
-  "Add all the relevant custom variables for the de-emphasized style."
+  "Add all the relevant custom variables for the out-of-scope style."
   (cl-labels ((ts-cust (var &rest r)
 		(eval `(indent-bars--alt-custom
-			"ts" ,var "Tree-sitter (de-emphasized)" ,@r))))
+			"ts-os" ,var "Tree-sitter (out-of-scope)" ,@r))))
       (ts-cust 'color '(nil :blend 0.1) 'add-inherit)
       (dolist (c '( width-frac pad-frac pattern zigzag ;simple types
 		    no-stipple-char-font-weight))
@@ -66,11 +66,11 @@ valid node types for the grammar of the language indicated."
 			:value-type (repeat :tag "Types" (symbol :tag "Type"))))
   :group 'indent-bars-ts)
 
-(defcustom indent-bars-treesit-emphasis-scope nil
+(defcustom indent-bars-treesit-scope nil
   "An alist of language and treesitter node types to emphasize.
 If non-nil, indentation bars on text outside of the innermost
-matching treesitter scope will be de-emphasized using the
-alternative style specified in the indent-bars-ts-* custom
+matching treesitter scope will use the alternative
+\"out-of-scope\"style specified in the indent-bars-ts-os-* custom
 variables, which mirror and inherit from the normal style
 variables."
   :type '(choice (const :tag "No scope types" nil)
@@ -103,8 +103,7 @@ is disabled."
 
 (defcustom indent-bars-ts-update-delay 0.125
   "Minimum delay time in seconds between treesitter scope updates.
-Has effect only if `indent-bars-treesit-emphasis-scope' is
-non-nil."
+Has effect only if `indent-bars-treesit-scope' is non-nil."
   :type 'float
   :group 'indent-bars-ts)
 
@@ -124,12 +123,12 @@ Otherwise return nil."
 (defun indent-bars-ts--node-query (node query &optional start-only spanning)
   "Capture node(s) matching QUERY which overlap with NODE.
 QUERY is a compiled treesit query.  If START-ONLY is non-nil, the
-query searches for matching nodes which overlap with the start of
-the node at point.  Otherwise nodes which intersect anywhere with
+query searches for matching nodes which overlap with NODE's
+starting position.  Otherwise nodes which intersect anywhere with
 NODE will be returned.
 
 If SPANNING is non-nil, return a single spanning node which fully
-spans the full start..end range of NODE (or just the start ,if
+spans the start..end range of NODE, if any (or just the start, if
 START-ONLY is non-nil).  If SPANNING is \\='innermost, return the
 latest (innermost) node on the list which fully spans NODE, which
 could include NODE itself if it matches the QUERY.  For any other
@@ -202,10 +201,10 @@ by nodes of those types (e.g. module)."
   (unless (indent-bars-ts--ignore-blank (match-beginning 0))
     (indent-bars--handle-blank-lines)))
 
+;; see also ts--handle-blank-lines, below
 
-;;;; Scope
-(defvar indent-bars-ts-faded-style nil)
-
+;;;; Scope Highlighting
+(defvar indent-bars-ts-out-scope-style nil)
 (cl-declaim (optimize (safety 0))) ; no need for type check
 (cl-defstruct
     (indent-bars-ts-scope
@@ -218,12 +217,11 @@ by nodes of those types (e.g. module)."
 (defvar-local ibtcs nil  ; N.B. see shorthands at bottom of file
   "The current `indent-bars-ts-scope' struct.")
 
-(defsubst indent-bars-ts--style (pos)
-  "Return the style to use based on pos.
-Returns the deemphasized style if POS is outside the current
-treesitter scope, nil otherwise"
-  (and ibtcs (or (< pos (ibts/start ibtcs)) (> pos (ibts/end ibtcs)))
-       indent-bars-ts-faded-style))
+(defsubst indent-bars-ts--out-of-scope (pos)
+  "Return whether POS is outside the current treesitter scope.
+If there is no scope defined, every position is considered in
+scope."
+  (and ibtcs (or (< pos (ibts/start ibtcs)) (> pos (ibts/end ibtcs)))))
 
 (defun indent-bars-ts--symdiff (a b)
     "Return the symmetric difference between ranges A and B.
@@ -291,9 +289,8 @@ both)."
   "Initialize scope style and variables."
   (unless (get 'indent-bars-ts-setup :init-scope)
     (indent-bars-ts--add-customs)
-    (setq indent-bars-ts-faded-style (indent-bars--new-style))
-    (let ((indent-bars-current-style indent-bars-ts-faded-style))
-      (indent-bars--initialize-style))
+    (indent-bars--initialize-style
+     (setq indent-bars-ts-out-scope-style (indent-bars--new-style)))
     (put 'indent-bars-ts-setup :init-scope t)))
 
 ;;;###autoload
@@ -328,7 +325,7 @@ both)."
 		    err)))))
 
     ;; Emphasis Scope: use alternate styling outside current scope
-    (when-let ((types (alist-get lang indent-bars-treesit-emphasis-scope)))
+    (when-let ((types (alist-get lang indent-bars-treesit-scope)))
       (indent-bars-ts--init-scope)
       (setq ibtcs (ibts/create))
       (setf (ibts/query ibtcs)
