@@ -160,11 +160,12 @@ found, nil is returned."
 Searches for parent nodes with types specified in
 `indent-bars-treesit-wrap' for the current buffer's language,
 and, if found, limits the indentation depth to one more than the
-topmost matching parent node's initial line's indentation depth.
-If `indent-bars-no-descend-string' is non-nil, looks for
+topmost matching parent node's first line indentation depth.  If
+`indent-bars-no-descend-string' is non-nil, also looks for
 enclosing string and marks indent depth no deeper than one more
-than the starting line's depth.  This reduces depth inside
-strings, and for wrap contexts."
+than the indentation depth at string start.  This reduces depth
+inside strings, and for wrapping contexts (e.g. function
+arguments)."
   (if-let (((not (bobp)))
 	   (node (treesit-node-on (1- (point)) (point) indent-bars-ts--parser))
 	   (dnew
@@ -181,7 +182,7 @@ strings, and for wrap contexts."
       (min dnew d)
     d))
 
-;;;; Ignoring Some Blank Lines
+;;;; Ignoring Certain Blank Lines
 (defun indent-bars-ts--ignore-blank (beg)
   "See if blank lines at BEG should be ignored using tree-sitter.
 Blank lines to ignore are those within nodes of the types
@@ -191,15 +192,6 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
        (when-let ((n (treesit-node-on beg beg)))
 	 (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
 			 (treesit-node-type n)))))
-
-(defun indent-bars-ts--handle-blank-lines ()
-  "Wrapper for `indent-bars--handle-blank-lines' that works with treesitter.
-
-If `indent-bars-treesit-ignore-blank-lines-types' is configured,
-ignore blank lines whose starting positions are directly spanned
-by nodes of those types (e.g. module)."
-  (unless (indent-bars-ts--ignore-blank (match-beginning 0))
-    (indent-bars--handle-blank-lines)))
 
 ;; see also ts--handle-blank-lines, below
 
@@ -212,7 +204,7 @@ by nodes of those types (e.g. module)."
      (:conc-name ibts/)
      (:constructor ibts/create))
   (start (make-marker)) (end (make-marker))
-  (point -1) (tick 0) query)
+  (start-bars 0) (point -1) (tick 0) query)
 
 (defvar-local ibtcs nil  ; N.B. see shorthands at bottom of file
   "The current `indent-bars-ts-scope' struct.")
@@ -222,6 +214,24 @@ by nodes of those types (e.g. module)."
 If there is no scope defined, every position is considered in
 scope."
   (and ibtcs (or (< pos (ibts/start ibtcs)) (> pos (ibts/end ibtcs)))))
+
+(defun indent-bars-ts--display ()
+  "Display indentation bars accounting for current treesitter scope."
+  (if (indent-bars-ts--out-of-scope (match-beginning 1))
+      (indent-bars--display indent-bars-ts-out-scope-style) ; fully faded, or
+    (indent-bars--display indent-bars-ts-out-scope-style	;  switch from
+			  (ibts/start-bars ibtcs)	; faded to normal
+			  indent-bars-style)))
+
+(defun indent-bars-ts--handle-blank-lines ()
+  "Display bars on blank lines, respecting treesitter scope."
+  (let ((beg (match-beginning 0)))
+    (unless (indent-bars-ts--ignore-blank beg)
+      (if (indent-bars-ts--out-of-scope beg) ;fully faded
+	  (indent-bars--handle-blank-lines indent-bars-ts-out-scope-style)
+	(indent-bars--handle-blank-lines indent-bars-ts-out-scope-style
+					 (ibts/start-bars ibtcs)
+					 indent-bars-style)))))
 
 (defun indent-bars-ts--symdiff (a b)
     "Return the symmetric difference between ranges A and B.
@@ -258,18 +268,23 @@ both)."
 		      indent-bars-ts--parser))
 	       (scope (indent-bars-ts--node-query
 		       node (ibts/query ibtcs) nil 'innermost)))
-      (let ((bstart (ibts/start ibtcs))
-	    (bend (ibts/end ibtcs))
-	    (tstart (treesit-node-start scope))
-	    (tend (treesit-node-end scope)))
-	(unless (and (= tstart bstart) (= tend bend))
-	  (setf (ibts/tick ibtcs) (buffer-modified-tick)
-		(ibts/point ibtcs) (point))
-	  (set-marker (ibts/start ibtcs) tstart)
-	  (set-marker (ibts/end ibtcs) tend)
-	  (cl-loop for (beg . end) in
+      (let ((old-start (ibts/start ibtcs))
+	    (old-end   (ibts/end ibtcs))
+	    (tsc-start (treesit-node-start scope))
+	    (tsc-end   (treesit-node-end scope)))
+	(unless (and (= tsc-start old-start) (= tsc-end old-end))
+	  (setf (ibts/tick ibtcs)  (buffer-modified-tick)
+		(ibts/point ibtcs) (point)
+		(ibts/start-bars ibtcs)
+		(save-excursion
+		  (goto-char tsc-start)
+		  (forward-line 0)
+		  (indent-bars--current-indentation-depth)))
+	  (set-marker (ibts/start ibtcs) tsc-start)
+	  (set-marker (ibts/end ibtcs) tsc-end)
+	  (cl-loop for (beg . end) in 	; refontify
 		   (indent-bars-ts--symdiff
-		    (cons bstart bend) (cons tstart tend))
+		    (cons old-start old-end) (cons tsc-start tsc-end))
 		   do (font-lock-flush beg end)))))))
 
 (defvar indent-bars-ts--scope-timer nil)
