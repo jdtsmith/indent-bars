@@ -344,11 +344,11 @@ performed."
     ;; Emphasis Scope: use alternate styling outside current scope
     (when-let ((types (alist-get lang indent-bars-treesit-scope)))
       (indent-bars-ts--init-scope)
-      (setq ibtcs (ibts/create))
+      (setq ibtcs (ibts/create)
+	    indent-bars--display-form '(indent-bars-ts--display)
+	    indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
       (setf (ibts/query ibtcs)
-	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))
-    
-    (setq indent-bars--style-function #'indent-bars-ts--style)))
+	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))))
 
 (provide 'indent-bars-ts)
 ;;; indent-bars-ts.el ends here

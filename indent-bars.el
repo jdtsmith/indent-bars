@@ -1212,6 +1212,10 @@ Adapted from `highlight-indentation-mode'."
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
+(defvar indent-bars--display-form
+  '(indent-bars--display))
+(defvar indent-bars--handle-blank-lines-form
+  '(indent-bars--handle-blank-lines))
 (defun indent-bars--setup-font-lock ()
   "Setup font lock keywords and functions for indent-bars."
   (unless (eq font-lock-unfontify-region-function #'indent-bars--unfontify)
@@ -1224,37 +1228,42 @@ Adapted from `highlight-indentation-mode'."
 				      `(>= ,(1+ indent-bars--offset) ?\s)
 				    '(+ (any ?\t ?\s))))
 				(not (any ?\t ?\s ?\n))))
-	   (1 (indent-bars--display)))))
+	   (1 ,indent-bars--display-form))))
   (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
   (if indent-bars-display-on-blank-lines
       (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n))) ; multi-line blank regions
 	(setq indent-bars--font-lock-blank-line-keywords
-	      `((,re (0 (indent-bars--handle-blank-lines)))))
+	      `((,re (0 ,indent-bars--handle-blank-lines-form))))
 	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
 	(add-hook 'font-lock-extend-region-functions
 		  #'indent-bars--extend-blank-line-regions 95 t))))
 
 (declare-function indent-bars-ts-setup "indent-bars-ts")
-(defun indent-bars--initialize-style ()
-  "Initialize the current style.
-To initialize a new style, bind `indent-bars-current-style' to
-the it prior to calling."
+(defun indent-bars--initialize-style (style)
+  "Initialize STYLE."
   ;; Colors
-  (setf (ibs/main-color ibcs) (indent-bars--main-color)
-	(ibs/depth-palette ibcs) (indent-bars--depth-palette)
-	(ibs/current-depth-palette ibcs) (indent-bars--current-depth-palette))
-
+  (setf (ibs/main-color style)
+	(indent-bars--main-color style)
+	(ibs/depth-palette style)
+	(indent-bars--depth-palette style)
+	(ibs/current-depth-palette style)
+	(indent-bars--current-depth-palette style)
+	
+	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
+	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
+  
   ;; Faces/stipple
-  (indent-bars--create-stipple-face
-   (frame-char-width) (frame-char-height)
-   (indent-bars--stipple-rot (frame-char-width)))
-  (indent-bars--create-faces 7 'reset)
-  (indent-bars--create-no-stipple-chars 7)
-
+  (face-spec-set (ibs/stipple-face style)
+		 (indent-bars--create-stipple-face
+		  (frame-char-width) (frame-char-height)
+		  (indent-bars--stipple-rot (frame-char-width))))
+  
   ;; Current depth highlight faces/stipple
-  (when (indent-bars--style "highlight-current-depth")
-    (indent-bars--set-current-bg-color)
-    (indent-bars--set-current-depth-stipple)))
+  (when (indent-bars--style style "highlight-current-depth")
+    (setf (ibs/current-bg-color style)
+	  (indent-bars--current-bg-color style)
+	  (ibs/current-depth-stipple style)
+	  (indent-bars--current-depth-stipple style))))
 
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
