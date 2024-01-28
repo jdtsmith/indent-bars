@@ -193,7 +193,7 @@ If you are experiencing issues with stipple bar display (missing, garbled, etc.)
                               'face `(:background "red" :foreground "blue" :stipple ,stipple))))
    ```
 
-This should then look something like:
+This should then look something like (note the blue vertical bars):
 
 <img width="668" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/dd0f65f5-3cdc-4865-a66d-41365cecadd0">
 
