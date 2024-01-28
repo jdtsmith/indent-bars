@@ -630,9 +630,7 @@ font-lock properties."
   "Number of possible bars for initial blank string of length LEN.
 Note that the first bar is expected at `indent-bars-starting-column'."
   (setq len (- len indent-bars--offset))
-  (cond ((>= len indent-bars-spacing) (/ (1+ len) indent-bars-spacing))
-	((> len 0) 1)
-	(t 0)))
+  (if (>= len indent-bars-spacing) (1+ (/ (1+ len) indent-bars-spacing)) 0))
 
 (defun indent-bars--blank-string (off nbars bar-from &optional width)
   "Return a blank string with bars displayed.
