@@ -1040,9 +1040,6 @@ font-lock properties."
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
 
-;; local variables to be dynamically bound
-(defvar-local indent-bars--switch-after nil)
-
 (defun indent-bars--display (&optional style switch-after style2)
   "Draw indentation bars based on line contents.
 STYLE, SWITCH-AFTER and STYLE2 are as in

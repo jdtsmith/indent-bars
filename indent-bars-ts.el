@@ -21,6 +21,7 @@
 ;;    ibts/  => indent-bars-ts-scope- (slot accessors)
 ;;    ibtcs  => indent-bars-ts-current-scope (struct)
 
+;;; Code:
 
 ;;;; Requires
 (require 'cl-lib)
@@ -183,6 +184,7 @@ arguments)."
     d))
 
 ;;;; Ignoring Certain Blank Lines
+;; see also ts--handle-blank-lines, below
 (defun indent-bars-ts--ignore-blank (beg)
   "See if blank lines at BEG should be ignored using tree-sitter.
 Blank lines to ignore are those within nodes of the types
@@ -192,8 +194,6 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
        (when-let ((n (treesit-node-on beg beg)))
 	 (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
 			 (treesit-node-type n)))))
-
-;; see also ts--handle-blank-lines, below
 
 ;;;; Scope Highlighting
 (defvar indent-bars-ts-out-scope-style nil)
@@ -216,26 +216,27 @@ scope."
   (and ibtcs (or (< pos (ibts/start ibtcs)) (> pos (ibts/end ibtcs)))))
 
 (defun indent-bars-ts--display ()
-  "Display indentation bars accounting for current treesitter scope."
+  "Display indentation bars, accounting for current treesitter scope."
   (if (indent-bars-ts--out-of-scope (match-beginning 1))
-      (indent-bars--display indent-bars-ts-out-scope-style) ; fully faded, or
-    (indent-bars--display indent-bars-ts-out-scope-style	;  switch from
-			  (ibts/start-bars ibtcs)	; faded to normal
+      (indent-bars--display indent-bars-ts-out-scope-style)
+    (indent-bars--display indent-bars-ts-out-scope-style
+			  (ibts/start-bars ibtcs)
 			  indent-bars-style)))
 
 (defun indent-bars-ts--handle-blank-lines ()
   "Display bars on blank lines, respecting treesitter scope."
   (let ((beg (match-beginning 0)))
     (unless (indent-bars-ts--ignore-blank beg)
-      (if (indent-bars-ts--out-of-scope beg) ;fully faded
+      (if (indent-bars-ts--out-of-scope beg) ;fully out of scope
 	  (indent-bars--handle-blank-lines indent-bars-ts-out-scope-style)
+	;; Switch from out of scope to in scope after start-bars
 	(indent-bars--handle-blank-lines indent-bars-ts-out-scope-style
 					 (ibts/start-bars ibtcs)
 					 indent-bars-style)))))
 
 (defun indent-bars-ts--symdiff (a b)
     "Return the symmetric difference between ranges A and B.
-A and B ranges of (start . end) conses.  Their symmetric
+Ranges A and B are (start . end) conses.  Their symmetric
 difference is a list of ranges, possibly nil, that one (but not
 both) of them cover."
     (let ((l '()))
@@ -257,12 +258,11 @@ both) of them cover."
   "Perform the treesitter scope update.
 If the buffer is modified or the point has moved, re-query the
 scope bounds.  If it has changed (beyond normal marker movement),
-refontify the symmetric difference between old and new
+refontify the symmetric difference between the old and new
 ranges (i.e those ranges covered by either old or new, but not
 both)."
   (unless (and (= (point) (ibts/point ibtcs))
 	       (= (buffer-modified-tick) (ibts/tick ibtcs)))
-    ;; scope may have changed
     (when-let ((node (treesit-node-on
 		      (max (point-min) (1- (point))) (point)
 		      indent-bars-ts--parser))
@@ -282,7 +282,7 @@ both)."
 		  (indent-bars--current-indentation-depth)))
 	  (set-marker (ibts/start ibtcs) tsc-start)
 	  (set-marker (ibts/end ibtcs) tsc-end)
-	  (cl-loop for (beg . end) in 	; refontify
+	  (cl-loop for (beg . end) in 	; refontify where needed
 		   (indent-bars-ts--symdiff
 		    (cons old-start old-end) (cons tsc-start tsc-end))
 		   do (font-lock-flush beg end)))))))
