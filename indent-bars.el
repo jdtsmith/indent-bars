@@ -1051,7 +1051,8 @@ STYLE, SWITCH-AFTER and STYLE2 are as in
 	      (goto-char b)
 	      (indent-bars--current-indentation-depth))))
     (when (> n 0) (indent-bars--draw-line style n b e nil
-					  switch-after style2))))
+					  switch-after style2))
+    nil))
 
 (defsubst indent-bars--context-bars (end)
   "Maximum number of bars at point and END.
@@ -1088,7 +1089,8 @@ configured by default in `indent-bars--handle-blank-lines-form'."
 	    (unless (= ep pm)
 	      (indent-bars--draw-line style ctxbars bp ep 'invent
 				      switch-after style2))
-	    (beginning-of-line 2)))))))
+	    (beginning-of-line 2)))))
+    nil))
 
 (defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
 (defun indent-bars--extend-blank-line-regions ()
