@@ -219,6 +219,7 @@ scope."
   "Display indentation bars, accounting for current treesitter scope."
   (if (indent-bars-ts--out-of-scope (match-beginning 1))
       (indent-bars--display indent-bars-ts-out-scope-style)
+    ;; In scope: switch from out to in-scope style
     (indent-bars--display indent-bars-ts-out-scope-style
 			  (ibts/start-bars ibtcs)
 			  indent-bars-style)))
@@ -291,7 +292,7 @@ both)."
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
   (if-let ((tmr indent-bars--highlight-timer))
-      (progn
+      (progn ; reschedule timer
 	(timer-set-time
 	 tmr (time-add (current-time) indent-bars-ts-update-delay))
 	(unless (memq tmr timer-list) (timer-activate tmr)))
