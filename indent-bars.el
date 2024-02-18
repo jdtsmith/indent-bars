@@ -1249,7 +1249,7 @@ Adapted from `highlight-indentation-mode'."
 (defun indent-bars-setup-and-remove (frame)
   "Setup indent bars for FRAME and remove from `after-make-frame-functions'."
   (when (display-graphic-p frame)
-    (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
+    (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove t)
     (indent-bars-setup)))
 
 ;;;###autoload
@@ -1259,8 +1259,8 @@ Adapted from `highlight-indentation-mode'."
   :group 'indent-bars
   (if indent-bars-mode
       (if (and (daemonp) (not (frame-parameter nil 'client)))
-	  (add-hook 'after-make-frame-functions
-		    #'indent-bars-setup-and-remove nil t)
+	  (add-hook 'after-make-frame-functions #'indent-bars-setup-and-remove
+		    nil t)
 	(indent-bars-setup))
     (indent-bars-teardown)))
 
