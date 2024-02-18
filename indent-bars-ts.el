@@ -203,7 +203,7 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
      (:copier nil)
      (:conc-name ibts/)
      (:constructor ibts/create))
-  (start (make-marker)) (end (make-marker))
+  (start (point-min-marker)) (end (point-min-marker))
   (start-bars 0) (point -1) (tick 0) query)
 
 (defvar-local ibtcs nil  ; N.B. see shorthands at bottom of file
