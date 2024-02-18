@@ -111,7 +111,6 @@ Has effect only if `indent-bars-treesit-scope' is non-nil."
 ;;;; Node Utilities
 (defvar-local indent-bars-ts--parser nil)
 (defvar-local indent-bars-ts--wrap-query nil)
-(defvar-local indent-bars-ts--scope-query nil)
 (defvar-local indent-bars-ts--string-query nil)
 
 (defsubst indent-bars-ts--node-spans-p (node start end)
