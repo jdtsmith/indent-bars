@@ -1238,7 +1238,8 @@ Adapted from `highlight-indentation-mode'."
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
-	       #'indent-bars--extend-blank-line-regions t))
+	       #'indent-bars--extend-blank-line-regions t)
+  (remove-hook 'after-make-frame-functions #'indent-bars-frame-setup t))
 
 (defun indent-bars-reset ()
   "Reset indent-bars config."
@@ -1246,10 +1247,11 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars-teardown)
   (indent-bars-setup))
 
-(defun indent-bars-setup-and-remove ()
-  "Setup indent bars and remove from `after-make-frame-functions'."
-  (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
-  (indent-bars-setup))
+(defun indent-bars-frame-setup (frame)
+  "Setup indent bars for newly created frame"
+  (select-frame frame)
+  (when (display-graphic-p frame)
+    (indent-bars-setup)))
 
 ;;;###autoload
 (define-minor-mode indent-bars-mode
@@ -1257,13 +1259,10 @@ Adapted from `highlight-indentation-mode'."
   :global nil
   :group 'indent-bars
   (if indent-bars-mode
-      (if (and (daemonp) (not (frame-parameter nil 'client)))
-	  (let ((buf (current-buffer)))
-	    (add-hook 'after-make-frame-functions
-		      (lambda () (with-current-buffer buf
-				   (indent-bars-setup-and-remove)))
-		      nil t))
-	(indent-bars-setup))
+      (progn (unless (and (daemonp) (not (frame-parameter nil 'client)))
+               (indent-bars-setup))
+             (add-hook 'after-make-frame-functions
+                         #'indent-bars-frame-setup nil t))
     (indent-bars-teardown)))
 
 (provide 'indent-bars)
