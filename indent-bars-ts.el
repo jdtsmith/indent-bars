@@ -290,7 +290,7 @@ both)."
 (defvar indent-bars-ts--scope-timer nil)
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
-  (if-let ((tmr indent-bars--highlight-timer))
+  (if-let ((tmr indent-bars-ts--scope-timer))
       (progn ; reschedule timer
 	(timer-set-time
 	 tmr (time-add (current-time) indent-bars-ts-update-delay))
