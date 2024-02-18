@@ -1342,6 +1342,8 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars--setup-font-lock)
   (font-lock-flush))
 
+
+(defvar indent-bars--teardown-functions nil)
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
   (dolist (s indent-bars--styles)
@@ -1365,7 +1367,8 @@ Adapted from `highlight-indentation-mode'."
   (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
-	       #'indent-bars--extend-blank-line-regions t))
+	       #'indent-bars--extend-blank-line-regions t)
+  (apply #'run-hooks indent-bars--teardown-functions))
 
 (defun indent-bars-reset ()
   "Reset indent-bars config."

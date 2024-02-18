@@ -311,6 +311,13 @@ performed."
      (setq indent-bars-ts-out-scope-style (indent-bars--new-style)))
     (put 'indent-bars-ts-setup :init-scope t)))
 
+(defun indent-bars-ts--teardown ()
+  "Teardown indent-bars-ts."
+  (setq
+   indent-bars--display-form nil
+   indent-bars--handle-blank-lines-form nil)
+  (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t))
+
 ;;;###autoload
 (defun indent-bars-ts-setup ()
   "Setup indent-bars for using with treesiter."
@@ -349,8 +356,9 @@ performed."
 	    indent-bars--display-form '(indent-bars-ts--display)
 	    indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
       (setf (ibts/query ibtcs)
-	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))))
+	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
       (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
+      (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))))
 
 (provide 'indent-bars-ts)
 ;;; indent-bars-ts.el ends here
