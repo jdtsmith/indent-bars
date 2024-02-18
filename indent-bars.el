@@ -1376,10 +1376,11 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars-teardown)
   (indent-bars-setup))
 
-(defun indent-bars-setup-and-remove ()
-  "Setup indent bars and remove from `after-make-frame-functions'."
-  (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
-  (indent-bars-setup))
+(defun indent-bars-setup-and-remove (frame)
+  "Setup indent bars for FRAME and remove from `after-make-frame-functions'."
+  (when (display-graphic-p frame)
+    (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove)
+    (indent-bars-setup)))
 
 (defvar indent-bars-mode)
 ;;;###autoload
@@ -1389,11 +1390,8 @@ Adapted from `highlight-indentation-mode'."
   :group 'indent-bars
   (if indent-bars-mode
       (if (and (daemonp) (not (frame-parameter nil 'client)))
-	  (let ((buf (current-buffer))) ;careful with frameless daemon emacs
-	    (add-hook 'after-make-frame-functions
-		      (lambda () (with-current-buffer buf
-				   (indent-bars-setup-and-remove)))
-		      nil t))
+	  (add-hook 'after-make-frame-functions
+		    #'indent-bars-setup-and-remove nil t)
 	(indent-bars-setup))
     (indent-bars-teardown)))
 
