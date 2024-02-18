@@ -350,6 +350,7 @@ performed."
 	    indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
       (setf (ibts/query ibtcs)
 	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))))))
+      (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
 
 (provide 'indent-bars-ts)
 ;;; indent-bars-ts.el ends here
