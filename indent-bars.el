@@ -773,8 +773,9 @@ inheritance of the plist is handled.  If style is the symbol
 (defsubst indent-bars--depth (len)
   "Number of possible bars for initial blank string of length LEN.
 Note that the first bar is expected at `indent-bars-starting-column'."
-  (setq len (- len indent-bars--offset))
-  (if (>= len indent-bars-spacing) (1+ (/ (1+ len) indent-bars-spacing)) 0))
+  (if (> len indent-bars--offset)
+      (1+ (/ (- len indent-bars--offset 1) indent-bars-spacing))
+    0))
 
 (defvar indent-bars--update-depth-function nil)
 (defun indent-bars--current-indentation-depth (&optional on-bar)
