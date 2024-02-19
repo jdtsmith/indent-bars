@@ -1324,12 +1324,12 @@ Adapted from `highlight-indentation-mode'."
   ;; Window state: selection/size
   (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
 
+  ;; Treesitter
+  (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
+
   ;; Resize
   (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
   (indent-bars--resize-stipple)		; just in case
-
-  ;; Treesitter
-  (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
 
   ;; Current depth
   (when (indent-bars--style 'any "highlight-current-depth")
