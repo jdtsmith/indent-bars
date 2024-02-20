@@ -748,22 +748,47 @@ inheritance of the plist is handled.  If style is the symbol
 	       indent-bars--styles)
     (indent-bars--style1 style name)))
 
+(defun indent-bars--custom-inherit (old new)
+  "Inherit the values of NEW and OLD, which can be values or lists.
+NEW and OLD must have the same form, composed of atoms
+and (optionally) a final plist.  The symbol \\='unspecified in
+NEW indicates that that value should be replaced by the
+corresponding value in OLD.  Any trailing PLIST in NEW and OLD
+will be merged (with NEW taking precedence).  The merged value is
+returned."
+  (cond
+   ((and (atom old) (atom new))
+    (if (eq new 'unspecified) old new))
+   
+   ((and (consp old) (consp new))
+    (let ((n new) (o old) lo)
+      (while (and n o)
+	(if (and (plistp n) (plistp o) (keywordp (car o)))
+	    (let ((m (map-merge 'plist o n)))
+	      (if lo (setcdr lo m) (setq old m))
+	      (setq o nil))		; signify list complete
+	  (unless (eq (car n) 'unspecified)
+	    (setcar o (car n))))
+	(setq lo o n (cdr n) o (cdr o))))
+    old)
+
+   (t new)))
 
 (defun indent-bars--style1 (style name)
-  "Return the value of style variable NAME for STYLE."
+  "Return the value of style variable NAME for STYLE.
+Considers ([no-]inherit . rest) inheritance."
   (let* ((tag (indent-bars-style-tag style))
 	 (sym (indent-bars--alt name tag))
 	 (val (symbol-value sym))
-	 (inhrt t))			; inherit by default
+	 (inhrt t))  ; inherit by default
     (when tag
       ;; Check for the ([no-]inherit . actual-val) form
       (when (and (consp val) (memq (car val) '(inherit no-inherit)))
 	(setq inhrt (and (car val) (not (eq (car val) 'no-inherit)))
 	      val (cdr val)))
-      (when-let (((and inhrt (plistp val) (keywordp (car val)))) ;only :key plists
-		 (main-val (symbol-value (indent-bars--alt name nil)))
-		 ((plistp main-val)))
-	(setq val (map-merge 'plist main-val val))))
+      (when inhrt
+	(setq val (indent-bars--custom-inherit
+		   (symbol-value (indent-bars--alt name nil)) val))))
     val))
 
 ;;;; Indentation and Drawing
