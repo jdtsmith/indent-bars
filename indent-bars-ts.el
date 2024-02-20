@@ -35,17 +35,17 @@
   :group 'indent-bars
   :prefix "indent-bars-ts-")
 
-(defgroup indent-bars-ts-oos-style nil
+(defgroup indent-bars-ts-style nil
   "Customization group for indent-bars treesitter out-of-scope styling."
   :group 'indent-bars
-  :prefix "indent-bars-ts-oos-")
+  :prefix "indent-bars-ts-")
 
 ;;;;; Alternate Style Variables
 (defun indent-bars-ts--add-customs ()
-  "Add all the relevant custom variables for the out-of-scope style."
+  "Add all the relevant custom variables for the out-of-scope ts style."
   (cl-labels ((ts-cust (var &rest r)
 		(eval `(indent-bars--alt-custom
-			"ts-os" ,var "Tree-sitter (out-of-scope)" ,@r))))
+			"ts" ,var "Tree-sitter (out-of-scope)" ,@r))))
       (ts-cust 'color '(nil :blend 0.1) 'add-inherit)
       (dolist (c '( width-frac pad-frac pattern zigzag ;simple types
 		    no-stipple-char-font-weight))
@@ -307,7 +307,8 @@ performed."
   (unless (or force (get 'indent-bars-ts-setup :init-scope))
     (indent-bars-ts--add-customs)
     (indent-bars--initialize-style
-     (setq indent-bars-ts-out-scope-style (indent-bars--new-style)))
+     (setq indent-bars-ts-out-scope-style
+	   (indent-bars--new-style "ts")))
     (put 'indent-bars-ts-setup :init-scope t)))
 
 (defun indent-bars-ts--teardown ()
