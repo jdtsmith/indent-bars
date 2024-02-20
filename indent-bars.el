@@ -65,6 +65,7 @@
 (require 'outline)
 (require 'font-lock)
 (require 'compat)
+(require 'cus-edit)
 
 ;;;; Customization
 (defgroup indent-bars nil
