@@ -1165,7 +1165,7 @@ Adapted from `highlight-indentation-mode'."
   ;; Faces
   (indent-bars--create-stipple-face (frame-char-width) (frame-char-height)
 				    (indent-bars--stipple-rot (frame-char-width)))
-  (indent-bars--create-faces 9 'reset)	; N.B.: extends as needed
+  (indent-bars--create-faces 9)	; N.B.: extends as needed
 
   ;; No Stipple (e.g. terminal)
   (setq indent-bars--no-stipple
