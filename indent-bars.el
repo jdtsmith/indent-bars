@@ -1249,8 +1249,9 @@ Adapted from `highlight-indentation-mode'."
 (defun indent-bars-setup-and-remove (frame)
   "Setup indent bars for FRAME and remove from `after-make-frame-functions'."
   (when (display-graphic-p frame)
-    (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove t)
-    (indent-bars-setup)))
+    (with-selected-frame frame
+      (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove t)
+      (indent-bars-setup))))
 
 ;;;###autoload
 (define-minor-mode indent-bars-mode
