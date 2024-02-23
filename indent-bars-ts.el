@@ -315,10 +315,10 @@ If FORCE is non-nil, initialize even if this has already been
 performed."
   (unless (or force (get 'indent-bars-ts-setup :init-scope))
     (indent-bars-ts--add-customs)
-    (indent-bars--initialize-style
-     (setq indent-bars-ts-out-scope-style
-	   (indent-bars--new-style "ts")))
-    (put 'indent-bars-ts-setup :init-scope t)))
+    (put 'indent-bars-ts-setup :init-scope t))
+  (indent-bars--initialize-style
+   (setq indent-bars-ts-out-scope-style
+	 (indent-bars--new-style "ts"))))
 
 (defun indent-bars-ts--teardown ()
   "Teardown indent-bars-ts."
