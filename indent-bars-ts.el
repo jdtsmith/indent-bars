@@ -234,19 +234,28 @@ scope."
 					 (ibts/start-bars ibtcs)
 					 indent-bars-style)))))
 
+(defun indent-bars-ts--union (a b)
+    "Return the union between ranges A and B.
+Ranges A and B are (start . end) conses.  Their union is a list
+of ranges that either cover."
+    (if (< (car b) (car a)) (setq b (prog1 a (setq a b))))
+    (if (< (cdr a) (car b))
+        (list a b) ; no overlap
+      (list (cons (car a) (max (cdr a) (cdr b))))))
+
 (defun indent-bars-ts--symdiff (a b)
     "Return the symmetric difference between ranges A and B.
 Ranges A and B are (start . end) conses.  Their symmetric
 difference is a list of ranges, possibly nil, that one (but not
 both) of them cover."
-    (let ((l '()))
+    (let ((l ()))
       (if (< (car b) (car a)) (setq b (prog1 a (setq a b))))
       (if (< (cdr a) (car b))
-          (push a l)
+          (push a l) ; no overlap below, add a
         (unless (= (car a) (car b))
           (push (cons (car a) (car b)) l)))
       (if (> (car b) (cdr a))
-          (push b l)
+          (push b l) ; no overlap above, add b
         (unless (= (cdr a) (cdr b))
           (push (if (> (cdr a) (cdr b))
                     (cons (cdr b) (cdr a))
@@ -281,7 +290,7 @@ both)."
 		  (forward-line 0)
 		  (indent-bars--current-indentation-depth)))
 	  (cl-loop for (beg . end) in 	; refontify where needed
-		   (indent-bars-ts--symdiff
+		   (indent-bars-ts--union
 		    (cons old-start old-end) (cons tsc-start tsc-end))
 		   do (font-lock-flush beg end))
 	  (set-marker (ibts/start ibtcs) tsc-start)
