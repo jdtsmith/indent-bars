@@ -280,12 +280,12 @@ both)."
 		  (goto-char tsc-start)
 		  (forward-line 0)
 		  (indent-bars--current-indentation-depth)))
-	  (set-marker (ibts/start ibtcs) tsc-start)
-	  (set-marker (ibts/end ibtcs) tsc-end)
 	  (cl-loop for (beg . end) in 	; refontify where needed
 		   (indent-bars-ts--symdiff
 		    (cons old-start old-end) (cons tsc-start tsc-end))
-		   do (font-lock-flush beg end)))))))
+		   do (font-lock-flush beg end))
+	  (set-marker (ibts/start ibtcs) tsc-start)
+	  (set-marker (ibts/end ibtcs) tsc-end))))))
 
 (defvar indent-bars-ts--scope-timer nil)
 (defun indent-bars-ts--update-scope ()
