@@ -1125,6 +1125,10 @@ Adapted from `highlight-indentation-mode'."
     cobol-tab-width)
    ((or (derived-mode-p 'go-ts-mode) (derived-mode-p 'go-mode))
     tab-width)
+   ((derived-mode-p 'nix-mode)
+    tab-width)
+   ((and (derived-mode-p 'nix-ts-mode) (boundp 'nix-ts-mode-indent-offset))
+    nix-ts-mode-indent-offset)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
