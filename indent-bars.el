@@ -506,7 +506,9 @@ May be nil, a color string or a vector of colors strings.")
     :documentation "A vector of style non-stipple chars.")
   ;; Current depth remapping
   ( remap nil :type list
-    :documentation "An active face-remap cookie.")
+    :documentation "An active face-remap cookie for faces.")
+  ( remap-stipple nil :type list
+    :documentation "An active face-remap cookie for stipple.")
   ( current-bg-color nil :type color
     :documentation "The background color of the current depth highlight.")
   ( current-depth-palette nil
@@ -1201,7 +1203,6 @@ Rate limit set by `indent-bars-depth-update-delay'."
 		 #'indent-bars--update-current-depth-highlight depth)))))))
 
 ;;;; Text scaling and window hooks
-(defvar-local indent-bars--remap-stipple nil)
 (defvar-local indent-bars--gutter-rot 0)
 (defun indent-bars--window-change (win)
   "Update the stipple for buffer in window WIN, if selected."
@@ -1218,12 +1219,12 @@ W is the optional `window-font-width' and ROT is the number of
 bits to rotate the pattern.  If W and ROT are not passed they
 will be calculated."
   (dolist (s indent-bars--styles)
-    (if (ibs/remap s)
-	(face-remap-remove-relative (ibs/remap s)))
+    (if (ibs/remap-stipple s)
+	(face-remap-remove-relative (ibs/remap-stipple s)))
     (let* ((w (or w (window-font-width)))
 	   (rot (or rot (indent-bars--stipple-rot w)))
 	   (h (window-font-height)))
-      (setf (ibs/remap s)
+      (setf (ibs/remap-stipple s)
 	    (face-remap-add-relative
 	     (ibs/stipple-face s)
 	     :stipple (indent-bars--stipple w h rot)))
@@ -1374,8 +1375,10 @@ Adapted from `highlight-indentation-mode'."
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
   (dolist (s indent-bars--styles)
-    (if (ibs/remap s)
-	(face-remap-remove-relative (ibs/remap s)))
+    (when (ibs/remap s)
+      (face-remap-remove-relative (ibs/remap s)))
+    (when (ibs/remap-stipple s)
+      (face-remap-remove-relative (ibs/remap-stipple s)))
     (face-spec-set (ibs/stipple-face s) nil 'reset)
     (cl-loop for f in (ibs/faces s)
 	     do (face-spec-set f nil 'reset)))
