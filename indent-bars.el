@@ -766,16 +766,17 @@ returned."
     (if (eq new 'unspecified) old new))
    
    ((and (consp old) (consp new))
-    (let ((n new) (o old) lo)
+    (let* ((old (copy-sequence old)) 	; avoid editing old
+	   (n new) (o old) last-o)
       (while (and n o)
 	(if (and (plistp n) (plistp o) (keywordp (car o)))
 	    (let ((m (map-merge 'plist o n)))
-	      (if lo (setcdr lo m) (setq old m))
+	      (if last-o (setcdr last-o m) (setq old m))
 	      (setq o nil))		; signify list complete
 	  (unless (eq (car n) 'unspecified)
 	    (setcar o (car n))))
-	(setq lo o n (cdr n) o (cdr o))))
-    old)
+	(setq last-o o n (cdr n) o (cdr o)))
+      old))
 
    (t new)))
 
