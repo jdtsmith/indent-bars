@@ -288,8 +288,9 @@ scope bounds.  If it has changed (beyond normal marker movement),
 refontify the symmetric difference between the old and new
 ranges (i.e those ranges covered by either old or new, but not
 both)."
-  (unless (and (= (point) (ibts/point ibtcs))
-	       (= (buffer-modified-tick) (ibts/tick ibtcs)))
+  (unless (or (not ibtcs) ; can be called in other buffers too
+	      (and (= (point) (ibts/point ibtcs))
+		   (= (buffer-modified-tick) (ibts/tick ibtcs))))
     (when-let ((node (treesit-node-on
 		      (max (point-min) (1- (point))) (point)
 		      indent-bars-ts--parser))
