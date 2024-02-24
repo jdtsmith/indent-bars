@@ -1173,13 +1173,13 @@ Works by remapping the appropriate indent-bars[-style]-N face for
 all styles in the `indent-bars--styles' list.  DEPTH should be
 greater than zero."
   (dolist (s indent-bars--styles)
-    (if (ibs/remap s)			; out with the old
-	(face-remap-remove-relative (ibs/remap s)))
     (let* ((face (indent-bars--face s depth))
 	   (hl-col (and (ibs/current-depth-palette s)
 			(indent-bars--get-color s depth 'highlight)))
 	   (hl-bg (ibs/current-bg-color s)))
       (when (or hl-col hl-bg (ibs/current-depth-stipple s))
+	(when (ibs/remap s)		; out with the old
+	      (face-remap-remove-relative (ibs/remap s)))
 	(setf (ibs/remap s)
 	      (apply #'face-remap-add-relative face
 		     `(,@(when hl-col `(:foreground ,hl-col))
@@ -1225,8 +1225,8 @@ W is the optional `window-font-width' and ROT is the number of
 bits to rotate the pattern.  If W and ROT are not passed they
 will be calculated."
   (dolist (s indent-bars--styles)
-    (if (ibs/remap-stipple s)
-	(face-remap-remove-relative (ibs/remap-stipple s)))
+    (when (ibs/remap-stipple s)
+      (face-remap-remove-relative (ibs/remap-stipple s)))
     (let* ((w (or w (window-font-width)))
 	   (rot (or rot (indent-bars--stipple-rot w)))
 	   (h (window-font-height)))
