@@ -80,6 +80,10 @@ variables."
 			:value-type (repeat :tag "Types" (symbol :tag "Type"))))
   :group 'indent-bars-ts)
 
+(defcustom indent-bars-treesit-scope-min-lines 2
+  "Minimum number of lines a node must span to be counted for scope."
+  :type 'integer)
+
 (defcustom indent-bars-treesit-ignore-blank-lines-types nil
   "Do not style blank lines when the type of node at start is in this list.
 Either nil, or a list of node type strings to avoid adding blank
@@ -120,7 +124,8 @@ Otherwise return nil."
        (>= (treesit-node-end node) end)
        node))
 
-(defun indent-bars-ts--node-query (node query &optional start-only spanning)
+(defun indent-bars-ts--node-query (node query &optional
+					start-only spanning min-newlines)
   "Capture node(s) matching QUERY which overlap with NODE.
 QUERY is a compiled treesit query.  If START-ONLY is non-nil, the
 query searches for matching nodes which overlap with NODE's
@@ -133,19 +138,32 @@ START-ONLY is non-nil).  If SPANNING is \\='innermost, return the
 latest (innermost) node on the list which fully spans NODE, which
 could include NODE itself if it matches the QUERY.  For any other
 non-nil value of SPANNING, check if the first node matched by
-QUERY spans NODE and return it if so.  If no spanning node is
-found, nil is returned."
+QUERY spans NODE and return it if so.  If MIN-NEWLINES is a
+number, a spanning node will be returned only if spans at least
+that many newlines.  E.g. MIN-NEWLINES=1 demands a two line
+node (or larger).
+
+If no spanning node is found, nil is returned."
   (when-let ((start (treesit-node-start node))
 	     (end (if start-only start (treesit-node-end node)))
 	     (nodes (treesit-query-capture indent-bars-ts--parser query
 					   start end t)))
     (cond ((eq spanning 'innermost)
 	   (cl-loop for n in (nreverse nodes)
-		    if (or (eq n node)
-			   (indent-bars-ts--node-spans-p n start end))
+		    if (and (or (eq n node)
+				(indent-bars-ts--node-spans-p n start end))
+			    (or (not min-newlines)
+				(>= (count-lines
+				     (treesit-node-start n) (treesit-node-end n))
+				    min-newlines)))
 		    return n))
 	  (spanning  ; check first node, if it doesn't span, none will
-	   (indent-bars-ts--node-spans-p (car nodes) start end))
+	   (when-let ((n (indent-bars-ts--node-spans-p (car nodes) start end))
+		      ((or (not min-newlines)
+			   (>= (count-lines
+				(treesit-node-start n) (treesit-node-end n))
+			       min-newlines))))
+	     n))
 	  (t nodes))))
 
 (defsubst indent-bars--indent-at-node (node)
@@ -276,7 +294,8 @@ both)."
 		      (max (point-min) (1- (point))) (point)
 		      indent-bars-ts--parser))
 	       (scope (indent-bars-ts--node-query
-		       node (ibts/query ibtcs) nil 'innermost)))
+		       node (ibts/query ibtcs) nil 'innermost
+		       indent-bars-treesit-scope-min-lines)))
       (let ((old-start (ibts/start ibtcs))
 	    (old-end   (ibts/end ibtcs))
 	    (tsc-start (treesit-node-start scope))
