@@ -82,7 +82,10 @@ See [tree-sitter](#tree-sitter), and also the [Wiki page](https://github.com/jdt
 
 ## Compatibility 
 
-For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do.**  It can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to always do so; see [Character Display](#character-display).
+> [!IMPORTANT]
+> For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do**, but some do not.
+
+`indent-bars` can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to always do so; see [Character Display](#character-display).
 
 Known `:stipple` support, by Emacs build:
 
@@ -101,7 +104,7 @@ Please [open an issue](../../issues) with any updates/corrections to this list.
 See also [Testing Stipples](#testing-stipples).
 
 # Customization
-`M-x customize-group indent-bars` is the easiest way to customize everything about the appearence and function of `indent-bars`.  Note: when changing any of these custom variables while `indent-bars` is enabled, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.
+`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars`.  Note: when changing any of these custom variables while `indent-bars` is enabled, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.
 
 See some [examples](examples.md) with relevant settings.
 
@@ -235,7 +238,7 @@ Note that in mixed gui/terminal sessions of the same Emacs process, you need to 
 # Related Packages
 
 - [indent-guide](https://github.com/zk-phi/indent-guide): An older package that uses overlays with `|` characters.  Some reports of performance concerns.  Incompatible with company and other related in-buffer modes.
-- [highlight-indentation-mode](https://github.com/antonj/Highlight-Indentation-for-Emacs): Uses overlays to draw indentation guides, and includes a current indentation mode.  Partial support for blank line guides.  `indent-bars` adapts the indentation guessing function from this mode.
+- [highlight-indentation-mode](https://github.com/antonj/Highlight-Indentation-for-Emacs): Uses overlays to draw indentation guides, and includes a current indentation mode.  Partial support for blank line guides.  
 - [highlight-indent-guides](https://github.com/DarthFennec/highlight-indent-guides):  a highly configurable mode for indentation highlight, with color and style options, as well as current depth highlighting.
 - [hl-indent-scope](https://codeberg.org/ideasman42/emacs-hl-indent-scope): Highlights indentation based on language scope - requiring support for each language, uses overlays to draw indentation guides.
 - [visual-indentation-mode](https://github.com/skeeto/visual-indentation-mode): Full character-based alternating color indentation guides.  Package is now archived.
@@ -248,3 +251,9 @@ None of the existing packages:
 2. had enough guide appearance configurability
 3. were able to support depth-based coloring
 4. offered robust support for guides on blank lines
+
+### Acknowledgements
+
+I'm grateful for advice and input on the design of `indent-bars` from Eli Zaretski, Stefan Monnier, Dmitry Gutov and many other who opened issues and PRs.
+
+[highlight-indentation-mode](https://github.com/antonj/Highlight-Indentation-for-Emacs) was a source of good ideas, and `indent-bars` adapts the indentation guessing function from this mode.  The original idea of using stipples for "better" indent-bars came from [this comment by @vlcek](https://github.com/antonj/Highlight-Indentation-for-Emacs/issues/16#issuecomment-48593300).
