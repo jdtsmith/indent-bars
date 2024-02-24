@@ -759,6 +759,9 @@ corresponding value in OLD.  Any trailing PLIST in NEW and OLD
 will be merged (with NEW taking precedence).  The merged value is
 returned."
   (cond
+   ((and old (eq new 'unspecified))
+    old) 	; fully inherited
+   
    ((and (atom old) (atom new))
     (if (eq new 'unspecified) old new))
    
