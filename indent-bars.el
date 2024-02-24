@@ -919,16 +919,18 @@ needed."
 	  (put-text-property pos (1+ pos)
 			     prop (funcall fun
 					   (cond ((integerp switch-after)
-						  (cl-decf switch-after)
-						  (if (<= switch-after 0)
-						      (setq switch-after t))
-						  style2)
+						  (prog1
+						      (if (> switch-after 0) style style2)
+						    (cl-decf switch-after)
+						    (if (<= switch-after 0)
+							(setq switch-after t))))
 						 ((eq switch-after t) style2)
 						 (t style))
 					   bar))
 	  (cl-incf bar)
 	  (cl-incf pos indent-bars-spacing))
-	(if (and invent (<= bar nbars)) ; STILL bars to show: invent them
+	;; STILL bars to show: invent them (if requested)
+	(if (and invent (<= bar nbars)) 
 	    (put-text-property
 	     end (1+ end) 'display
 	     (concat (indent-bars--blank-string
