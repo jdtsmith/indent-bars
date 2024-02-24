@@ -599,7 +599,7 @@ See `indent-bars-highlight-current-depth' for configuration."
 	 
 	 ;; blend-only without a specified color: re-blend originals with BG
 	 (blend
-	  (or (indent-bars--depth-palette blend)
+	  (or (indent-bars--depth-palette style blend)
 	      (indent-bars--main-color style nil nil blend))))))))
 
 (defun indent-bars--get-color (style depth  &optional current-highlight)
@@ -704,7 +704,7 @@ Additional `defcustom` keyword arguments can be given as R."
 	 (sym (intern (concat "indent-bars-" optname)))
 	 (tsym (intern (concat "indent-bars-" alt "-" optname)))
 	 (type (custom-variable-type sym)))
-    ;; Add an unspecified choice
+    ;; Add an unspecified choice to all choices
     (let ((unspec `(const :tag ,(concat "No-value (use parent " optname ")")
 			  unspecified))
 	  (rest type))
@@ -1175,7 +1175,7 @@ greater than zero."
 	(face-remap-remove-relative (ibs/remap s)))
     (let* ((face (indent-bars--face s depth))
 	   (hl-col (and (ibs/current-depth-palette s)
-			(indent-bars--get-color depth 'highlight)))
+			(indent-bars--get-color s depth 'highlight)))
 	   (hl-bg (ibs/current-bg-color s)))
       (when (or hl-col hl-bg (ibs/current-depth-stipple s))
 	(setf (ibs/remap s)
