@@ -1075,19 +1075,14 @@ font-lock properties."
          (append '(display) font-lock-extra-managed-props)))
     (funcall indent-bars-orig-unfontify-region beg end)))
 
-(defun indent-bars--display (&optional style switch-after style2)
-  "Draw indentation bars based on line contents.
-STYLE, SWITCH-AFTER and STYLE2 are as in
-`indent-bars--draw-line'.  If STYLE is not passed, uses
-`indent-bars-style' for drawing."
-  (let* ((b (match-beginning 1))
-	 (e (match-end 1))
-	 (n (save-excursion
-	      (goto-char b)
-	      (indent-bars--current-indentation-depth))))
-    (when (> n 0) (indent-bars--draw-line style n b e nil
-					  switch-after style2))
-    nil))
+(defun indent-bars--display (beg end &optional style switch-after style2)
+  "Draw indentation bars from BEG..END, based on line contents.
+BEG and END should be on the same line.  STYLE, SWITCH-AFTER and
+STYLE2 are as in `indent-bars--draw-line'.  If STYLE is not
+passed, uses `indent-bars-style' for drawing."
+  (let* ((n (indent-bars--current-indentation-depth)))
+    (when (> n 0) (indent-bars--draw-line style n beg end nil
+					  switch-after style2))))
 
 (defsubst indent-bars--context-bars (end)
   "Maximum number of bars at point and END.
@@ -1097,21 +1092,21 @@ Moves point."
 	 (goto-char (1+ end))		; end is always eol
 	 (indent-bars--current-indentation-depth))))
 
-(defun indent-bars--handle-blank-lines (&optional style switch-after style2)
-  "Display the appropriate bars on regions of one or more blank-only lines.
-The region is the full match region of the last match.  Only
-called by font-lock if `indent-bars-display-on-blank-lines' is
-non-nil.  Called on complete multi-line blank line regions.  Uses
-the surrounding line indentation to determine additional bars to
-display on each line, using `indent-bars--draw-line'.  STYLE,
-SWITCH-AFTER and STYLE2 are as in `indent-bars--draw-line'.
+(defun indent-bars--handle-blank-lines (beg end &optional style switch-after style2)
+  "Display the appropriate bars over the blank-only lines from BEG..END.
+Only called if `indent-bars-display-on-blank-lines' is non-nil.
+To be called on complete multi-line blank line regions.
+
+It is ambigious how many bars to draw on each line in a stretch
+of blank lines, so this uses the maximum depth of the surrounding
+line indentation, above and below.  Drawing using
+`indent-bars--draw-line'.  STYLE, SWITCH-AFTER and STYLE2 are as
+in `indent-bars--draw-line'.
 
 Note: blank lines at the very beginning or end of the buffer are
 not indicated, even if they otherwise would be.  This function is
 configured by default in `indent-bars--handle-blank-lines-form'."
-  (let* ((beg (match-beginning 0))
-	 (end (match-end 0))
-	 ctxbars)
+  (let (ctxbars)
     (save-excursion
       (goto-char (1- beg))
       (beginning-of-line 1)
