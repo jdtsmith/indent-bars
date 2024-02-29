@@ -1129,6 +1129,10 @@ Adapted from `highlight-indentation-mode'."
     tab-width)
    ((and (derived-mode-p 'nix-ts-mode) (boundp 'nix-ts-mode-indent-offset))
     nix-ts-mode-indent-offset)
+   ((and (derived-mode-p 'json-ts-mode) (boundp 'json-ts-mode-indent-offset))
+    json-ts-mode-indent-offset)
+   ((and (derived-mode-p 'json-mode) (boundp 'js-indent-level))
+    js-indent-level)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
