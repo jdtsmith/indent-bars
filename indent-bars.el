@@ -1248,7 +1248,7 @@ Adapted from `highlight-indentation-mode'."
   (remove-hook 'font-lock-extend-region-functions
 	       #'indent-bars--extend-blank-line-regions t))
 
-(defun indent-bars-reset ()
+(defun indent-bars-reset (&rest _r)
   "Reset indent-bars config."
   (interactive)
   (indent-bars-teardown)
@@ -1272,6 +1272,10 @@ Adapted from `highlight-indentation-mode'."
 		    nil t)
 	(indent-bars-setup))
     (indent-bars-teardown)))
+
+;; Theme support
+(if (boundp 'enable-theme-functions)
+    (add-hook 'enable-theme-functions #'indent-bars-reset))
 
 (provide 'indent-bars)
 
