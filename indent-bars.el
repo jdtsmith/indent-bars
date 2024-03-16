@@ -1343,9 +1343,9 @@ Adapted from `highlight-indentation-mode'."
    (t 4))) 				; backup
 
 (defvar indent-bars--display-form
-  '(indent-bars--display))
+  '(indent-bars--display (match-beginning 1) (match-end 1)))
 (defvar indent-bars--handle-blank-lines-form
-  '(indent-bars--handle-blank-lines))
+  '(indent-bars--handle-blank-lines (match-beginning 0) (match-end 0)))
 (defun indent-bars--setup-font-lock ()
   "Setup font lock keywords and functions for indent-bars."
   (unless (eq font-lock-unfontify-region-function #'indent-bars--unfontify)
