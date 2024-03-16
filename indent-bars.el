@@ -66,6 +66,7 @@
 (require 'font-lock)
 (require 'compat)
 (require 'cus-edit)
+(require 'subr-x)
 
 ;;;; Customization
 (defgroup indent-bars nil
