@@ -631,12 +631,15 @@ color, if setup (see `indent-bars-highlight-current-depth')."
      (t (ibs/main-color style)))))
 
 ;;;;; Faces
-(defun indent-bars--create-stipple-face (w h rot)
-  "Create and set the stipple face.
-Create for character size W x H with offset ROT."
-  `((t ( :inherit nil :stipple ,(indent-bars--stipple w h rot)
-	 ,@(when indent-bars-no-stipple-char-font-weight
-             `(:weight ,indent-bars-no-stipple-char-font-weight))))))
+(defun indent-bars--stipple-face-spec (w h rot &optional style stipple)
+  "Create a face specification for the stipple face for STYLE.
+Create for character size W x H with offset ROT.  If STIPPLE is
+non-nil, use it instead of calculating."
+  (let ((stipple (or stipple (indent-bars--stipple w h rot style))))
+    (when stipple
+      `((t ( :inherit nil :stipple ,stipple
+	     ,@(when indent-bars-no-stipple-char-font-weight
+		 `(:weight ,indent-bars-no-stipple-char-font-weight))))))))
 
 (defun indent-bars--calculate-face-spec (style depth)
   "Calculate the face spec for bar at DEPTH in STYLE.
@@ -668,8 +671,8 @@ The face is created if necessary."
 ;;;;; No stipple characters (e.g. terminal)
 (defun indent-bars--no-stipple-char (style depth)
   "Return the no-stipple bar character for DEPTH in STYLE."
-  (when (> depth (length (indent-bars-style-no-stipple-chars style)))
-    (setf (indent-bars-style-no-stipple-chars style)
+  (when (> depth (length (ibs/no-stipple-chars style)))
+    (setf (ibs/no-stipple-chars style)
 	  (indent-bars--create-no-stipple-chars style depth)))
   (aref (ibs/no-stipple-chars style) (1- depth)))
 
@@ -1033,14 +1036,13 @@ configured by default in `indent-bars--handle-blank-lines-form'."
 
 ;;;; Current indentation depth highlighting
 (defvar-local indent-bars--current-depth 0)
-
 (defun indent-bars--current-bg-color (style)
   "Return the current bar background color appropriate for STYLE."
   (when-let ((hcd
 	      (indent-bars--style style "highlight-current-depth")))
     (plist-get hcd :background)))
 
-(defun indent-bars--current-depth-stipple (style &optional w h rot)
+(defun indent-bars--current-depth-stipple (&optional w h rot style)
   "Return the current depth stipple highlight (if any) for STYLE.
 One of the keywords :width, :pad, :pattern, or :zigzag must be
 set in `indent-bars-highlight-current-depth' config.  W, H, and
@@ -1050,12 +1052,12 @@ ROT are as in `indent-bars--stipple', and have similar default values."
     (when (or width pad pattern zigzag)
       (let* ((w (or w (window-font-width)))
 	     (h (or h (window-font-height)))
-	     (rot (or rot (indent-bars--stipple-rot w))))
-	(indent-bars--stipple w h rot width pad pattern zigzag)))))
+	     (rot (or rot (indent-bars--stipple-rot nil w))))
+	(indent-bars--stipple w h rot style width pad pattern zigzag)))))
 
 (defun indent-bars--update-current-depth-highlight (depth)
   "Update highlight for the current DEPTH.
-Works by remapping the appropriate indent-bars[-style]-N face for
+Works by remapping the appropriate indent-bars[-tag]-N face for
 all styles in the `indent-bars--styles' list.  DEPTH should be
 greater than zero."
   (dolist (s indent-bars--styles)
@@ -1063,22 +1065,23 @@ greater than zero."
 	   (hl-col (and (ibs/current-depth-palette s)
 			(indent-bars--get-color s depth 'highlight)))
 	   (hl-bg (ibs/current-bg-color s)))
-      (when (or hl-col hl-bg (ibs/current-depth-stipple s))
-	(when (ibs/remap s)		; out with the old
-	      (face-remap-remove-relative (ibs/remap s)))
-	(setf (ibs/remap s)
+      (when (or hl-col hl-bg (ibs/current-stipple-face s))
+	(when-let ((c (alist-get (ibs/tag s) indent-bars--remaps))) ; out with the old
+	      (face-remap-remove-relative c))
+	(setf (alist-get (ibs/tag s) indent-bars--remaps)
 	      (apply #'face-remap-add-relative face
 		     `(,@(when hl-col `(:foreground ,hl-col))
-		       ,@(when hl-bg `(:background ,hl-bg))
-		       ,@(when-let ((st (ibs/current-depth-stipple s)))
-			   `(:stipple ,st)))))))))
+		       ,@(when hl-bg `(:background ,hl-bg)))
+		     (ibs/current-stipple-face s)))))))
 
 (defvar-local indent-bars--highlight-timer nil)
-(defun indent-bars--highlight-current-depth ()
+(defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
-Rate limit set by `indent-bars-depth-update-delay'."
+Rate limit set by `indent-bars-depth-update-delay'.  If FORCE is
+non-nil, update depth even if it has not changed."
   (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
-    (when (and depth (not (= depth indent-bars--current-depth)) (> depth 0))
+    (when (and depth (or force (not (= depth indent-bars--current-depth)))
+	       (> depth 0))
       (setq indent-bars--current-depth depth)
       (if (zerop indent-bars-depth-update-delay)
 	  (indent-bars--update-current-depth-highlight depth)
@@ -1366,6 +1369,11 @@ Adapted from `highlight-indentation-mode'."
 		  #'indent-bars--extend-blank-line-regions 95 t))))
 
 (declare-function indent-bars-ts-setup "indent-bars-ts")
+
+(defsubst indent-bars--tag (format-str s)
+  "Tag FORMAT-STR with style S and return the associate interned symbol."
+  (intern (format format-str (if (ibs/tag s) (concat "-" (ibs/tag s)) ""))))
+
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
   ;; Colors
@@ -1379,18 +1387,22 @@ Adapted from `highlight-indentation-mode'."
 	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
   
-  ;; Faces/stipple
+  ;; Base stipple face
   (face-spec-set (ibs/stipple-face style)
-		 (indent-bars--create-stipple-face
+		 (indent-bars--stipple-face-spec
 		  (frame-char-width) (frame-char-height)
-		  (indent-bars--stipple-rot (frame-char-width))))
+		  (indent-bars--stipple-rot nil (frame-char-width))))
   
   ;; Current depth highlight faces/stipple
-  (when (indent-bars--style style "highlight-current-depth")
-    (setf (ibs/current-bg-color style)
-	  (indent-bars--current-bg-color style)
-	  (ibs/current-depth-stipple style)
-	  (indent-bars--current-depth-stipple style))))
+  (setf (ibs/current-bg-color style)
+	(indent-bars--current-bg-color style))
+  (when-let ((stipple (indent-bars--current-depth-stipple nil nil nil style)))
+    (setf (ibs/current-stipple-face style)
+	  (indent-bars--tag "indent-bars%s-current-face" style))
+    (face-spec-set (ibs/current-stipple-face style)
+		   (indent-bars--stipple-face-spec
+		    (frame-char-width) (frame-char-height)
+		    (indent-bars--stipple-rot nil (frame-char-width)) style stipple))))
 
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
@@ -1403,18 +1415,22 @@ Adapted from `highlight-indentation-mode'."
 	(or (not (display-graphic-p)) indent-bars-prefer-character))
 
   ;; Style (color + stipple)
-  (indent-bars--initialize-style	; default style
-   (setq indent-bars-style (indent-bars--new-style)))
+  (unless indent-bars-style
+    (indent-bars--initialize-style	; default style
+     (setq indent-bars-style (indent-bars--new-style))))
 
   ;; Window state: selection/size
-  (add-hook 'window-state-change-functions #'indent-bars--window-change nil t)
+  (unless indent-bars--no-stipple
+    (add-hook 'window-state-change-functions
+	      #'indent-bars--window-change nil t))
 
   ;; Treesitter
   (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
 
-  ;; Resize
-  (add-hook 'text-scale-mode-hook #'indent-bars--resize-stipple nil t)
-  (indent-bars--resize-stipple)		; just in case
+  ;; Remap/Resize
+  (setq indent-bars--stipple-remaps (make-hash-table))
+  (add-hook 'text-scale-mode-hook #'indent-bars--window-change nil t)
+  (indent-bars--window-change)		; just in case
 
   ;; Current depth
   (when (indent-bars--style 'any "highlight-current-depth")
@@ -1427,18 +1443,21 @@ Adapted from `highlight-indentation-mode'."
   (indent-bars--setup-font-lock)
   (font-lock-flush))
 
-
 (defvar indent-bars--teardown-functions nil)
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
+  ;; Faces and remaps
   (dolist (s indent-bars--styles)
-    (when (ibs/remap s)
-      (face-remap-remove-relative (ibs/remap s)))
-    (when (ibs/remap-stipple s)
-      (face-remap-remove-relative (ibs/remap-stipple s)))
+    (face-remap-remove-relative
+     (alist-get (ibs/tag s) indent-bars--remaps))
     (face-spec-set (ibs/stipple-face s) nil 'reset)
     (cl-loop for f in (ibs/faces s)
 	     do (face-spec-set f nil 'reset)))
+  (when indent-bars--stipple-remaps
+    (maphash (lambda _k pl)
+	     (cl-loop for (_k r) on pl by #'cddr do
+		      (face-remap-remove-relative r)))
+    (setq  indent-bars--stipple-remaps nil))
   
   (font-lock-remove-keywords nil indent-bars--font-lock-keywords)
   (font-lock-remove-keywords nil indent-bars--font-lock-blank-line-keywords)
@@ -1448,16 +1467,15 @@ Adapted from `highlight-indentation-mode'."
   (when indent-bars-orig-unfontify-region
     (setq font-lock-unfontify-region-function
 	  indent-bars-orig-unfontify-region))
-  (setq indent-bars--gutter-rot 0
-	indent-bars--current-depth 0
+  (setq indent-bars--current-depth 0
 	indent-bars--styles nil)
-  (remove-hook 'text-scale-mode-hook #'indent-bars--resize-stipple t)
+  (remove-hook 'text-scale-mode-hook #'indent-bars--window-change t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
 	       #'indent-bars--extend-blank-line-regions t)
   (apply #'run-hooks indent-bars--teardown-functions))
 
-(defun indent-bars-reset ()
+(defun indent-bars-reset (&rest _r)
   "Reset indent-bars config."
   (interactive)
   (indent-bars-teardown)
