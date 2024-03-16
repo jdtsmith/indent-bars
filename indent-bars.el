@@ -471,7 +471,7 @@ returned."
 			  ((color-defined-p el) el)
 			  (t nil)))))
 ;;;; Style
-(defvar-local indent-bars-style nil
+(defvar indent-bars-style nil
   "The `indent-bars-style' struct for the main style.")
 
 (defvar indent-bars--styles nil
@@ -503,18 +503,33 @@ May be nil, a color string or a vector of colors strings.")
   ( stipple-face nil :type face
     :documentation "A stipple face to inherit from.")
   ( no-stipple-chars nil
-    :documentation "A vector of style non-stipple chars.")
-  ;; Current depth remapping
-  ( remap nil :type list
-    :documentation "An active face-remap cookie for faces.")
-  ( remap-stipple nil :type list
-    :documentation "An active face-remap cookie for stipple.")
+    :documentation "A vector of styled non-stipple chars.")
+  ;; Current depth highlighting
+  ( current-stipple-face nil :type face
+    :documentation "A current depth stipple face to inherit from.")
   ( current-bg-color nil :type color
     :documentation "The background color of the current depth highlight.")
   ( current-depth-palette nil
-    :documentation "Depth palette of current highlight colors.")
-  ( current-depth-stipple nil :type list
-    :documentation "The stipple pattern for the current depth."))
+    :documentation "Depth palette of highlighted colors."))
+
+(defvar-local indent-bars--remaps nil
+  "An alist of active face-remap cookie for faces.
+Keyed by style tag (nil for the main style).  These remaps are
+used to change the current depth highlight.")
+
+(defvar-local indent-bars--stipple-remaps nil
+  "A hash table of active face-remap cookies for stipples.
+The hash table is keyed by the `whr': an integer composing font
+width, height, and window starting offset (see
+`indent-bars--whr').  Element of the hash table are plist with
+the following keys:
+
+  (:main[-styletag] ... :current[-styletag] ...)
+
+These are used to update relevant stipples for main and current
+stipple faces for the various styles as character size and/or
+window pixel start (pattern rotation) change, due to window
+layout of font size changes.")
 
 (defun indent-bars--new-style (&optional tag)
   "Create and record a new style struct with TAG."
@@ -738,6 +753,23 @@ NAME is a string, and ALT and be a string or nil."
   (intern (format "indent-bars%s-%s"
 		  (if alt (concat "-" alt) "") name)))
 
+(defun indent-bars--style1 (style name)
+  "Return the value of style variable NAME for STYLE.
+Considers ([no-]inherit . rest) inheritance."
+  (let* ((tag (ibs/tag style))
+	 (sym (indent-bars--alt name tag))
+	 (val (symbol-value sym))
+	 (inhrt t))  ; inherit by default
+    (when tag
+      ;; Check for the ([no-]inherit . actual-val) form
+      (when (and (consp val) (memq (car val) '(inherit no-inherit)))
+	(setq inhrt (and (car val) (not (eq (car val) 'no-inherit)))
+	      val (cdr val)))
+      (when inhrt
+	(setq val (indent-bars--custom-inherit
+		   (symbol-value (indent-bars--alt name nil)) val))))
+    val))
+
 (defun indent-bars--style (style name)
   "Return the value of style variable NAME for STYLE.
 Determines variables to use based on the style tag.  For style
@@ -779,23 +811,6 @@ returned."
       old))
 
    (t new)))
-
-(defun indent-bars--style1 (style name)
-  "Return the value of style variable NAME for STYLE.
-Considers ([no-]inherit . rest) inheritance."
-  (let* ((tag (indent-bars-style-tag style))
-	 (sym (indent-bars--alt name tag))
-	 (val (symbol-value sym))
-	 (inhrt t))  ; inherit by default
-    (when tag
-      ;; Check for the ([no-]inherit . actual-val) form
-      (when (and (consp val) (memq (car val) '(inherit no-inherit)))
-	(setq inhrt (and (car val) (not (eq (car val) 'no-inherit)))
-	      val (cdr val)))
-      (when inhrt
-	(setq val (indent-bars--custom-inherit
-		   (symbol-value (indent-bars--alt name nil)) val))))
-    val))
 
 ;;;; Indentation and Drawing
 (defvar-local indent-bars-spacing nil)
