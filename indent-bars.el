@@ -692,7 +692,7 @@ see `indent-bars-prefer-character')."
 	 (propertize (string indent-bars-no-stipple-char)
 		     'face (indent-bars--face style d)))))))
 
-;;;;; Package
+;;;;; Alternate Style Support
 (defmacro indent-bars--alt-custom
     (alt opt alt-description std-val &optional add-inherit no-inherit &rest r)
   "Define a custom ALT variable for option OPT.
@@ -949,7 +949,7 @@ needed."
 	  (cl-incf bar)
 	  (cl-incf pos indent-bars-spacing))
 	;; STILL bars to show: invent them (if requested)
-	(if (and invent (<= bar nbars)) 
+	(if (and invent (<= bar nbars))
 	    (put-text-property
 	     end (1+ end) 'display
 	     (concat (indent-bars--blank-string
@@ -1001,7 +1001,7 @@ in `indent-bars--draw-line'.
 Note: blank lines at the very beginning or end of the buffer are
 not indicated, even if they otherwise would be.  This function is
 configured by default in `indent-bars--handle-blank-lines-form'."
-  (let (ctxbars)
+  (let ((pm (point-max)) ctxbars)
     (save-excursion
       (goto-char (1- beg))
       (beginning-of-line 1)
@@ -1009,8 +1009,7 @@ configured by default in `indent-bars--handle-blank-lines-form'."
 	(goto-char beg)
 	(while (< (point) end) ;note: end extends 1 char beyond blank line range
 	  (let* ((bp (line-beginning-position))
-		 (ep (line-end-position))
-		 (pm (point-max)))
+		 (ep (line-end-position)))
 	    (unless (= ep pm)
 	      (indent-bars--draw-line style ctxbars bp ep 'invent
 				      switch-after style2))
