@@ -953,130 +953,6 @@ needed."
 		      switch-after style2)
 		     "\n")))))))
 
-;;;; Stipple Display
-(defsubst indent-bars--block (n)
-  "Create a block of N low-order 1 bits."
-  (- (ash 1 n) 1))
-
-(defun indent-bars--stipple-rot (w)
-  "Return the stipple rotation for pattern with W for the current window."
-  (mod (car (window-edges nil t nil t)) w))
-
-(defun indent-bars--rot (num w n)
-  "Shift number NUM of W bits up by N bits, carrying around to the low bits.
-N should be strictly less than W and the returned value will fit
-within W bits."
-  (logand (indent-bars--block w) (logior (ash num n) (ash num (- n w)))))
-
-(defun indent-bars--row-data (w pad rot width-frac)
-  "Calculate stipple row data to fit in character of width W.
-The width of the pattern of filled pixels is determined by
-WIDTH-FRAC.  The pattern itself is shifted up by PAD bits (which
-shifts the pattern to the right, for positive values of PAD).
-Subsequently, the value is shifted up (with W-bit wrap-around) by
-ROT bits, and returned.  ROT is the starting bit offset of a
-character within the closest stipple repeat to the left; i.e. if
-pixel 1 of the stipple aligns with pixel 1 of the chacter, ROT=0.
-ROT should be less than W."
-  (let* ((bar-width (max 1 (round (* w width-frac))))
-	 (num (indent-bars--rot
-	       (ash (indent-bars--block bar-width) pad) w rot)))
-    (apply #'unibyte-string
-	   (cl-loop for boff = 0 then (+ boff 8) while (< boff w)
-		    for nbits = (min 8 (- w boff))
-		    collect (ash (logand num
-					 (ash (indent-bars--block nbits) boff))
-				 (- boff))))))
-
-;; ** Notes on the stipples:
-;;
-;; indent-bars by default uses a selectively-revealed stipple pattern
-;; with a width equivalent to the (presumed fixed) width of individual
-;; characters to efficiently draw bars.  A stipple pattern is drawn as
-;; a fixed repeating bit pattern, with its lowest bits and earlier
-;; bytes leftmost.  It is drawn with respect to the *entire frame*,
-;; with its first bit aligned with the first (leftmost) frame pixel.
-;; 
-;; Turning on :stipple for a character merely "opens a window" on that
-;; frame-filling, repeating stipple pattern.  Since the pattern starts
-;; outside the body (in literally the first frame pixel, typically in
-;; the fringe), you must consider the shift between the first pixel of
-;; a character and the first pixel of the repeating stipple block at
-;; that pixel position or above:
-;; 
-;;     |<-frame edge |<---buffer/window edge
-;;     |<--w-->|<--w-->|<--w-->|     w = pattern width
-;;     | marg/fringe |<-chr->|     chr = character width = w
-;;             |<-g->|               g = gutter offset of chr start, g<w
-;;
-;; Or, when the character width exceeds the margin/fringe offset:
-;; 
-;;     |<-frame edge |<---buffer/window edge
-;;     |<--------w-------->|<---------w-------->|
-;;     | marg/fringe |<-------chr------->|
-;;     |<-----g----->|
-;;
-;; So g = (mod marg/fringe w).
-;; 
-;; When the block/zigzag/whatever pattern is made, to align with
-;; characters, it must get shifted up (= right) by g bits, with carry
-;; over (wrap) around w=(window-font-width) bits (i.e the width of the
-;; bitmap).  The byte/bit pattern is first-lowest-leftmost.
-;;
-;; Note that different window sides will often have different g
-;; values, which means the same bitmap cannot work for the buffer in
-;; both windows.  So showing the same buffer side by side can lead to
-;; mis-alignment in the non-active buffer.
-;;
-;; Solution: use window hooks to update the stipple bitmap as focus or
-;; windows change.  So at least the focused buffer looks correct.  If
-;; this is insufficient, use C-x 4 c
-;; (clone-indirect-buffer-other-window).  A bug in Emacs <29 means
-;; `face-remapping-alist' is unintentionally shared between indirect
-;; and master buffers.  Fixed in Emacs 29.
-
-(defun indent-bars--stipple (w h rot
-			       &optional width-frac pad-frac pattern zigzag)
-  "Calculate stipple bitmap pattern for char width W and height H.
-ROT is the number of bits to rotate the pattern around to the
-right (with wrap).
-
-Uses configuration variables `indent-bars-width-frac',
-`indent-bars-pad-frac', `indent-bars-pattern', and
-`indent-bars-zigzag', unless PAD-FRAC, WIDTH-FRAC, PATTERN,
-and/or ZIGZAG are set (the latter overriding the config
-variables, which see)."
-  (unless (or (not (display-graphic-p)) indent-bars-prefer-character)
-    (let* ((rowbytes (/ (+ w 7) 8))
-	   (pattern (or pattern indent-bars-pattern))
-	   (pat (if (< h (length pattern)) (substring pattern 0 h) pattern))
-	   (plen (length pat))
-	   (chunk (/ (float h) plen))
-	   (small (floor chunk))
-	   (large (ceiling chunk))
-	   (pad-frac (or pad-frac indent-bars-pad-frac))
-	   (pad (round (* w pad-frac)))
-	   (zigzag (or zigzag indent-bars-zigzag))
-	   (zz (if zigzag (round (* w zigzag)) 0))
-	   (zeroes (make-string rowbytes ?\0))
-	   (width-frac (or width-frac indent-bars-width-frac))
-	   (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
-		      (list (indent-bars--row-data w pad rot width-frac)) ; one row
-		    (cl-loop for last-fill-char = nil then x
-			     for x across pat
-			     for n = small then (if (and (/= x ?\s) (= n small))
-						    large
-						  small)
-			     for zoff = zz then (if (and last-fill-char
-							 (/= x ?\s)
-							 (/= x last-fill-char))
-						    (- zoff) zoff)
-			     for row = (if (= x ?\s) zeroes
-					 (indent-bars--row-data w (+ pad zoff)
-								rot width-frac))
-			     append (cl-loop repeat n collect row)))))
-      (list w (length dlist) (string-join dlist)))))
-
 ;;;; Font Lock
 (defvar-local indent-bars--font-lock-keywords nil)
 (defvar indent-bars--font-lock-blank-line-keywords nil)
@@ -1218,37 +1094,202 @@ Rate limit set by `indent-bars-depth-update-delay'."
 		 indent-bars-depth-update-delay nil
 		 #'indent-bars--update-current-depth-highlight depth)))))))
 
-;;;; Text scaling and window hooks
-(defvar-local indent-bars--gutter-rot 0)
-(defun indent-bars--window-change (win)
-  "Update the stipple for buffer in window WIN, if selected."
-  (when (eq win (selected-window))
-    (let* ((w (window-font-width))
-	   (rot (indent-bars--stipple-rot w)))
-      (when (/= indent-bars--gutter-rot rot)
-	(setq indent-bars--gutter-rot rot)
-	(indent-bars--resize-stipple w rot)))))
+;;;; Stipple Display
+(defsubst indent-bars--block (n)
+  "Create a block of N low-order 1 bits."
+  (- (ash 1 n) 1))
 
-(defun indent-bars--resize-stipple (&optional w rot)
-  "Recreate stipple(s) with updated size.
-W is the optional `window-font-width' and ROT is the number of
-bits to rotate the pattern.  If W and ROT are not passed they
-will be calculated."
-  (dolist (s indent-bars--styles)
-    (when (ibs/remap-stipple s)
-      (face-remap-remove-relative (ibs/remap-stipple s)))
-    (let* ((w (or w (window-font-width)))
-	   (rot (or rot (indent-bars--stipple-rot w)))
-	   (h (window-font-height)))
-      (setf (ibs/remap-stipple s)
-	    (face-remap-add-relative
-	     (ibs/stipple-face s)
-	     :stipple (indent-bars--stipple w h rot)))
-      (when (ibs/current-depth-stipple s)
-	(setf (ibs/current-depth-stipple s)
-	      (indent-bars--current-depth-stipple s w h rot))
-	(setq indent-bars--current-depth 0)
-	(indent-bars--highlight-current-depth)))))
+(defun indent-bars--stipple-rot (win w)
+  "Return the stipple rotation for window WIN and pattern width W.
+WIN defaults to the selected window if nil."
+  (mod (car (window-edges win t nil t)) w))
+
+(defun indent-bars--rot (num w n)
+  "Shift number NUM of W bits up by N bits, carrying around to the low bits.
+N should be strictly less than W and the returned value will fit
+within W bits."
+  (logand (indent-bars--block w) (logior (ash num n) (ash num (- n w)))))
+
+(defun indent-bars--row-data (w pad rot width-frac)
+  "Calculate stipple row data to fit in character of width W.
+The width of the pattern of filled pixels is determined by
+WIDTH-FRAC.  The pattern itself is shifted up by PAD bits (which
+shifts the pattern to the right, for positive values of PAD).
+Subsequently, the value is shifted up (with W-bit wrap-around) by
+ROT bits, and returned.  ROT is the starting bit offset of a
+character within the closest stipple repeat to the left; i.e. if
+pixel 1 of the stipple aligns with pixel 1 of the chacter, ROT=0.
+ROT should be less than W."
+  (let* ((bar-width (max 1 (round (* w width-frac))))
+	 (num (indent-bars--rot
+	       (ash (indent-bars--block bar-width) pad) w rot)))
+    (apply #'unibyte-string
+	   (cl-loop for boff = 0 then (+ boff 8) while (< boff w)
+		    for nbits = (min 8 (- w boff))
+		    collect (ash (logand num
+					 (ash (indent-bars--block nbits) boff))
+				 (- boff))))))
+
+;; ** Notes on the stipples:
+;;
+;; indent-bars by default uses a selectively-revealed stipple pattern
+;; with a width equivalent to the (presumed fixed) width of individual
+;; characters to efficiently draw bars.  A stipple pattern is drawn as
+;; a fixed repeating bit pattern, with its lowest bits and earlier
+;; bytes leftmost.  It is drawn with respect to the *entire frame*,
+;; with its first bit aligned with the first (leftmost) frame pixel.
+;; 
+;; Turning on :stipple for a character merely "opens a window" on that
+;; frame-filling, repeating stipple pattern.  Since the pattern starts
+;; outside the body (in literally the first frame pixel, typically in
+;; the fringe), you must consider the shift between the first pixel of
+;; a character and the first pixel of the repeating stipple block at
+;; that pixel position or above:
+;; 
+;;     |<-frame edge |<---buffer/window edge
+;;     |<--w-->|<--w-->|<--w-->|     w = pattern width
+;;     | marg/fringe |<-chr->|     chr = character width = w
+;;             |<-g->|               g = gutter offset of chr start, g<w
+;;
+;; Or, when the character width exceeds the margin/fringe offset:
+;; 
+;;     |<-frame edge |<---buffer/window edge
+;;     |<--------w-------->|<---------w-------->|
+;;     | marg/fringe |<-------chr------->|
+;;     |<-----g----->|
+;;
+;; So g = (mod marg/fringe w).
+;; 
+;; When the block/zigzag/whatever pattern is made, to align with
+;; characters, it must get shifted up (= right) by g bits, with carry
+;; over (wrap) around w=(window-font-width) bits (i.e the width of the
+;; bitmap).  The byte/bit pattern is first-lowest-leftmost.
+;;
+;; Note that different window sides will often have different g
+;; values, which means the same bitmap cannot work for the buffer in
+;; both windows.  So showing the same buffer side by side can lead to
+;; mis-alignment in the non-active buffer.
+;;
+;; Solution: use window hooks to update the stipple bitmap as focus or
+;; windows change.  So at least the focused buffer looks correct.  If
+;; this is insufficient, use C-x 4 c
+;; (clone-indirect-buffer-other-window).  A bug in Emacs <29 means
+;; `face-remapping-alist' is unintentionally shared between indirect
+;; and master buffers.  Fixed in Emacs 29.
+
+(defun indent-bars--stipple (w h rot &optional style
+			       width-frac pad-frac pattern zigzag)
+  "Calculate stipple bitmap pattern for char width W and height H.
+ROT is the number of bits to rotate the pattern around to the
+right (with wrap).
+
+Uses configuration variables `indent-bars-width-frac',
+`indent-bars-pad-frac', `indent-bars-pattern', and
+`indent-bars-zigzag', unless PAD-FRAC, WIDTH-FRAC, PATTERN,
+and/or ZIGZAG are set (the latter overriding the config
+variables, which see).  If STYLE is set, use config variables
+appropriate for that style."
+  (unless (or (not (display-graphic-p)) indent-bars-prefer-character)
+    (let* ((rowbytes (/ (+ w 7) 8))
+	   (pattern (or pattern (indent-bars--style style "pattern")))
+	   (pat (if (< h (length pattern)) (substring pattern 0 h) pattern))
+	   (plen (length pat))
+	   (chunk (/ (float h) plen))
+	   (small (floor chunk))
+	   (large (ceiling chunk))
+	   (pad-frac (or pad-frac (indent-bars--style style "pad-frac")))
+	   (pad (round (* w pad-frac)))
+	   (zigzag (or zigzag (indent-bars--style style "zigzag")))
+	   (zz (if zigzag (round (* w zigzag)) 0))
+	   (zeroes (make-string rowbytes ?\0))
+	   (width-frac (or width-frac (indent-bars--style style "width-frac")))
+	   (dlist (if (and (= plen 1) (not (string= pat " "))) ; solid bar
+		      (list (indent-bars--row-data w pad rot width-frac)) ; one row
+		    (cl-loop for last-fill-char = nil then x
+			     for x across pat
+			     for n = small then (if (and (/= x ?\s) (= n small))
+						    large
+						  small)
+			     for zoff = zz then (if (and last-fill-char
+							 (/= x ?\s)
+							 (/= x last-fill-char))
+						    (- zoff) zoff)
+			     for row = (if (= x ?\s) zeroes
+					 (indent-bars--row-data w (+ pad zoff)
+								rot width-frac))
+			     append (cl-loop repeat n collect row)))))
+      (list w (length dlist) (string-join dlist)))))
+
+(defsubst indent-bars--whr (w h r)
+  "Encoded value for W, H and R."
+  (+ (ash w 16) (ash h 8) r))
+
+(defun indent-bars--create-stipples (w h rot)
+  "Create and store stipple remaps for the given font size and pixel start.
+An entry is created for each active style for both
+:main[-styletag] and :current[-styletag], indicating remaps for
+the main and currently highlight contexts.  W is the
+`window-font-width', H is the corresponding height, and ROT is
+the number of bits to rotate the pattern start."
+  (let* ((whr (indent-bars--whr w h rot))
+	 (filter `(:window indent-bars-whr ,whr))
+	 remap)
+    (dolist (s indent-bars--styles)
+      ;; Main stipple face
+      (when (ibs/stipple-face s)
+	(setq remap
+	      (plist-put
+	       remap (indent-bars--tag ":main%s" s)
+	       (face-remap-add-relative
+		(ibs/stipple-face s)
+		`( :filtered ,filter
+		   (:stipple ,(indent-bars--stipple w h rot s)))))))
+      ;; Currently highlighted stipple face
+      (when (ibs/current-stipple-face s)
+	(setq remap
+	      (plist-put
+	       remap (indent-bars--tag ":current%s" s)
+	       (face-remap-add-relative
+		(ibs/current-stipple-face s)
+		`( :filtered ,filter
+		   (:stipple ,(indent-bars--current-depth-stipple w h rot s))))))
+	(indent-bars--highlight-current-depth 'force)))
+    (puthash whr remap indent-bars--stipple-remaps)))
+
+;;;; Window change and cleanup
+(defvar-local indent-bars--needs-cleanup nil)
+(defun indent-bars--window-change (&optional win)
+  "Update the stipples for buffer in window WIN, if selected.
+WIN defaults to the selected window."
+  (unless win (setq win (selected-window)))
+  (when (eq win (selected-window))
+    (let* ((w (window-font-width win))
+	   (h (window-font-height win))
+	   (rot (indent-bars--stipple-rot win w))
+	   (whr (indent-bars--whr rot w h))
+	   (cur-whr (window-parameter win 'indent-bars-whr)))
+      (when (/= cur-whr whr)
+	(set-window-parameter win 'indent-bars-whr whr)
+	(indent-bars--create-stipples w h rot)
+	(unless indent-bars--needs-cleanup
+	  (setq indent-bars--needs-cleanup t)
+	  (run-with-idle-timer
+	   0.5 nil
+	   (apply-partially #'indent-bars--cleanup-stipple-remaps
+			    (current-buffer))))))))
+
+(defun indent-bars--cleanup-stipple-remaps (buf)
+  "Clean up unused stipple face remaps for buffer BUF."
+  (when-let (((buffer-live-p buf))
+	     (wins (get-buffer-window-list buf nil t))
+	     (whrs (cl-loop for win in wins
+			    collect (window-parameter win 'indent-bars-whr)))
+	     (rmp-hsh (buffer-local-value 'indent-bars--stipple-remaps buf))
+	     (rkeys (hash-table-keys rmp-hsh)))
+    (dolist (r (seq-difference rkeys whrs))
+      (face-remap-remove-relative (gethash r rmp-hsh))
+      (remhash r rmp-hsh)))
+  (setf (buffer-local-value 'indent-bars--needs-cleanup buf) nil))
 
 ;;;; Setup and mode
 (defun indent-bars--guess-spacing ()
