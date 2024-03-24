@@ -532,6 +532,12 @@ stipple faces for the various styles as character size and/or
 window pixel start (pattern rotation) change, due to window
 layout of font size changes.")
 
+(defsubst indent-bars--tag (format-str s &rest r)
+  "Tag FORMAT-STR with style S and return the associate interned symbol.
+Additional `format' arguments can be passed as R."
+  (intern (apply #'format format-str
+		 (if (ibs/tag s) (concat "-" (ibs/tag s)) "") r)))
+
 (defun indent-bars--new-style (&optional tag)
   "Create and record a new style struct with TAG."
   (let ((style (ibs/create tag)))
@@ -653,10 +659,8 @@ DEPTH starts at 1."
 Redefine them if REDEFINE is non-nil."
   (vconcat
    (cl-loop
-    with tag = (ibs/tag style)
-    with tag-s = (if tag (format "-%s" tag) "")
     for i from 1 to num
-    for face = (intern (format "indent-bars%s-%d" tag-s i)) do
+    for face = (indent-bars--tag "indent-bars%s-%d" style i) do
     (if (and redefine (facep face)) (face-spec-reset-face face))
     (face-spec-set face (indent-bars--calculate-face-spec style i))
     collect face)))
@@ -1368,10 +1372,6 @@ Adapted from `highlight-indentation-mode'."
 		  #'indent-bars--extend-blank-line-regions 95 t))))
 
 (declare-function indent-bars-ts-setup "indent-bars-ts")
-
-(defsubst indent-bars--tag (format-str s)
-  "Tag FORMAT-STR with style S and return the associate interned symbol."
-  (intern (format format-str (if (ibs/tag s) (concat "-" (ibs/tag s)) ""))))
 
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
