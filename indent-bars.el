@@ -1407,11 +1407,7 @@ Adapted from `highlight-indentation-mode'."
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
   
   ;; Base stipple face
-  (face-spec-set (ibs/stipple-face style)
-		 (indent-bars--stipple-face-spec
-		  (frame-char-width) (frame-char-height)
-		  (indent-bars--stipple-rot nil (frame-char-width))
-		  style))
+  (face-spec-set (ibs/stipple-face style) nil) ;stipple only via filtered remaps
   
   ;; Current depth highlight faces/stipple
   (setf (ibs/current-bg-color style)
@@ -1419,10 +1415,7 @@ Adapted from `highlight-indentation-mode'."
   (when-let ((stipple (indent-bars--current-depth-stipple nil nil nil style)))
     (setf (ibs/current-stipple-face style)
 	  (indent-bars--tag "indent-bars%s-current-face" style))
-    (face-spec-set (ibs/current-stipple-face style)
-		   (indent-bars--stipple-face-spec
-		    (frame-char-width) (frame-char-height)
-		    (indent-bars--stipple-rot nil (frame-char-width)) style stipple))))
+    (face-spec-set (ibs/current-stipple-face style) nil)))
 
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
