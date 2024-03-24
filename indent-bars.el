@@ -1428,8 +1428,8 @@ Adapted from `highlight-indentation-mode'."
 	(or (not (display-graphic-p)) indent-bars-prefer-character))
 
   ;; Style (color + stipple)
-  (unless indent-bars-style
-    (indent-bars--initialize-style	; default style
+  (unless (and indent-bars-style indent-bars--styles)
+    (indent-bars--initialize-style
      (setq indent-bars-style (indent-bars--new-style))))
 
   ;; Window state: selection/size
@@ -1442,10 +1442,10 @@ Adapted from `highlight-indentation-mode'."
 
   ;; Remap/Resize
   (setq indent-bars--stipple-remaps (make-hash-table))
-  (add-hook 'text-scale-mode-hook #'indent-bars--text-scale t)
-  (indent-bars--window-change)		; just in case
+  (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
+  (indent-bars--update-all-stipples)
 
-  ;; Current depth
+  ;; Current depth Highlighting
   (when (indent-bars--style 'any "highlight-current-depth")
     (add-hook 'post-command-hook
 	      #'indent-bars--highlight-current-depth nil t)
@@ -1482,9 +1482,8 @@ Adapted from `highlight-indentation-mode'."
   (when indent-bars-orig-unfontify-region
     (setq font-lock-unfontify-region-function
 	  indent-bars-orig-unfontify-region))
-  (setq indent-bars--current-depth 0
-	indent-bars--styles nil)
-  (remove-hook 'text-scale-mode-hook #'indent-bars--text-scale t)
+  (setq indent-bars--current-depth 0)
+  (remove-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
 	       #'indent-bars--extend-blank-line-regions t)
