@@ -1290,13 +1290,13 @@ WIN defaults to the selected window.  To be set as a local
 	 (whr (indent-bars--whr w h rot))
 	 (cur-whr (window-parameter win 'indent-bars-whr)))
     (unless (eq cur-whr whr)
-      (set-window-parameter win 'indent-bars-whr whr))
-    (when-let ((buf (window-buffer win))
-	       (ht (buffer-local-value 'indent-bars--stipple-remaps buf))
-	       ((null (gethash whr ht))))
-      (with-current-buffer buf ; we may be called from an arbitrary buffer
-	(indent-bars--create-stipples w h rot)
-	(indent-bars--schedule-remap-cleanup)))))
+      (set-window-parameter win 'indent-bars-whr whr)
+      (when-let ((buf (window-buffer win))
+		 (ht (buffer-local-value 'indent-bars--stipple-remaps buf))
+		 ((null (gethash whr ht))))
+	(with-current-buffer buf ; we may be called from an arbitrary buffer
+	  (indent-bars--create-stipples w h rot)
+	  (indent-bars--schedule-remap-cleanup))))))
 
 (defun indent-bars--cleanup-stipple-remaps (buf)
   "Clean up unused stipple face remaps for buffer BUF."
@@ -1459,18 +1459,20 @@ Adapted from `highlight-indentation-mode'."
 (defvar indent-bars--teardown-functions nil)
 (defun indent-bars-teardown ()
   "Tears down indent-bars."
-  ;; Faces and remaps
+  ;; Remove current highlight remaps
   (dolist (s indent-bars--styles)
     (face-remap-remove-relative
-     (alist-get (ibs/tag s) indent-bars--remaps))
-    (face-spec-set (ibs/stipple-face s) nil 'reset)
-    (cl-loop for f in (ibs/faces s)
-	     do (face-spec-set f nil 'reset)))
-  (when indent-bars--stipple-remaps
-    (maphash (lambda _k pl)
-	     (cl-loop for (_k r) on pl by #'cddr do
-		      (face-remap-remove-relative r)))
-    (setq  indent-bars--stipple-remaps nil))
+     (alist-get (ibs/tag s) indent-bars--remaps)))
+  ;; Remove stipple remaps and window parameters
+  (unless indent-bars--no-stipple
+    (when indent-bars--stipple-remaps
+      (maphash (lambda (_k pl)
+		 (cl-loop for (_k r) on pl by #'cddr do
+			  (face-remap-remove-relative r)))
+	       indent-bars--stipple-remaps)
+      (setq indent-bars--stipple-remaps nil))
+    (dolist (w (get-buffer-window-list nil nil t))
+      (set-window-parameter w 'indent-bars-whr nil)))
   
   (font-lock-remove-keywords nil indent-bars--font-lock-keywords)
   (font-lock-remove-keywords nil indent-bars--font-lock-blank-line-keywords)
