@@ -1280,24 +1280,23 @@ is created for each active style, for both :main[-styletag] and
   (indent-bars--schedule-remap-cleanup))
 
 (defun indent-bars--window-change (&optional win)
-  "Update the stipples for buffer in window WIN, if selected.
-WIN defaults to the selected window."
+  "Update the stipples for buffer in window WIN.
+WIN defaults to the selected window.  To be set as a local
+`window-state-change-functions' hook."
   (unless win (setq win (selected-window)))
-  (when (eq win (selected-window))
-    (let* ((w (window-font-width win))
-	   (h (window-font-height win))
-	   (rot (indent-bars--stipple-rot win w))
-	   (whr (indent-bars--whr rot w h))
-	   (cur-whr (window-parameter win 'indent-bars-whr)))
-      (when (/= cur-whr whr)
-	(set-window-parameter win 'indent-bars-whr whr)
+  (let* ((w (window-font-width win))
+	 (h (window-font-height win))
+	 (rot (indent-bars--stipple-rot win w))
+	 (whr (indent-bars--whr w h rot))
+	 (cur-whr (window-parameter win 'indent-bars-whr)))
+    (unless (eq cur-whr whr)
+      (set-window-parameter win 'indent-bars-whr whr))
+    (when-let ((buf (window-buffer win))
+	       (ht (buffer-local-value 'indent-bars--stipple-remaps buf))
+	       ((null (gethash whr ht))))
+      (with-current-buffer buf ; we may be called from an arbitrary buffer
 	(indent-bars--create-stipples w h rot)
-	(unless indent-bars--needs-cleanup
-	  (setq indent-bars--needs-cleanup t)
-	  (run-with-idle-timer
-	   0.5 nil
-	   (apply-partially #'indent-bars--cleanup-stipple-remaps
-			    (current-buffer))))))))
+	(indent-bars--schedule-remap-cleanup)))))
 
 (defun indent-bars--cleanup-stipple-remaps (buf)
   "Clean up unused stipple face remaps for buffer BUF."
