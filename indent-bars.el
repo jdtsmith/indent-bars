@@ -1073,7 +1073,7 @@ greater than zero."
 	(when-let ((c (alist-get (ibs/tag s) indent-bars--remaps))) ; out with the old
 	      (face-remap-remove-relative c))
 	(setf (alist-get (ibs/tag s) indent-bars--remaps)
-	      (apply #'face-remap-add-relative face
+	      (face-remap-add-relative face
 		     `(,@(when hl-col `(:foreground ,hl-col))
 		       ,@(when hl-bg `(:background ,hl-bg)))
 		     (ibs/current-stipple-face s)))))))
