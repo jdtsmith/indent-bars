@@ -1264,6 +1264,20 @@ is created for each active style, for both :main[-styletag] and
 
 ;;;; Window change and cleanup
 (defvar-local indent-bars--needs-cleanup nil)
+(defun indent-bars--schedule-remap-cleanup ()
+  "Schedule cleanup of stipple remaps, unless already scheduled."
+  (unless indent-bars--needs-cleanup
+    (setq indent-bars--needs-cleanup t)
+    (run-with-idle-timer
+     1 nil
+     (apply-partially #'indent-bars--cleanup-stipple-remaps (current-buffer)))))
+
+(defun indent-bars--text-scale ()
+  "Update stipples on text scale."
+  (dolist (w (get-buffer-window-list nil nil t))
+    (indent-bars--window-change w))
+  (indent-bars--schedule-remap-cleanup))
+
 (defun indent-bars--window-change (&optional win)
   "Update the stipples for buffer in window WIN, if selected.
 WIN defaults to the selected window."
@@ -1428,7 +1442,7 @@ Adapted from `highlight-indentation-mode'."
 
   ;; Remap/Resize
   (setq indent-bars--stipple-remaps (make-hash-table))
-  (add-hook 'text-scale-mode-hook #'indent-bars--window-change nil t)
+  (add-hook 'text-scale-mode-hook #'indent-bars--text-scale t)
   (indent-bars--window-change)		; just in case
 
   ;; Current depth
@@ -1468,7 +1482,7 @@ Adapted from `highlight-indentation-mode'."
 	  indent-bars-orig-unfontify-region))
   (setq indent-bars--current-depth 0
 	indent-bars--styles nil)
-  (remove-hook 'text-scale-mode-hook #'indent-bars--window-change t)
+  (remove-hook 'text-scale-mode-hook #'indent-bars--text-scale t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
 	       #'indent-bars--extend-blank-line-regions t)
