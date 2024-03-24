@@ -1232,6 +1232,11 @@ window pixel start (pattern rotation \"rot\") change, due to
 window layout or font size changes.  Note that all stipple
 attributes are set via filtered face remaps.")
 
+(defsubst indent-bars--remove-plist-remaps (pl)
+  "Remove remaps key values from plist PL."
+  (cl-loop for (_k r) on pl by #'cddr do
+	   (face-remap-remove-relative r)))
+
 (defun indent-bars--create-stipples (w h rot)
   "Create and store stipple remaps for the given font size and pixel start.
 W is the `window-font-width', H is the corresponding height, and
@@ -1304,10 +1309,12 @@ WIN defaults to the selected window.  To be set as a local
 	     (whrs (cl-loop for win in wins
 			    collect (window-parameter win 'indent-bars-whr)))
 	     (rmp-hsh (buffer-local-value 'indent-bars--stipple-remaps buf))
-	     (rkeys (hash-table-keys rmp-hsh)))
-    (dolist (r (seq-difference rkeys whrs))
-      (face-remap-remove-relative (gethash r rmp-hsh))
-      (remhash r rmp-hsh)))
+	     (rkeys (hash-table-keys rmp-hsh))
+	     (unneeded (seq-difference rkeys whrs)))
+    (with-current-buffer buf ;N.B. face-remapping-alist is buffer-local
+      (dolist (rk unneeded)
+	(indent-bars--remove-plist-remaps (gethash rk rmp-hsh))
+	(remhash rk rmp-hsh))))
   (setf (buffer-local-value 'indent-bars--needs-cleanup buf) nil))
 
 ;;;; Setup and mode
@@ -1468,8 +1475,7 @@ Adapted from `highlight-indentation-mode'."
   (unless indent-bars--no-stipple
     (when indent-bars--stipple-remaps
       (maphash (lambda (_k pl)
-		 (cl-loop for (_k r) on pl by #'cddr do
-			  (face-remap-remove-relative r)))
+		 (indent-bars--remove-plist-remaps pl))
 	       indent-bars--stipple-remaps)
       (setq indent-bars--stipple-remaps nil)))
   
