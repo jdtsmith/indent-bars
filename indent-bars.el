@@ -542,7 +542,7 @@ Additional `format' arguments can be passed as R."
 (defun indent-bars--new-style (&optional tag)
   "Create and record a new style struct with TAG."
   (let ((style (ibs/create tag)))
-    (cl-pushnew style indent-bars--styles)
+    (cl-pushnew style indent-bars--styles :test #'equal)
     style))
 
 ;;;;; Colors
