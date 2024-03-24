@@ -515,12 +515,12 @@ May be nil, a color string or a vector of colors strings.")
     :documentation "Depth palette of highlighted colors."))
 
 (defvar-local indent-bars--remaps nil
-  "An alist of active face-remap cookie for faces.
+  "An alist of active face-remap cookies for faces.
 Keyed by style tag (nil for the main style).  These remaps are
-used to change the current depth highlight.")
+used to change the current depth highlight (aside from stipple changes).")
 
 (defvar-local indent-bars--stipple-remaps nil
-  "A hash table of active face-remap cookies for stipples.
+  "A hash table of active stipple face-remap cookies.
 The hash table is keyed by the `whr', an integer composing font
 width, height, and window starting offset (see
 `indent-bars--whr').  Elements of the hash table are plists with
@@ -530,8 +530,9 @@ the following keys:
 
 These are used to update relevant stipples for main and current
 stipple faces for the various styles as character size and/or
-window pixel start (pattern rotation) change, due to window
-layout of font size changes.")
+window pixel start (pattern rotation \"rot\") change, due to
+window layout or font size changes.  Note that all stipple
+attributes are set via filtered face remaps.")
 
 (defsubst indent-bars--tag (format-str s &rest r)
   "Tag FORMAT-STR with style S and return the associate interned symbol.
@@ -1149,41 +1150,40 @@ ROT should be less than W."
 ;; 
 ;; Turning on :stipple for a character merely "opens a window" on that
 ;; frame-filling, repeating stipple pattern.  Since the pattern starts
-;; outside the body (in literally the first frame pixel, typically in
-;; the fringe), you must consider the shift between the first pixel of
-;; a character and the first pixel of the repeating stipple block at
-;; that pixel position or above:
+;; outside the body (in literally the first frame pixel, typically
+;; within the fringe), you must consider the shift between the first
+;; pixel of a window character and the first pixel of the repeating
+;; stipple block at that pixel position or above:
 ;; 
 ;;     |<-frame edge |<---buffer/window edge
 ;;     |<--w-->|<--w-->|<--w-->|     w = pattern width
-;;     | marg/fringe |<-chr->|     chr = character width = w
+;;     | marg+fringe |<-chr->|     chr = character width = w
 ;;             |<-g->|               g = gutter offset of chr start, g<w
 ;;
 ;; Or, when the character width exceeds the margin/fringe offset:
 ;; 
 ;;     |<-frame edge |<---buffer/window edge
 ;;     |<--------w-------->|<---------w-------->|
-;;     | marg/fringe |<-------chr------->|
+;;     | marg+fringe |<-------chr------->|
 ;;     |<-----g----->|
 ;;
-;; So g = (mod marg/fringe w).
+;; So g = (mod marg+fringe w).
 ;; 
-;; When the block/zigzag/whatever pattern is made, to align with
-;; characters, it must get shifted up (= right) by g bits, with carry
-;; over (wrap) around w=(window-font-width) bits (i.e the width of the
-;; bitmap).  The byte/bit pattern is first-lowest-leftmost.
+;; When the block/zigzag/whatever stipple pattern is made, to align
+;; with characters, it must get shifted up (= right) by g bits, with
+;; carry over (wrap) around w=(window-font-width) bits (i.e the width
+;; of the bitmap).  The byte/bit pattern is first-lowest-leftmost.
 ;;
-;; Note that different window sides will often have different g
-;; values, which means the same bitmap cannot work for the buffer in
-;; both windows.  So showing the same buffer side by side can lead to
-;; mis-alignment in the non-active buffer.
+;; Note that different windows may have different g values
+;; (e.g. left/right), which means the same bitmap cannot work for the
+;; buffer in both windows.  In practice that means that all stipple
+;; face attributes must be set via filtered face remaps, with the
+;; filter set to match the pattern size (width and height) as well as
+;; gutter offset "rot" value in that window.
 ;;
-;; Solution: use window hooks to update the stipple bitmap as focus or
-;; windows change.  So at least the focused buffer looks correct.  If
-;; this is insufficient, use C-x 4 c
-;; (clone-indirect-buffer-other-window).  A bug in Emacs <29 means
-;; `face-remapping-alist' is unintentionally shared between indirect
-;; and master buffers.  Fixed in Emacs 29.
+;; Note: a bug in Emacs <29 means `face-remapping-alist' is
+;; unintentionally shared between indirect and master buffers.  Fixed
+;; in Emacs 29.
 
 (defun indent-bars--stipple (w h rot &optional style
 			       width-frac pad-frac pattern zigzag)
@@ -1273,8 +1273,8 @@ is created for each active style, for both :main[-styletag] and
      1 nil
      (apply-partially #'indent-bars--cleanup-stipple-remaps (current-buffer)))))
 
-(defun indent-bars--text-scale ()
-  "Update stipples on text scale."
+(defun indent-bars--update-all-stipples ()
+  "Update all stipples for current buffer."
   (dolist (w (get-buffer-window-list nil nil t))
     (indent-bars--window-change w))
   (indent-bars--schedule-remap-cleanup))
