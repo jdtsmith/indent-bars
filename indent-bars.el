@@ -514,26 +514,6 @@ May be nil, a color string or a vector of colors strings.")
   ( current-depth-palette nil
     :documentation "Depth palette of highlighted colors."))
 
-(defvar-local indent-bars--remaps nil
-  "An alist of active face-remap cookies for faces.
-Keyed by style tag (nil for the main style).  These remaps are
-used to change the current depth highlight (aside from stipple changes).")
-
-(defvar-local indent-bars--stipple-remaps nil
-  "A hash table of active stipple face-remap cookies.
-The hash table is keyed by the `whr', an integer composing font
-width, height, and window starting offset (see
-`indent-bars--whr').  Elements of the hash table are plists with
-the following keys:
-
-  (:main[-styletag] ... :current[-styletag] ...)
-
-These are used to update relevant stipples for main and current
-stipple faces for the various styles as character size and/or
-window pixel start (pattern rotation \"rot\") change, due to
-window layout or font size changes.  Note that all stipple
-attributes are set via filtered face remaps.")
-
 (defsubst indent-bars--tag (format-str s &rest r)
   "Tag FORMAT-STR with style S and return the associate interned symbol.
 Additional `format' arguments can be passed as R."
@@ -1042,6 +1022,11 @@ configured by default in `indent-bars--handle-blank-lines-form'."
 
 ;;;; Current indentation depth highlighting
 (defvar-local indent-bars--current-depth 0)
+(defvar-local indent-bars--remaps nil
+  "An alist of active face-remap cookies for faces.
+Keyed by style tag (nil for the main style).  These remaps are
+used to change the current depth highlight (aside from stipple changes).")
+
 (defun indent-bars--current-bg-color (style)
   "Return the current bar background color appropriate for STYLE."
   (when-let ((hcd
@@ -1231,6 +1216,21 @@ appropriate for that style."
 (defsubst indent-bars--whr (w h r)
   "Encoded value for W, H and R."
   (+ (ash w 16) (ash h 8) r))
+
+(defvar-local indent-bars--stipple-remaps nil
+  "A hash table of active stipple face-remap cookies.
+The hash table is keyed by the `whr', an integer composing font
+width, height, and window starting offset (see
+`indent-bars--whr').  Elements of the hash table are plists with
+the following keys:
+
+  (:main[-styletag] ... :current[-styletag] ...)
+
+These are used to update relevant stipples for main and current
+stipple faces for the various styles as character size and/or
+window pixel start (pattern rotation \"rot\") change, due to
+window layout or font size changes.  Note that all stipple
+attributes are set via filtered face remaps.")
 
 (defun indent-bars--create-stipples (w h rot)
   "Create and store stipple remaps for the given font size and pixel start.
