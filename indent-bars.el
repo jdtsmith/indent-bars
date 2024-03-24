@@ -59,14 +59,15 @@
 ;;;; Requires
 (require 'cl-lib)
 (require 'map)
+(require 'seq)
+(require 'subr-x)
 (require 'color)
 (require 'timer)
-(require 'face-remap)
 (require 'outline)
 (require 'font-lock)
-(require 'compat)
+(require 'face-remap)
 (require 'cus-edit)
-(require 'subr-x)
+(require 'compat)
 
 ;;;; Customization
 (defgroup indent-bars nil
