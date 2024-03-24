@@ -1404,7 +1404,8 @@ Adapted from `highlight-indentation-mode'."
   (face-spec-set (ibs/stipple-face style)
 		 (indent-bars--stipple-face-spec
 		  (frame-char-width) (frame-char-height)
-		  (indent-bars--stipple-rot nil (frame-char-width))))
+		  (indent-bars--stipple-rot nil (frame-char-width))
+		  style))
   
   ;; Current depth highlight faces/stipple
   (setf (ibs/current-bg-color style)
