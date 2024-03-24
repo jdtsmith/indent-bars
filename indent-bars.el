@@ -1276,8 +1276,7 @@ is created for each active style, for both :main[-styletag] and
 (defun indent-bars--update-all-stipples ()
   "Update all stipples for current buffer."
   (dolist (w (get-buffer-window-list nil nil t))
-    (indent-bars--window-change w))
-  (indent-bars--schedule-remap-cleanup))
+    (indent-bars--window-change w)))
 
 (defun indent-bars--window-change (&optional win)
   "Update the stipples for buffer in window WIN.
