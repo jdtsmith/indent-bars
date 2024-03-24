@@ -1289,13 +1289,13 @@ WIN defaults to the selected window.  To be set as a local
 	 (whr (indent-bars--whr w h rot))
 	 (cur-whr (window-parameter win 'indent-bars-whr)))
     (unless (eq cur-whr whr)
-      (set-window-parameter win 'indent-bars-whr whr)
-      (when-let ((buf (window-buffer win))
-		 (ht (buffer-local-value 'indent-bars--stipple-remaps buf))
-		 ((null (gethash whr ht))))
-	(with-current-buffer buf ; we may be called from an arbitrary buffer
-	  (indent-bars--create-stipples w h rot)
-	  (indent-bars--schedule-remap-cleanup))))))
+      (set-window-parameter win 'indent-bars-whr whr))
+    (when-let ((buf (window-buffer win))
+	       (ht (buffer-local-value 'indent-bars--stipple-remaps buf))
+	       ((null (gethash whr ht))))
+      (with-current-buffer buf ; we may be called from an arbitrary buffer
+	(indent-bars--create-stipples w h rot)
+	(indent-bars--schedule-remap-cleanup)))))
 
 (defun indent-bars--cleanup-stipple-remaps (buf)
   "Clean up unused stipple face remaps for buffer BUF."
@@ -1441,9 +1441,10 @@ Adapted from `highlight-indentation-mode'."
   (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
 
   ;; Remap/Resize
-  (setq indent-bars--stipple-remaps (make-hash-table))
-  (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
-  (indent-bars--update-all-stipples)
+  (unless indent-bars--no-stipple
+    (setq indent-bars--stipple-remaps (make-hash-table))
+    (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
+    (indent-bars--update-all-stipples)) ; sets all remaps for current buffer
 
   ;; Current depth Highlighting
   (when (indent-bars--style 'any "highlight-current-depth")
@@ -1470,9 +1471,7 @@ Adapted from `highlight-indentation-mode'."
 		 (cl-loop for (_k r) on pl by #'cddr do
 			  (face-remap-remove-relative r)))
 	       indent-bars--stipple-remaps)
-      (setq indent-bars--stipple-remaps nil))
-    (dolist (w (get-buffer-window-list nil nil t))
-      (set-window-parameter w 'indent-bars-whr nil)))
+      (setq indent-bars--stipple-remaps nil)))
   
   (font-lock-remove-keywords nil indent-bars--font-lock-keywords)
   (font-lock-remove-keywords nil indent-bars--font-lock-blank-line-keywords)
