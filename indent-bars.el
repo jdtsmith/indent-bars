@@ -535,7 +535,7 @@ layout of font size changes.")
 (defun indent-bars--new-style (&optional tag)
   "Create and record a new style struct with TAG."
   (let ((style (ibs/create tag)))
-    (push style indent-bars--styles)
+    (cl-pushnew style indent-bars--styles)
     style))
 
 ;;;;; Colors
