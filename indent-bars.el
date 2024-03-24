@@ -1490,6 +1490,7 @@ Adapted from `highlight-indentation-mode'."
 (defun indent-bars-reset (&rest _r)
   "Reset indent-bars config."
   (interactive)
+  (setq indent-bars-style nil indent-bars--styles nil)
   (indent-bars-teardown)
   (indent-bars-setup))
 
