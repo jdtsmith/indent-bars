@@ -96,16 +96,6 @@ is set."
 		 (repeat :tag "Node types" string))
   :group 'indent-bars-ts)
 
-(defcustom indent-bars-no-descend-string 'string
-  "Configure bar behavior inside treesitter-matched strings.
-If non-nil, set to a symbol naming a tree-sitter string node type
-into which bars will go no deeper than their starting line.  If
-this node type is invalid, a message is printed and the feature
-is disabled."
-  :local t
-  :type '(choice (const :tag "Disable" nil) (symbol :tag "Node Type"))
-  :group 'indent-bars-ts)
-
 (defcustom indent-bars-ts-update-delay 0.125
   "Minimum delay time in seconds between treesitter scope updates.
 Has effect only if `indent-bars-treesit-scope' is non-nil."
@@ -187,13 +177,14 @@ arguments)."
   (if-let (((not (bobp)))
 	   (node (treesit-node-on (1- (point)) (point) indent-bars-ts--parser))
 	   (dnew
-	    (if (and indent-bars-no-descend-string
+	    (if (and indent-bars-ts--string-query
 		     (indent-bars-ts--node-query
 		      node indent-bars-ts--string-query t))
 		;; A string: do not descend
 		(1+ (indent-bars--depth (indent-bars--indent-at-node node)))
 	      ;; Check wrap context
-	      (when-let ((ctx (indent-bars-ts--node-query
+	      (when-let (( indent-bars-ts--wrap-query)
+			 (ctx (indent-bars-ts--node-query
 			       node indent-bars-ts--wrap-query nil t)))
 		(1+ (indent-bars--depth
 		     (indent-bars--indent-at-node ctx)))))))
@@ -363,8 +354,8 @@ performed."
 	    indent-bars--update-depth-function
 	    #'indent-bars-ts--update-indentation-depth))
 
-    ;; Strings (avoid descending deeper inside strings)
-    (when indent-bars-no-descend-string
+    ;; Strings (avoid descending deeper inside strings using TS)
+    (when (stringp indent-bars-no-descend-string)
       (let ((query `([(,indent-bars-no-descend-string)] @s))
 	    (pm (point-min)))
 	(setq indent-bars-ts--string-query (treesit-query-compile lang query))

@@ -365,6 +365,22 @@ non-nil.  Set to 0 for instant depth updates."
   :type 'boolean
   :group 'indent-bars)
 
+(defcustom indent-bars-no-descend-string t
+  "Configure bar behavior inside strings.
+If non-nil, bars will go no deeper than their starting line of a
+string."
+  :local t
+  :type 'boolean
+  :group 'indent-bars)
+
+(defcustom indent-bars-no-descend-lists t
+  "Configure bar behavior inside lists.
+If non-nil, bars will go no deeper than the starting line of a
+list."
+  :local t
+  :type 'boolean
+  :group 'indent-bars)
+
 (defcustom indent-bars-prefer-character nil
   "Use characters instead of stipple to draw bars.
 Normally characters are used on terminal only.  A non-nil value
@@ -815,15 +831,35 @@ Note that the first bar is expected at `indent-bars-starting-column'."
     0))
 
 (defvar indent-bars--update-depth-function nil)
-(defun indent-bars--current-indentation-depth (&optional on-bar)
+(defun indent-bars--current-indentation-depth (&optional on-bar pos)
   "Calculate current indentation depth.
-If ON-BAR is non-nil, report a line with content beginning on a
-bar position at that position.  If
-`indent-bars--update-depth-function' is non-nil, it will be
-called with the indentation depth, and can return an updated
-depth."
+If ON-BAR is non-nil and content begins at a column where a bar
+would otherwise have fallen, report the depth of that (undrawn)
+bar.  Otherwise, the depth of the last possible visible bar is
+returned.
+
+If `indent-bars-no-descend-string' is non-nil and point at line
+beginning is inside a string, do not add bars deeper than one
+more than the string's start.  If `indent-bars-no-descend-lists'
+is non-nil, perform the same check for lists.  If POS is passed,
+it is used as the position to check with `syntax-ppss'.
+
+If `indent-bars--update-depth-function' is non-nil, it will be
+called with the indentation depth (prior to the ON-BAR check),
+and can return an updated depth."
   (let* ((c (current-indentation))
 	 (d (indent-bars--depth c)))
+    (when (or indent-bars-no-descend-string indent-bars-no-descend-lists)
+      (let* ((p (point))
+	     (ppss (syntax-ppss pos)) 	; moves point
+	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
+	     (sl (and indent-bars-no-descend-lists (nth 1 ppss)))
+	     (s (if (and ss sl) (max ss sl) (or ss sl))))
+	(when s
+	  (goto-char s)
+	  (setq c (current-indentation)
+		d (min d (1+ (indent-bars--depth c)))))
+	(goto-char p)))
     (if indent-bars--update-depth-function
 	(setq d (funcall indent-bars--update-depth-function d)))
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
@@ -961,7 +997,7 @@ font-lock properties."
 BEG and END should be on the same line.  STYLE, SWITCH-AFTER and
 STYLE2 are as in `indent-bars--draw-line'.  If STYLE is not
 passed, uses `indent-bars-style' for drawing."
-  (let* ((n (indent-bars--current-indentation-depth)))
+  (let ((n (indent-bars--current-indentation-depth nil beg)))
     (when (> n 0) (indent-bars--draw-line style n beg end nil
 					  switch-after style2))))
 
