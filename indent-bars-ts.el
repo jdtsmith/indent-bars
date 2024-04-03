@@ -251,9 +251,11 @@ scope."
   (let ((beg (match-beginning 0)))
     (unless (indent-bars-ts--ignore-blank beg)
       (if (indent-bars-ts--out-of-scope beg) ;fully out of scope
-	  (indent-bars--handle-blank-lines indent-bars-ts-out-scope-style)
+	  (indent-bars--handle-blank-lines (match-beginning 0) (match-end 0)
+					   indent-bars-ts-out-scope-style)
 	;; Switch from out of scope to in scope after start-bars
-	(indent-bars--handle-blank-lines indent-bars-ts-out-scope-style
+	(indent-bars--handle-blank-lines (match-beginning 0) (match-end 0)
+					 indent-bars-ts-out-scope-style
 					 (ibts/start-bars ibtcs)
 					 indent-bars-style)))))
 
