@@ -301,13 +301,14 @@ both) of them cover."
     l))
 
 (defun indent-bars-ts--update-scope1 ()
-  "Perform the treesitter scope update.
+  "Perform the treesitter scope font-lock update.
 If the buffer is modified or the point has moved, re-query the
-scope bounds.  If it has changed (beyond normal marker movement),
-refontify the symmetric difference between the old and new
-ranges (i.e those ranges covered by either old or new, but not
-both)."
-  (unless (or (not ibtcs) ; can be called in other buffers too
+scope bounds at point.  If the current scope range, clipped to
+the window's bounds, falls outside the prior scope (beyond normal
+marker movement), refontify the union of old and new clipped
+ranges and update.  Note that the updated node range clips to an
+\"extended window\" with 50% padding on either side."
+  (unless (or (not ibtcs) ; can be called from other buffers!
 	      (and (= (point) (ibts/point ibtcs))
 		   (= (buffer-modified-tick) (ibts/tick ibtcs))))
     (when-let ((node (treesit-node-on
