@@ -399,8 +399,10 @@ performed."
 	  (treesit-query-error
 	   (setq indent-bars-no-descend-string nil)
 	   (message "%s. See `indent-bars-no-descend-string'.\n%s"
-		    "indent-bars: malformed string query; disabling"
-		    err)))))
+		    "indent-bars: malformed treesitter string query; disabling"
+		    err))
+	  (:success (setq indent-bars--update-depth-function
+			  #'indent-bars-ts--update-indentation-depth)))))
 
     ;; Emphasis Scope: use alternate styling outside current scope
     (when-let ((types (alist-get lang indent-bars-treesit-scope)))
