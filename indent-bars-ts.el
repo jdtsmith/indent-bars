@@ -211,8 +211,19 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
      (:copier nil)
      (:conc-name ibts/)
      (:constructor ibts/create))
-  (start (point-min-marker)) (end (point-min-marker))
-  (start-bars 0) (point -1) (tick 0) query)
+  "A structure for tracking treesitter-based scope information."
+  ( range (cons (point-min-marker) (point-min-marker)) :type cons
+    :documentation "The current scope node's range.")
+  ( clip-win (cons (point-max-marker) (point-max-marker)) :type cons
+    :documentation "The clipping window for the current scope.")
+  ( start-bars 0 :type integer
+    :documentation "The number of bars shown at start of current scope.")
+  ( point -1 :type integer
+    :documentation "Point at last scope update.")
+  ( tick 0 :type integer
+    :documentation "Buffer modification tick at last scope update.")
+  ( query nil :type ts-query
+    :documentation "The treesitter scope query object."))
 
 (defvar-local ibtcs nil  ; N.B. see shorthands at bottom of file
   "The current `indent-bars-ts-scope' struct.")
@@ -221,14 +232,17 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
   "Return whether POS is outside the current treesitter scope.
 If there is no scope defined, every position is considered in
 scope."
-  (and ibtcs (or (< pos (ibts/start ibtcs)) (> pos (ibts/end ibtcs)))))
+  (and ibtcs (or (< pos (car (ibts/range ibtcs)))
+		 (> pos (cdr (ibts/range ibtcs))))))
 
 (defun indent-bars-ts--display ()
   "Display indentation bars, accounting for current treesitter scope."
   (if (indent-bars-ts--out-of-scope (match-beginning 1))
-      (indent-bars--display indent-bars-ts-out-scope-style)
+      (indent-bars--display (match-beginning 1) (match-end 1)
+			    indent-bars-ts-out-scope-style)
     ;; In scope: switch from out to in-scope style
-    (indent-bars--display indent-bars-ts-out-scope-style
+    (indent-bars--display (match-beginning 1) (match-end 1)
+			  indent-bars-ts-out-scope-style
 			  (ibts/start-bars ibtcs)
 			  indent-bars-style)))
 
@@ -243,34 +257,46 @@ scope."
 					 (ibts/start-bars ibtcs)
 					 indent-bars-style)))))
 
+(defmacro indent-bars-ts--order-ranges (a b)
+  "Order ranges A and B by start position."
+  `(if (< (car ,b) (car ,a)) (setq ,b (prog1 ,a (setq ,a ,b)))))
+
 (defun indent-bars-ts--union (a b)
-    "Return the union between ranges A and B.
+  "Return the union between ranges A and B.
 Ranges A and B are (start . end) conses.  Their union is a list
 of ranges that either cover."
-    (if (< (car b) (car a)) (setq b (prog1 a (setq a b))))
-    (if (< (cdr a) (car b))
-        (list a b) ; no overlap
-      (list (cons (car a) (max (cdr a) (cdr b))))))
+  (indent-bars-ts--order-ranges a b)
+  (if (< (cdr a) (car b))
+      (list a b) ; no overlap, use both
+    (list (cons (car a) (max (cdr a) (cdr b))))))
+
+(defun indent-bars-ts--intersection (a b)
+  "Return the intersection between ranges A and B.
+Ranges A and B are (start . end) conses.  Their intersection is a
+single range that both cover, or nil if none."
+  (indent-bars-ts--order-ranges a b)
+  (unless (or (< (cdr a) (car b)) (> (car b) (cdr a)))
+    (cons (car b) (min (cdr a) (cdr b)))))
 
 (defun indent-bars-ts--symdiff (a b)
-    "Return the symmetric difference between ranges A and B.
+  "Return the symmetric difference between ranges A and B.
 Ranges A and B are (start . end) conses.  Their symmetric
 difference is a list of ranges, possibly nil, that one (but not
 both) of them cover."
-    (let ((l ()))
-      (if (< (car b) (car a)) (setq b (prog1 a (setq a b))))
-      (if (< (cdr a) (car b))
-          (push a l) ; no overlap below, add a
-        (unless (= (car a) (car b))
-          (push (cons (car a) (car b)) l)))
-      (if (> (car b) (cdr a))
-          (push b l) ; no overlap above, add b
-        (unless (= (cdr a) (cdr b))
-          (push (if (> (cdr a) (cdr b))
-                    (cons (cdr b) (cdr a))
-                  (cons (cdr a) (cdr b)))
-           l)))
-      l))
+  (let ((l ()))
+    (indent-bars-ts--order-ranges a b)
+    (if (< (cdr a) (car b))
+	(push a l)			; no overlap below, add a
+      (unless (= (car a) (car b))
+	(push (cons (car a) (car b)) l)))
+    (if (> (car b) (cdr a))
+	(push b l)			; no overlap above, add b
+      (unless (= (cdr a) (cdr b))
+	(push (if (> (cdr a) (cdr b))
+		  (cons (cdr b) (cdr a))
+		(cons (cdr a) (cdr b)))
+	      l)))
+    l))
 
 (defun indent-bars-ts--update-scope1 ()
   "Perform the treesitter scope update.
@@ -288,24 +314,28 @@ both)."
 	       (scope (indent-bars-ts--node-query
 		       node (ibts/query ibtcs) nil 'innermost
 		       indent-bars-treesit-scope-min-lines)))
-      (let ((old-start (ibts/start ibtcs))
-	    (old-end   (ibts/end ibtcs))
-	    (tsc-start (treesit-node-start scope))
-	    (tsc-end   (treesit-node-end scope)))
-	(unless (and (= tsc-start old-start) (= tsc-end old-end))
-	  (setf (ibts/tick ibtcs)  (buffer-modified-tick)
-		(ibts/point ibtcs) (point)
-		(ibts/start-bars ibtcs)
-		(save-excursion
-		  (goto-char tsc-start)
-		  (forward-line 0)
-		  (indent-bars--current-indentation-depth)))
-	  (cl-loop for (beg . end) in 	; refontify where needed
-		   (indent-bars-ts--union
-		    (cons old-start old-end) (cons tsc-start tsc-end))
-		   do (font-lock-flush beg end))
-	  (set-marker (ibts/start ibtcs) tsc-start)
-	  (set-marker (ibts/end ibtcs) tsc-end))))))
+      (let* ((old (ibts/range ibtcs))	      ;old node range markers
+	     (old-clip (ibts/clip-win ibtcs)) ;old clipping window
+	     (win (cons (window-start) (window-end)))
+	     (new (cons (treesit-node-start scope) (treesit-node-end scope))))
+	(unless (and (equal new old) 	            ; if node is the same and
+		     (>= (car win) (car old-clip))  ; window inside old range:
+		     (<= (cdr win) (cdr old-clip))) ; no update needed
+	  (let* ((marg (/ (- (cdr win) (car win)) 2)) ; a bit of space
+		 (clip-wide (cons (max (point-min) (- (car win) marg))
+				  (min (point-max) (+ (cdr win) marg)))))
+	    (setf (ibts/tick ibtcs) (buffer-modified-tick)
+		  (ibts/point ibtcs) (point)
+		  (ibts/start-bars ibtcs)
+		  (indent-bars--current-indentation-depth nil (car new)))
+	    (cl-loop for rng in (indent-bars-ts--union old new)
+		     for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
+		     do (font-lock-flush beg end))
+	    (dolist (fn '(car cdr))
+	      (set-marker (funcall fn (ibts/range ibtcs))
+			  (funcall fn new))
+	      (set-marker (funcall fn (ibts/clip-win ibtcs))
+			  (funcall fn clip-wide)))))))))
 
 (defvar indent-bars-ts--scope-timer nil)
 (defun indent-bars-ts--update-scope ()
