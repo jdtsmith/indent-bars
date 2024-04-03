@@ -1274,8 +1274,8 @@ Adapted from `highlight-indentation-mode'."
     (indent-bars-teardown)))
 
 ;; Theme support
-(if (boundp 'enable-theme-functions)
-    (add-hook 'enable-theme-functions #'indent-bars-reset))
+;; (if (boundp 'enable-theme-functions)
+;;     (add-hook 'enable-theme-functions #'indent-bars-reset))
 
 (provide 'indent-bars)
 
