@@ -359,6 +359,19 @@ non-nil.  Set to 0 for instant depth updates."
   :type 'float
   :group 'indent-bars)
 
+(defcustom indent-bars-highlight-method 'context
+  "Method for determining the current indentation depth.
+If nil, the last showing bar on the current line is selected for
+highlight.  If \\='on-bar and the start of text at the current
+indentation would have fallen directly on a bar, highlight that
+bar instead.  If \\='context, use \\='on-bar logic, but only if a
+directly adjacent non-blank context line is indented deeper by
+more than one indent spacing.  Otherwise select the last bar
+showing for highlight."
+  :type '(choice (const :tag "Last Showing" nil)
+		 (const :tag "On Bar" on-bar)
+		 (const :tag "Context" context)))
+
 ;;;;; Other
 (defcustom indent-bars-display-on-blank-lines t
   "Whether to display bars on blank lines."
@@ -830,38 +843,59 @@ Note that the first bar is expected at `indent-bars-starting-column'."
       (1+ (/ (- len indent-bars--offset 1) indent-bars-spacing))
     0))
 
+(defun indent-bars--context-depth ()
+  "Return the maximum `current-indentation' around current line.
+Skips any fully blank lines."
+  (let (b (p (point)))
+    (beginning-of-line)
+    (skip-chars-backward "[:space:]\n")
+    (setq b (current-indentation))
+    (goto-char p)
+    (forward-line 1)
+    (skip-chars-forward "[:space:]\n")
+    (prog1
+	(max (current-indentation) b)
+      (goto-char p))))
+
 (defvar indent-bars--update-depth-function nil)
-(defun indent-bars--current-indentation-depth (&optional on-bar pos)
+(defun indent-bars--current-indentation-depth (&optional on-bar)
   "Calculate current indentation depth.
-If ON-BAR is non-nil and content begins at a column where a bar
-would otherwise have fallen, report the depth of that (undrawn)
-bar.  Otherwise, the depth of the last possible visible bar is
-returned.
+If ON-BAR is nil, return the depth of the last visible bar on the
+line.  If ON-BAR is non-nil and content begins at a column where
+a bar would otherwise have fallen, report the depth of
+that (undrawn) bar.  If ON-BAR is the symbol \\='context and
+first non-blank line immediately above or below the current line
+is not at a deeper indentation level (by at least one bar
+spacing), disable on-bar and use the last-visible-bar depth for
+that line.
 
 If `indent-bars-no-descend-string' is non-nil and point at line
 beginning is inside a string, do not add bars deeper than one
 more than the string's start.  If `indent-bars-no-descend-lists'
-is non-nil, perform the same check for lists.  If POS is passed,
-it is used as the position to check with `syntax-ppss'.
+is non-nil, perform the same check for lists.
 
 If `indent-bars--update-depth-function' is non-nil, it will be
 called with the indentation depth (prior to the ON-BAR check),
 and can return an updated depth."
   (let* ((c (current-indentation))
-	 (d (indent-bars--depth c)))
-    (when (or indent-bars-no-descend-string indent-bars-no-descend-lists)
+	 (d (indent-bars--depth c))
+	 special)
+    (when (or (eq indent-bars-no-descend-string t)
+	      (eq indent-bars-no-descend-lists t))
       (let* ((p (point))
-	     (ppss (syntax-ppss pos)) 	; moves point
+	     (ppss (syntax-ppss)) 	; moves point
 	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
-	     (sl (and indent-bars-no-descend-lists (nth 1 ppss)))
-	     (s (if (and ss sl) (max ss sl) (or ss sl))))
-	(when s
-	  (goto-char s)
+	     (sl (and indent-bars-no-descend-lists (nth 1 ppss))))
+	(when (setq special (if (and ss sl) (max ss sl) (or ss sl)))
+	  (goto-char special)
 	  (setq c (current-indentation)
 		d (min d (1+ (indent-bars--depth c)))))
 	(goto-char p)))
-    (if indent-bars--update-depth-function
-	(setq d (funcall indent-bars--update-depth-function d)))
+    (when (and indent-bars--update-depth-function (not special))
+      (setq d (funcall indent-bars--update-depth-function d)))
+    (when (and on-bar (eq on-bar 'context)
+	       (< (indent-bars--context-depth) (+ c indent-bars-spacing)))
+      (setq on-bar nil))
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
 	(1+ d) d)))
 
@@ -1106,7 +1140,8 @@ greater than zero."
   "Refresh current indentation depth highlight.
 Rate limit set by `indent-bars-depth-update-delay'.  If FORCE is
 non-nil, update depth even if it has not changed."
-  (let* ((depth (indent-bars--current-indentation-depth 'on-bar)))
+  (let* ((depth (indent-bars--current-indentation-depth
+		 indent-bars-highlight-method)))
     (when (and depth (or force (not (= depth indent-bars--current-depth)))
 	       (> depth 0))
       (setq indent-bars--current-depth depth)
