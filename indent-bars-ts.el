@@ -300,6 +300,7 @@ both) of them cover."
 	      l)))
     l))
 
+(defvar indent-bars-ts--scope-timer nil)
 (defun indent-bars-ts--update-scope1 ()
   "Perform the treesitter scope font-lock update.
 If the buffer is modified or the point has moved, re-query the
@@ -308,7 +309,8 @@ the window's bounds, falls outside the prior scope (beyond normal
 marker movement), refontify the union of old and new clipped
 ranges and update.  Note that the updated node range clips to an
 \"extended window\" with 50% padding on either side."
-  (unless (or (not ibtcs) ; can be called from other buffers!
+  (setq indent-bars-ts--scope-timer nil)
+  (unless (or (not ibtcs)	   ; can be called from other buffers!
 	      (and (= (point) (ibts/point ibtcs))
 		   (= (buffer-modified-tick) (ibts/tick ibtcs))))
     (when-let ((node (treesit-node-on
@@ -340,17 +342,12 @@ ranges and update.  Note that the updated node range clips to an
 	      (set-marker (funcall fn (ibts/clip-win ibtcs))
 			  (funcall fn clip-wide)))))))))
 
-(defvar indent-bars-ts--scope-timer nil)
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
-  (if-let ((tmr indent-bars-ts--scope-timer))
-      (progn ; reschedule timer
-	(timer-set-time
-	 tmr (time-add (current-time) indent-bars-ts-update-delay))
-	(unless (memq tmr timer-list) (timer-activate tmr)))
+  (unless indent-bars-ts--scope-timer
     (setq indent-bars-ts--scope-timer
-	  (run-with-timer indent-bars-ts-update-delay nil
-			  #'indent-bars-ts--update-scope1))))
+	  (run-with-idle-timer indent-bars-ts-update-delay nil
+			       #'indent-bars-ts--update-scope1))))
 
 ;;;; Setup
 (defun indent-bars-ts--init-scope (&optional force)
@@ -366,6 +363,9 @@ performed."
 
 (defun indent-bars-ts--teardown ()
   "Teardown indent-bars-ts."
+  (when indent-bars-ts--scope-timer
+    (cancel-timer indent-bars-ts--scope-timer)
+    (setq indent-bars-ts--scope-timer nil))
   (setq
    indent-bars--display-form nil
    indent-bars--handle-blank-lines-form nil)
