@@ -831,6 +831,36 @@ returned."
 
    (t new)))
 
+(defun indent-bars-reset-styles (&rest _r)
+  "Reset all styles' colors and faces.
+Useful for calling after theme changes."
+  (interactive)
+  (dolist (s indent-bars--styles) (indent-bars--initialize-style s)))
+
+(defun indent-bars--initialize-style (style)
+  "Initialize STYLE."
+  ;; Colors
+  (setf (ibs/main-color style)
+	(indent-bars--main-color style)
+	(ibs/depth-palette style)
+	(indent-bars--depth-palette style)
+	(ibs/current-depth-palette style)
+	(indent-bars--current-depth-palette style)
+	
+	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
+	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
+  
+  ;; Base stipple face
+  (face-spec-set (ibs/stipple-face style) nil) ;stipple only via filtered remaps
+  
+  ;; Current depth highlight faces/stipple
+  (setf (ibs/current-bg-color style)
+	(indent-bars--current-bg-color style))
+  (when-let ((stipple (indent-bars--current-depth-stipple nil nil nil style)))
+    (setf (ibs/current-stipple-face style)
+	  (indent-bars--tag "indent-bars%s-current-face" style))
+    (face-spec-set (ibs/current-stipple-face style) nil)))
+
 ;;;; Indentation and Drawing
 (defvar-local indent-bars-spacing nil)
 (defvar-local indent-bars--offset nil)
@@ -1472,45 +1502,11 @@ Adapted from `highlight-indentation-mode'."
 
 (declare-function indent-bars-ts-setup "indent-bars-ts")
 
-(defun indent-bars--initialize-style (style)
-  "Initialize STYLE."
-  ;; Colors
-  (setf (ibs/main-color style)
-	(indent-bars--main-color style)
-	(ibs/depth-palette style)
-	(indent-bars--depth-palette style)
-	(ibs/current-depth-palette style)
-	(indent-bars--current-depth-palette style)
-	
-	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
-	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
-  
-  ;; Base stipple face
-  (face-spec-set (ibs/stipple-face style) nil) ;stipple only via filtered remaps
-  
-  ;; Current depth highlight faces/stipple
-  (setf (ibs/current-bg-color style)
-	(indent-bars--current-bg-color style))
-  (when-let ((stipple (indent-bars--current-depth-stipple nil nil nil style)))
-    (setf (ibs/current-stipple-face style)
-	  (indent-bars--tag "indent-bars%s-current-face" style))
-    (face-spec-set (ibs/current-stipple-face style) nil)))
-
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
   ;; Spacing
   (setq indent-bars-spacing (indent-bars--guess-spacing)
 	indent-bars--offset (or indent-bars-starting-column indent-bars-spacing))
-
-  ;; Colors
-  (setq indent-bars--main-color (indent-bars--main-color)
-	indent-bars--depth-palette (indent-bars--depth-palette)
-	indent-bars--current-depth-palette (indent-bars--current-depth-palette))
-
-  ;; Faces
-  (indent-bars--create-stipple-face (frame-char-width) (frame-char-height)
-				    (indent-bars--stipple-rot (frame-char-width)))
-  (indent-bars--create-faces 9)	; N.B.: extends as needed
 
   ;; No Stipple (e.g. terminal)
   (setq indent-bars--no-stipple
@@ -1604,8 +1600,8 @@ Adapted from `highlight-indentation-mode'."
     (indent-bars-teardown)))
 
 ;; Theme support
-;; (if (boundp 'enable-theme-functions)
-;;     (add-hook 'enable-theme-functions #'indent-bars-reset))
+(if (boundp 'enable-theme-functions)
+    (add-hook 'enable-theme-functions #'indent-bars-reset-styles))
 
 (provide 'indent-bars)
 
