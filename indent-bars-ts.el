@@ -80,7 +80,7 @@ variables."
 			:value-type (repeat :tag "Types" (symbol :tag "Type"))))
   :group 'indent-bars-ts)
 
-(defcustom indent-bars-treesit-scope-min-lines 2
+(defcustom indent-bars-treesit-scope-min-lines 3
   "Minimum number of lines a node must span to be counted for scope."
   :type 'integer)
 
