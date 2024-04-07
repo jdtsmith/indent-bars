@@ -332,7 +332,9 @@ ranges and update.  Note that the updated node range clips to an
 	    (setf (ibts/tick ibtcs) (buffer-modified-tick)
 		  (ibts/point ibtcs) (point)
 		  (ibts/start-bars ibtcs)
-		  (indent-bars--current-indentation-depth nil (car new)))
+		  (save-excursion
+		    (goto-char (car new))
+		    (indent-bars--current-indentation-depth)))
 	    (cl-loop for rng in (indent-bars-ts--union old new)
 		     for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
 		     do (font-lock-flush beg end))

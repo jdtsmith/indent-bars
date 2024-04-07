@@ -997,7 +997,7 @@ font-lock properties."
 BEG and END should be on the same line.  STYLE, SWITCH-AFTER and
 STYLE2 are as in `indent-bars--draw-line'.  If STYLE is not
 passed, uses `indent-bars-style' for drawing."
-  (let ((n (indent-bars--current-indentation-depth nil beg)))
+  (let ((n (indent-bars--current-indentation-depth)))
     (when (> n 0) (indent-bars--draw-line style n beg end nil
 					  switch-after style2))))
 
