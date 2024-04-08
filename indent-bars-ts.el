@@ -82,7 +82,8 @@ variables."
 
 (defcustom indent-bars-treesit-scope-min-lines 3
   "Minimum number of lines a node must span to be counted for scope."
-  :type 'integer)
+  :type 'integer
+  :group 'indent-bars-ts)
 
 (defcustom indent-bars-treesit-ignore-blank-lines-types nil
   "Do not style blank lines when the type of node at start is in this list.

@@ -72,16 +72,15 @@
 ;;;; Customization
 (defgroup indent-bars nil
   "Highlight indentation bars."
-  :group 'basic-faces
+  :group 'convenience
   :prefix "indent-bars-")
 
 (defgroup indent-bars-style nil
   "Highlight indentation bars."
-  :group 'basic-faces
+  :group 'indent-bars
   :prefix "indent-bars-")
 
 ;;;;; Stipple Bar Shape
-
 (defcustom indent-bars-width-frac 0.4
   "The width of the indent bar as a fraction of the character width.
 Applies to stipple-based bars only."
