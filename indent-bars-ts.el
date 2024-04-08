@@ -60,7 +60,10 @@ Inside such wrapping types, indentation bar depth will not be
 increased more than one beyond that of the containing node's
 depth.  This is typically done for lists, parameters, function
 arguments, etc., to avoid unwanted \"extra bars\".  Types must be
-valid node types for the grammar of the language indicated."
+valid node types for the grammar of the language indicated.  Note
+that the options `indent-bars-no-descend-string' and
+`indent-bars-no-descend-lists', if set, take precedence over this
+option."
   :type '(choice (const :tag "No wrap types" nil)
 		 (alist :tag "Alist of node types"
 			:key-type (symbol :tag "Language")
