@@ -1167,12 +1167,13 @@ greater than zero."
 	   (hl-bg (ibs/current-bg-color s)))
       (when (or hl-col hl-bg (ibs/current-stipple-face s))
 	(when-let ((c (alist-get (ibs/tag s) indent-bars--remaps))) ; out with the old
-	      (face-remap-remove-relative c))
+	  (face-remap-remove-relative c))
 	(setf (alist-get (ibs/tag s) indent-bars--remaps)
-	      (face-remap-add-relative face
-		     `(,@(when hl-col `(:foreground ,hl-col))
-		       ,@(when hl-bg `(:background ,hl-bg)))
-		     (ibs/current-stipple-face s)))))))
+	      (face-remap-add-relative
+	       face
+	       `(,@(when hl-col `(:foreground ,hl-col))
+		 ,@(when hl-bg `(:background ,hl-bg)))
+	       (ibs/current-stipple-face s)))))))
 
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
