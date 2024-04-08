@@ -651,12 +651,15 @@ color, if setup (see `indent-bars-highlight-current-depth')."
 (defun indent-bars--stipple-face-spec (w h rot &optional style stipple)
   "Create a face specification for the stipple face for STYLE.
 Create for character size W x H with offset ROT.  If STIPPLE is
-non-nil, use it instead of calculating."
-  (let ((stipple (or stipple (indent-bars--stipple w h rot style))))
-    (when stipple
-      `((t ( :inherit nil :stipple ,stipple
-	     ,@(when indent-bars-no-stipple-char-font-weight
-		 `(:weight ,indent-bars-no-stipple-char-font-weight))))))))
+non-nil, use it instead of calculating.  Includes
+:weight (affecting only non-stipple character display) if
+`indent-bars-no-stipple-char-font-weight' (or equivalent for the
+STYLE) is non-nil."
+  (let ((stipple (or stipple (indent-bars--stipple w h rot style)))
+	(wt (indent-bars--style style "no-stipple-char-font-weight")))
+    `((t ( :inherit nil
+	   ,@(and stipple `(:stipple ,stipple))
+	   ,@(and wt `(:weight ,wt)))))))
 
 (defun indent-bars--calculate-face-spec (style depth)
   "Calculate the face spec for bar at DEPTH in STYLE.
@@ -850,7 +853,12 @@ Useful for calling after theme changes."
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
   
   ;; Base stipple face
-  (face-spec-set (ibs/stipple-face style) nil) ;stipple only via filtered remaps
+  (face-spec-set
+   (ibs/stipple-face style)
+   (indent-bars--stipple-face-spec
+    (frame-char-width) (frame-char-height)
+    (indent-bars--stipple-rot (selected-window) (frame-char-width))
+    style))
   
   ;; Current depth highlight faces/stipple
   (setf (ibs/current-bg-color style)
