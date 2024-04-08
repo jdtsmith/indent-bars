@@ -61,9 +61,9 @@ increased more than one beyond that of the containing node's
 depth.  This is typically done for lists, parameters, function
 arguments, etc., to avoid unwanted \"extra bars\".  Types must be
 valid node types for the grammar of the language indicated.  Note
-that the options `indent-bars-no-descend-string' and
-`indent-bars-no-descend-lists', if set, take precedence over this
-option."
+that the (non-treesitter) options `indent-bars-no-descend-string'
+and `indent-bars-no-descend-lists', if set, take precedence over
+this option."
   :type '(choice (const :tag "No wrap types" nil)
 		 (alist :tag "Alist of node types"
 			:key-type (symbol :tag "Language")
@@ -101,8 +101,8 @@ is set."
   :group 'indent-bars-ts)
 
 (defcustom indent-bars-ts-update-delay 0.125
-  "Minimum delay time in seconds between treesitter scope updates.
-Has effect only if `indent-bars-treesit-scope' is non-nil."
+  "Idle time in seconds for treesitter scope updates to occur.
+This has effect only if `indent-bars-treesit-scope' is non-nil."
   :type 'float
   :group 'indent-bars-ts)
 
