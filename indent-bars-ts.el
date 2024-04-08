@@ -222,8 +222,8 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
     :documentation "The clipping window for the current scope.")
   ( start-bars 0 :type integer
     :documentation "The number of bars shown at start of current scope.")
-  ( point -1 :type integer
-    :documentation "Point at last scope update.")
+  ( bol-point -1 :type integer
+    :documentation "Point at line beginning during last scope update.")
   ( tick 0 :type integer
     :documentation "Buffer modification tick at last scope update.")
   ( query nil :type ts-query
@@ -314,39 +314,40 @@ marker movement), refontify the union of old and new clipped
 ranges and update.  Note that the updated node range clips to an
 \"extended window\" with 50% padding on either side."
   (setq indent-bars-ts--scope-timer nil)
-  (unless (or (not ibtcs)	   ; can be called from other buffers!
-	      (and (= (point) (ibts/point ibtcs))
-		   (= (buffer-modified-tick) (ibts/tick ibtcs))))
-    (when-let ((node (treesit-node-on
-		      (max (point-min) (1- (point))) (point)
-		      indent-bars-ts--parser))
-	       (scope (indent-bars-ts--node-query
-		       node (ibts/query ibtcs) nil 'innermost
-		       indent-bars-treesit-scope-min-lines)))
-      (let* ((old (ibts/range ibtcs))	      ;old node range markers
-	     (old-clip (ibts/clip-win ibtcs)) ;old clipping window
-	     (win (cons (window-start) (window-end)))
-	     (new (cons (treesit-node-start scope) (treesit-node-end scope))))
-	(unless (and (equal new old) 	            ; if node is the same and
-		     (>= (car win) (car old-clip))  ; window inside old range:
-		     (<= (cdr win) (cdr old-clip))) ; no update needed
-	  (let* ((marg (/ (- (cdr win) (car win)) 2)) ; a bit of space
-		 (clip-wide (cons (max (point-min) (- (car win) marg))
-				  (min (point-max) (+ (cdr win) marg)))))
-	    (setf (ibts/tick ibtcs) (buffer-modified-tick)
-		  (ibts/point ibtcs) (point)
-		  (ibts/start-bars ibtcs)
-		  (save-excursion
-		    (goto-char (car new))
-		    (indent-bars--current-indentation-depth)))
-	    (cl-loop for rng in (indent-bars-ts--union old new)
-		     for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
-		     do (font-lock-flush beg end))
-	    (dolist (fn '(car cdr))
-	      (set-marker (funcall fn (ibts/range ibtcs))
-			  (funcall fn new))
-	      (set-marker (funcall fn (ibts/clip-win ibtcs))
-			  (funcall fn clip-wide)))))))))
+  (let ((lbp (line-beginning-position)))
+    (unless (or (not ibtcs)	   ; can be called from other buffers!
+		(and (= lbp (ibts/bol-point ibtcs))
+		     (= (buffer-modified-tick) (ibts/tick ibtcs))))
+      (when-let ((node (treesit-node-on
+			(max (point-min) (1- (point))) (point)
+			indent-bars-ts--parser))
+		 (scope (indent-bars-ts--node-query
+			 node (ibts/query ibtcs) nil 'innermost
+			 indent-bars-treesit-scope-min-lines)))
+	(let* ((old (ibts/range ibtcs))      ;old node range markers
+	       (old-clip (ibts/clip-win ibtcs)) ;old clipping window
+	       (win (cons (window-start) (window-end)))
+	       (new (cons (treesit-node-start scope) (treesit-node-end scope))))
+	  (unless (and (equal new old) ; if node is the same and
+		       (>= (car win) (car old-clip)) ; window inside old range:
+		       (<= (cdr win) (cdr old-clip))) ; no update needed
+	    (let* ((marg (/ (- (cdr win) (car win)) 2)) ; a bit of space
+		   (clip-wide (cons (max (point-min) (- (car win) marg))
+				    (min (point-max) (+ (cdr win) marg)))))
+	      (setf (ibts/tick ibtcs) (buffer-modified-tick)
+		    (ibts/bol-point ibtcs) lbp
+		    (ibts/start-bars ibtcs)
+		    (save-excursion
+		      (goto-char (car new))
+		      (indent-bars--current-indentation-depth)))
+	      (cl-loop for rng in (indent-bars-ts--union old new)
+		       for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
+		       do (font-lock-flush beg end))
+	      (dolist (fn '(car cdr))
+		(set-marker (funcall fn (ibts/range ibtcs))
+			    (funcall fn new))
+		(set-marker (funcall fn (ibts/clip-win ibtcs))
+			    (funcall fn clip-wide))))))))))
 
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
