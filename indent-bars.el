@@ -69,6 +69,8 @@
 (require 'cus-edit)
 (require 'compat)
 
+;;;; Variables
+(defvar indent-bars-mode)
 ;;;; Customization
 (defgroup indent-bars nil
   "Highlight indentation bars."
@@ -1151,11 +1153,13 @@ ROT are as in `indent-bars--stipple', and have similar default values."
 	     (rot (or rot (indent-bars--stipple-rot nil w))))
 	(indent-bars--stipple w h rot style width pad pattern zigzag)))))
 
+(defvar-local indent-bars--highlight-timer nil)
 (defun indent-bars--update-current-depth-highlight (depth)
   "Update highlight for the current DEPTH.
 Works by remapping the appropriate indent-bars[-tag]-N face for
 all styles in the `indent-bars--styles' list.  DEPTH should be
 greater than zero."
+  (setq indent-bars--highlight-timer nil)
   (dolist (s indent-bars--styles)
     (let* ((face (indent-bars--face s depth))
 	   (hl-col (and (ibs/current-depth-palette s)
@@ -1170,27 +1174,20 @@ greater than zero."
 		       ,@(when hl-bg `(:background ,hl-bg)))
 		     (ibs/current-stipple-face s)))))))
 
-(defvar-local indent-bars--highlight-timer nil)
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
 Rate limit set by `indent-bars-depth-update-delay'.  If FORCE is
 non-nil, update depth even if it has not changed."
-  (let* ((depth (indent-bars--current-indentation-depth
-		 indent-bars-highlight-selection-method)))
-    (when (and depth (or force (not (= depth indent-bars--current-depth)))
-	       (> depth 0))
-      (setq indent-bars--current-depth depth)
-      (if (zerop indent-bars-depth-update-delay)
-	  (indent-bars--update-current-depth-highlight depth)
-	(if-let ((tmr indent-bars--highlight-timer))
-	    (progn
-	      (timer-set-function
-	       tmr #'indent-bars--update-current-depth-highlight (list depth))
-	      (timer-set-time
-	       tmr (time-add (current-time) indent-bars-depth-update-delay))
-	      (unless (memq tmr timer-list) (timer-activate tmr)))
+  (unless (or indent-bars--highlight-timer (not indent-bars-mode))
+    (let* ((depth (indent-bars--current-indentation-depth
+		   indent-bars-highlight-selection-method)))
+      (when (and depth (or force (not (= depth indent-bars--current-depth)))
+		 (> depth 0))
+	(setq indent-bars--current-depth depth)
+	(if (zerop indent-bars-depth-update-delay)
+	    (indent-bars--update-current-depth-highlight depth)
 	  (setq indent-bars--highlight-timer
-		(run-with-timer
+		(run-with-idle-timer
 		 indent-bars-depth-update-delay nil
 		 #'indent-bars--update-current-depth-highlight depth)))))))
 
@@ -1595,7 +1592,6 @@ Adapted from `highlight-indentation-mode'."
       (remove-hook 'after-make-frame-functions #'indent-bars-setup-and-remove t)
       (indent-bars-setup))))
 
-(defvar indent-bars-mode)
 ;;;###autoload
 (define-minor-mode indent-bars-mode
   "Indicate indentation with configurable bars."
