@@ -379,16 +379,16 @@ showing for highlight."
 
 (defcustom indent-bars-no-descend-string t
   "Configure bar behavior inside strings.
-If non-nil, bars will go no deeper than their starting line of a
-string."
+If non-nil, displayed bars inside the string will go no deeper
+than the indent level of the string's starting line."
   :local t
   :type 'boolean
   :group 'indent-bars)
 
 (defcustom indent-bars-no-descend-lists t
   "Configure bar behavior inside lists.
-If non-nil, bars will go no deeper than the starting line of a
-list."
+If non-nil, displayed bars will go no deeper than the indent
+level at the starting line of the innermost containing list."
   :local t
   :type 'boolean
   :group 'indent-bars)
