@@ -1343,7 +1343,7 @@ attributes are set via filtered face remaps.")
   (cl-loop for (_k r) on pl by #'cddr do
 	   (face-remap-remove-relative r)))
 
-(defun indent-bars--create-stipples (w h rot)
+(defun indent-bars--create-stipple-remaps (w h rot)
   "Create and store stipple remaps for the given font size and pixel start.
 W is the `window-font-width', H is the corresponding height, and
 ROT is the number of bits to rotate the pattern start.  An entry
@@ -1405,7 +1405,7 @@ WIN defaults to the selected window.  To be set as a local
 	       (ht (buffer-local-value 'indent-bars--stipple-remaps buf))
 	       ((null (gethash whr ht))))
       (with-current-buffer buf ; we may be called from an arbitrary buffer
-	(indent-bars--create-stipples w h rot)
+	(indent-bars--create-stipple-remaps w h rot)
 	(indent-bars--schedule-remap-cleanup)))))
 
 (defun indent-bars--cleanup-stipple-remaps (buf)
