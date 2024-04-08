@@ -915,19 +915,18 @@ called with the indentation depth (prior to the ON-BAR check),
 and can return an updated depth."
   (let* ((c (current-indentation))
 	 (d (indent-bars--depth c))
-	 special)
-    (when (or (eq indent-bars-no-descend-string t)
-	      (eq indent-bars-no-descend-lists t))
+	 ppss-ind)
+    (when indent-bars--ppss
       (let* ((p (point))
 	     (ppss (syntax-ppss)) 	; moves point
 	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
 	     (sl (and indent-bars-no-descend-lists (nth 1 ppss))))
-	(when (setq special (if (and ss sl) (max ss sl) (or ss sl)))
-	  (goto-char special)
+	(when (setq ppss-ind (if (and ss sl) (max ss sl) (or ss sl)))
+	  (goto-char ppss-ind)
 	  (setq c (current-indentation)
 		d (min d (1+ (indent-bars--depth c)))))
 	(goto-char p)))
-    (when (and indent-bars--update-depth-function (not special))
+    (when (and indent-bars--update-depth-function (not ppss-ind))
       (setq d (funcall indent-bars--update-depth-function d)))
     (when (and on-bar (eq on-bar 'context)
 	       (< (indent-bars--context-depth) (+ c indent-bars-spacing)))
@@ -1528,6 +1527,10 @@ Adapted from `highlight-indentation-mode'."
     (add-hook 'window-state-change-functions
 	      #'indent-bars--window-change nil t))
 
+  ;; PPSS
+  (setq indent-bars--ppss
+	(or indent-bars-no-descend-string indent-bars-no-descend-lists))
+  
   ;; Treesitter
   (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
 
