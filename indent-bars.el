@@ -1577,6 +1577,8 @@ Adapted from `highlight-indentation-mode'."
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
   (remove-hook 'font-lock-extend-region-functions
 	       #'indent-bars--extend-blank-line-regions t)
+  (remove-hook 'window-state-change-functions
+	       #'indent-bars--window-change t)
   (apply #'run-hooks indent-bars--teardown-functions))
 
 (defun indent-bars-reset (&rest _r)
