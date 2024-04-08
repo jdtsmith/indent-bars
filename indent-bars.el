@@ -358,16 +358,16 @@ non-nil.  Set to 0 for instant depth updates."
   :type 'float
   :group 'indent-bars)
 
-(defcustom indent-bars-highlight-method 'context
-  "Method for determining the current indentation depth.
+(defcustom indent-bars-highlight-selection-method 'context
+  "Method for selecting bar depth for current indentation highlight.
 If nil, the last showing bar on the current line is selected for
-highlight.  If \\='on-bar and the start of text at the current
-indentation would have fallen directly on a bar, highlight that
-bar instead.  If \\='context, use \\='on-bar logic, but only if a
-directly adjacent non-blank context line is indented deeper by
-more than one indent spacing.  Otherwise select the last bar
-showing for highlight."
-  :type '(choice (const :tag "Last Showing" nil)
+highlight.  If the symbol \\='on-bar, and the start of the text
+on the line would have fallen directly on a bar, highlight that
+bar depth instead.  If \\='context, use \\='on-bar logic, but
+only if a directly adjacent (non-blank) context line is indented
+deeper, by more than one indent spacing.  Otherwise select the
+last bar showing for highlight."
+  :type '(choice (const :tag "Containing" nil)
 		 (const :tag "On Bar" on-bar)
 		 (const :tag "Context" context)))
 
@@ -914,11 +914,11 @@ If `indent-bars--update-depth-function' is non-nil, it will be
 called with the indentation depth (prior to the ON-BAR check),
 and can return an updated depth."
   (let* ((c (current-indentation))
-	 (d (indent-bars--depth c))
+	 (d (indent-bars--depth c)) 	;last visible bar
 	 ppss-ind)
     (when indent-bars--ppss
       (let* ((p (point))
-	     (ppss (syntax-ppss)) 	; moves point
+	     (ppss (syntax-ppss)) 	; moves point!
 	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
 	     (sl (and indent-bars-no-descend-lists (nth 1 ppss))))
 	(when (setq ppss-ind (if (and ss sl) (max ss sl) (or ss sl)))
@@ -928,7 +928,7 @@ and can return an updated depth."
 	(goto-char p)))
     (when (and indent-bars--update-depth-function (not ppss-ind))
       (setq d (funcall indent-bars--update-depth-function d)))
-    (when (and on-bar (eq on-bar 'context)
+    (when (and (eq on-bar 'context)
 	       (< (indent-bars--context-depth) (+ c indent-bars-spacing)))
       (setq on-bar nil))
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
@@ -1176,7 +1176,7 @@ greater than zero."
 Rate limit set by `indent-bars-depth-update-delay'.  If FORCE is
 non-nil, update depth even if it has not changed."
   (let* ((depth (indent-bars--current-indentation-depth
-		 indent-bars-highlight-method)))
+		 indent-bars-highlight-selection-method)))
     (when (and depth (or force (not (= depth indent-bars--current-depth)))
 	       (> depth 0))
       (setq indent-bars--current-depth depth)
