@@ -723,14 +723,8 @@ If ADD-INHERIT is non-nil, expand the type to a cons:
 
   (inherit . type)
 
-the former based on the value of NO-INHERIT.  ADD-INHERIT makes
-sense only for composite types with multiple underlying options,
-some of which can be omitted (e.g. plists).
-
-By default, all variables are configured to inherit unspecified
-or omitted underlying options from their composite parent
-variable.  If NO-INHERIT is non-nil, the variable will be
-configured not to inherit any missing values.
+where INHERIT is either \\='inherit or \\='no-inherit, depending
+on the value of NO-INHERIT.  
 
 Additional `defcustom` keyword arguments can be given as R."
   (require 'cus-edit)
@@ -739,17 +733,21 @@ Additional `defcustom` keyword arguments can be given as R."
 	 (symname (concat "indent-bars-" optname))
 	 (sym (intern (concat "indent-bars-" optname)))
 	 (tsym (intern (concat "indent-bars-" alt "-" optname)))
-	 (type (custom-variable-type sym)))
-    ;; Add an unspecified choice to all choices
-    (let ((unspec `(const :tag ,(concat "No-value (use parent " optname ")")
-			  unspecified))
-	  (rest type))
-      (if (eq (car type) 'choice)
-	  (progn			; add a choice option
-	    (when-let ((tag-pos (member :tag type)))
-	      (setq rest (cdr tag-pos))) ;after tag
-	    (setcdr rest (push unspec (cdr rest))))
-	(setq type `(choice ,unspec ,type))))
+	 (type (custom-variable-type sym))
+	 (choice (cond ((eq (car type) 'choice) type)
+		       ((eq (car type) 'list)
+			(seq-find
+			 (lambda (el) (and (consp el) (eq (car el) 'choice)))
+			 type)))))
+    ;; Add an unspecified choice
+    (when choice
+      (when-let ((tag-pos (member :tag choice)))
+	(setq choice (cdr tag-pos)))	;after tag
+      (setcdr choice
+	      (push
+	       `(const :tag ,(concat "No-value (use parent " optname ")") unspecified)
+	       (cdr choice))))
+
     ;; Add leading inherit flag, if needed
     (when (or no-inherit add-inherit)
       (setq type
@@ -895,16 +893,17 @@ Skips any fully blank lines."
       (goto-char p))))
 
 (defvar indent-bars--update-depth-function nil)
+(defvar indent-bars--ppss nil)
 (defun indent-bars--current-indentation-depth (&optional on-bar)
   "Calculate current indentation depth.
 If ON-BAR is nil, return the depth of the last visible bar on the
 line.  If ON-BAR is non-nil and content begins at a column where
 a bar would otherwise have fallen, report the depth of
-that (undrawn) bar.  If ON-BAR is the symbol \\='context and
+that (undrawn) bar.  If ON-BAR is the symbol \\='context, and the
 first non-blank line immediately above or below the current line
 is not at a deeper indentation level (by at least one bar
 spacing), disable on-bar and use the last-visible-bar depth for
-that line.
+that line instead.
 
 If `indent-bars-no-descend-string' is non-nil and point at line
 beginning is inside a string, do not add bars deeper than one
