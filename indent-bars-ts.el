@@ -304,7 +304,7 @@ both) of them cover."
 	      l)))
     l))
 
-(defvar indent-bars-ts--scope-timer nil)
+(defvar-local indent-bars-ts--scope-timer nil)
 (defun indent-bars-ts--update-scope1 ()
   "Perform the treesitter scope font-lock update.
 If the buffer is modified or the point has moved, re-query the

@@ -1580,7 +1580,7 @@ Adapted from `highlight-indentation-mode'."
 	       #'indent-bars--extend-blank-line-regions t)
   (remove-hook 'window-state-change-functions
 	       #'indent-bars--window-change t)
-  (apply #'run-hooks indent-bars--teardown-functions))
+  (run-hooks 'indent-bars--teardown-functions))
 
 (defun indent-bars-reset (&rest _r)
   "Reset indent-bars config."
