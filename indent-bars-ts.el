@@ -384,7 +384,6 @@ ranges and update.  Note that the updated node range clips to an
 	    (cl-loop for rng in (indent-bars-ts--union old new)
 		     for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
 		     if (and beg end) do
-		     (message "Flushing %d lines" (count-lines beg end))
 		     (font-lock-flush beg end))
 	    (set-marker (car old) (car new))
 	    (set-marker (cdr old) (cdr new))
