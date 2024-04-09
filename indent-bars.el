@@ -551,10 +551,13 @@ Additional `format' arguments can be passed as R."
 		 (if (ibs/tag s) (concat "-" (ibs/tag s)) "") r)))
 
 (defun indent-bars--new-style (&optional tag)
-  "Create and record a new style struct with TAG."
-  (let ((style (ibs/create tag)))
-    (cl-pushnew style indent-bars--styles :test #'equal)
-    style))
+  "Create and record a new style struct with TAG.
+A new style is only created if an existing style with that TAG is
+no yet recorded."
+  (or (seq-find (lambda (s) (eq (ibs/tag s) tag)) indent-bars--styles)
+      (let ((style (ibs/create tag)))
+	(cl-pushnew style indent-bars--styles :test #'equal)
+	style)))
 
 ;;;;; Colors
 (defun indent-bars--main-color (style &optional tint tint-blend blend-override)
@@ -837,7 +840,8 @@ returned."
   "Reset all styles' colors and faces.
 Useful for calling after theme changes."
   (interactive)
-  (dolist (s indent-bars--styles) (indent-bars--initialize-style s)))
+  (dolist (s indent-bars--styles)
+    (indent-bars--initialize-style s)))
 
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
