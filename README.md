@@ -228,9 +228,11 @@ Experiment with these to see what you prefer.
 
 ### Configuring tree-sitter
 
-Simply configure `indent-bars-treesit-scope` with the node types for which "local scope" highlighting is of interest.  This must be done for each language you use.  This scope could be as granular as classes and functions, or including detailed block statements.   `indent-bars-treesit-wrap` can be configured in a similar manner, if desired.  I recommend starting with the minimal possible set of node types, adding as needed.
+Simply configure `indent-bars-treesit-scope` with the node types for which "local scope" highlighting nodes are of interest.  This must be done for each tree-sitter language you use.  This scope could be as granular as classes and functions, or includ detailed block statements.  You can disable scoping for "short blocks" using `indent-bars-treesit-scope-min-lines`, so that, e.g., a quick `if` statement does not capture scope. I recommend starting with the minimal possible set of node types, adding as needed.
 
-The easiest way to discover the node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did.  You can do something similar for `indent-bars-treesit-ignore-blank-lines-types` (which, please note, are configured as _strings_, unlike in `indent-bars-treesit-wrap/scope`).
+indent-bars-treesit-wrap` can be configured in a similar manner, if desired, although the default of `indent-bars-no-descend-list` may be sufficient for your uses.
+
+The easiest way to discover node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did.  You can do something similar for `indent-bars-treesit-ignore-blank-lines-types` (which, please note, are configured as _strings_, unlike in `indent-bars-treesit-wrap/scope`).
 
 Please document good tree-sitter settings for other languages in the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
 
