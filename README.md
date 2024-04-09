@@ -199,7 +199,7 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 The heaviest operations are **tree-sitter** support (especially scope highlighting), and **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with.  Using with tab-based indentation is also slightly slower than with space-based.
 
-Both indentation-depth highlighting and current-tree-sitter-scope highlighting are protected by timers to avoid unnecessary loads (e.g. when pixel-scrolling).  Note that indentation-depth highlighting is _very_ fast and can safely be set to 0 seconds (though bars will then flash very fast as you scroll).  Tree-sitter scope requires querying the tree-sitter core, which can be somewhat slower, so be careful setting its timer too low.
+Both indentation-depth highlighting and current-tree-sitter-scope highlighting are protected by timers to avoid unnecessary loads (e.g. when pixel-scrolling).  Note that indentation-depth highlighting is _very_ fast and can safely be set to 0 seconds (though bars will then flash rapidly as you scroll).  Tree-sitter scope requires querying the tree-sitter core, which can be somewhat slower, so be careful setting its timer too low.
 
 ## Indentation
 
