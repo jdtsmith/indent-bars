@@ -16,22 +16,22 @@ This package provides indentation _guide bars_ enhanced by tree-sitter:
 
 ## What's New
 
-- v0.5: A major update with many new features and improvements.
+- **v0.5**: A major update with many new features and improvements.
   - Stipples are now free from artifacts when showing the same buffer in multiple windows.
   - Position-aware tree-sitter _scope_ with completely configurable out-of-scope styling.
   - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
   - Two new highlight selection "methods" including a new default ("context").
   - Inhibit string and list bar descent even without treesitter using Emacs' syntax capabilities.
-- v0.2.2:
+- **v0.2.2**:
   - Rate-limit updates of the current highlight depth; see `indent-bars-depth-update-delay`. 
-- v0.2: 
+- **v0.2**: 
    - ability to configure the starting column (including col 0)
    - Support for tab-based indent modes
    - optional character-based indent bars (automatic in terminal)
    - tree-sitter context-aware bar depth
    - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
    - other minor improvements
-- v0.1: Initial stipple-based indentation.
+- **v0.1**: Initial stipple-based indentation.
 
 # FAQ's
 
@@ -42,11 +42,11 @@ This package provides indentation _guide bars_ enhanced by tree-sitter:
 - **I want completely unique indent guidebars so as to flex on my colleagues!** <br>Check the [Examples](examples.md) for some ideas.  The sky is the limit (submit your examples).
 - **I use Emacs on the terminal, you insensitive clod!** <br>`indent-bars` will just work for you (though you don't get any fancy bar patterns).
 - **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.** <br>Maybe [this](examples.md#minimal) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with [`indent-bars-prefer-character`](#character-display).
-- **When I view the same buffer side by side, the bars jump around!** <br>This is a known issue for versions of Emacs with arbitrary pixel-width window; see [Per-buffer stipple offsets](#per-buffer-stipple-offsets).
-- **I get too many bars inside function definitions and calls**: You can use [tree-sitter to help](#tree-sitter).
+- **I get too many bars inside function definitions and calls**: You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter).
 - **I want a bar in the very first column!**: set `indent-bars-starting-column` to 0.
-- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the fast updates, set this to 0.
-
+- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the crazy-fast updates, set this to 0.
+- **I turned on treesitter support but nothing happened**: You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language of interest. [More info](#configuring-tree-sitter).
+ 
 # Install/config
 
 Not yet in a package database; simply clone and point `use-package` at the correct path.  You can also simply use the `vc-package-install` command newly released with Emacs 29.
@@ -113,14 +113,17 @@ Please [open an issue](../../issues) with any updates/corrections to this list.
 See also [Testing Stipples](#testing-stipples).
 
 # Customization
-`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars`.  Note: when changing any of these custom variables while `indent-bars` is enabled, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.
+`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  
+
+> [!NOTE]
+> When changing any of these custom variables while `indent-bars` is enabled, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.
 
 See some [examples](examples.md) with relevant settings.
 
 The main customization variables are categorized below.  See the documentation of each variable for more details.
 
 ## Bar shape and size
-- `indent-bars-width-frac`: The fractional width of the bar (0-1, in terms of fraction of a single character's width).
+- `indent-bars-width-frac`: The fractional width of the bar ([0-1], a _fraction_ of a single character's width).
 - `indent-bars-pad-frac`: The fractional padding offset of the bar from the left edge of the character. 
 - `indent-bars-pattern`: A string specifying the vertical structure of the bar (space=blank, non-space=filled).  Scaled to the height of one character.
 - `indent-bars-zigzag`: A fractional left-right *zigzag* to apply to consecutive groups of identical non-space characters in `pattern`.
@@ -156,23 +159,23 @@ The main customization variables are categorized below.  See the documentation o
 - `indent-bars-treesit-update-delay`: Delay in seconds for updating the treesitter scope highlight.
 
 ## Out-of-scope alternate styling variables
-If tree-sitter scope is active (`indent-bars-treesit-scope`), the settings above apply only to the _in scope_ text. To permit configuring the appearance of the out-of-scope bars, a parallel set of custom variables with `indent-bars-ts-` prefixes are created.
+If tree-sitter scope is active (`indent-bars-treesit-scope`), the settings above apply only to the _in-scope_ text. To permit configuring the appearance of the out-of-scope bars, a parallel set of custom variables with `indent-bars-ts-` prefixes are created.
 
 These can be used in the same manner as above to _fully_ configure the appearance of the "out-of-scope" bars (i.e. bars outside the custom tree-sitter scope), including depth highlighting.  Note that scope highlighting is completely independent of depth highlighting.  The `ts` parallel variables for out-of-scope styling are:
 
-- `indent-bars-ts-color` `inherit`
+- [I] `indent-bars-ts-color` 
 - `indent-bars-ts-width-frac`
 - `indent-bars-ts-pad-frac`
 - `indent-bars-ts-pattern`
 - `indent-bars-ts-zigzag`
 - `indent-bars-ts-no-stipple-char-font-weight`
-- `indent-bars-ts-color-by-depth` [`inherit`]
-- `indent-bars-ts-highlight-current-depth` [`inherit`]
+- [I] `indent-bars-ts-color-by-depth`
+- [I] `indent-bars-ts-highlight-current-depth`
 
 Each of these parallel variables has an equivalent form to their equivalent non-`ts` version (the "parent" variable), with two difference:
 
-1. Some (marked with [`inherit`] above) can be specified as a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted) means that any `:key` values not specified are inherited from the "parent" customize variable.  `no-inherit` means to omit any missing key values.
-2. For any non-`:key` type values, the specific value `'unspecified` can be set to specify using the parent's value for that slot.
+1. Some (marked with [I] above) can be specified as a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted) means that any unspecified `:key` values are inherited from its "parent".  `no-inherit` means to omit any missing key values.
+2. For any non-`:key` type values, the specific value `'unspecified` can be set to indicate using the parent's value for that slot.
 
 For example, a setting of:
 
@@ -184,7 +187,7 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 ## Speed
 
-`indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing -— *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
+`indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
 
 The heaviest operations are **tree-sitter** support (especially scope highlighting), and **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with.  Using with tab-based indentation is also slightly slower than with space-based.
 
@@ -196,14 +199,20 @@ Both indentation-depth highlighting and current-tree-sitter-scope highlighting a
 
 ## Current Depth Highlight
 
-`indent-bars` can highlight the bar at the current depth, and supports a few different ways to determine which bar that is (`Variables indent-bars-highlight-selection-method`).  The simplest is selecting the last-visible bar on the current line.  The old default was `on-bar`, which selects the "unseen" bar that the text on the current line starts on.  The new default is `'context`, which selects the last-visible bar unless an adjacent no-blank line is indented deeper by at least one indent spacing, in which case the `on-bar` approach is used.  Experiment with these to see what you prefer.
+`indent-bars` can highlight the bar at the current depth, and supports a few different ways to determine which bar that is (see `indent-bars-highlight-selection-method`):
+
+1. `nil`: The simplest version selects the depth of the last-visible bar on the current line.
+2. `on-bar`:  The old default, which selects the depth of the "unseen" bar that the first character of text on the current line cover up.
+3. `context`: The new default, which selects the last-visible bar unless an adjacent no-blank line is indented deeper by at least one indent spacing, in which case the `on-bar` approach is used.
+
+Experiment with these to see what you prefer.
 
 ## Tree-sitter
 
-`indent-bars` can optionally use tree-sitter in supported files to add several significant features:
+`indent-bars` can optionally use tree-sitter in supported files to enable several features:
 
 1. **Scope Highlighting**: The current tree-sitter scope can be configured by specifying matching node types.  The innermost node (covering sufficient lines) will then be rendered using the normal bar color and style.  Bars which are _out-of-scope_ have alternative styling applied.  See configuration, above.
-1. **Blank Line Display**: It can be nice to omit the display of bars on blank lines at the top level (e.g. in a _module_).  Tree-sitter can help show those lines.
+1. **Blank Line Display**: It can be nice to omit the display of bars on blank lines at the top level (e.g. in a _module_).  Tree-sitter can help identify those lines.
 1. **Wrap Detection**: It can be useful to prevent the drawing of many bars in wrapped entities like argument lists or literal dictionaries.  Tree-sitter can help detect these and inhibit these unwanted bars (see also `indent-bars-no-descend-string/list`, which do not require tree-sitter).
 
 > [!NOTE]
