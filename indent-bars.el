@@ -743,15 +743,15 @@ Additional `defcustom` keyword arguments can be given as R."
 		       ((eq (car type) 'list)
 			(seq-find
 			 (lambda (el) (and (consp el) (eq (car el) 'choice)))
-			 type)))))
+			 type))
+		       (t (setq type `(choice ,type))))))
     ;; Add an unspecified choice
-    (when choice
-      (when-let ((tag-pos (member :tag choice)))
-	(setq choice (cdr tag-pos)))	;after tag
-      (setcdr choice
-	      (push
-	       `(const :tag ,(concat "No-value (use parent " optname ")") unspecified)
-	       (cdr choice))))
+    (when-let ((tag-pos (member :tag choice)))
+      (setq choice (cdr tag-pos)))	;after tag
+    (setcdr choice
+	    (push
+	     `(const :tag ,(concat "No-value (use parent " optname ")") unspecified)
+	     (cdr choice)))
 
     ;; Add leading inherit flag, if needed
     (when (or no-inherit add-inherit)
