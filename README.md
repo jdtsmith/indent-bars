@@ -122,15 +122,15 @@ See some [examples](examples.md) with relevant settings.
 
 The main customization variables are categorized below.  See the documentation of each variable for more details.
 
+## Bar color and highlighting
+- `indent-bars-color`: The main bar color, either a color name or face, from which foreground or background color will be taken.  Also used to set a `:blend` factor, to blend colors into the frame's background color.
+- `indent-bars-color-by-depth`: How and whether to alter the color of the indent bars by indentation depth.  Defaults to using the foreground of the `outline-*` faces.
+
 ## Bar shape and size
 - `indent-bars-width-frac`: The fractional width of the bar ([0-1], a _fraction_ of a single character's width).
 - `indent-bars-pad-frac`: The fractional padding offset of the bar from the left edge of the character. 
 - `indent-bars-pattern`: A string specifying the vertical structure of the bar (space=blank, non-space=filled).  Scaled to the height of one character.
 - `indent-bars-zigzag`: A fractional left-right *zigzag* to apply to consecutive groups of identical non-space characters in `pattern`.
-
-## Bar color and highlighting
-- `indent-bars-color`: The main bar color, either a color name or face, from which foreground or background color will be taken.  Also used to set a `:blend` factor, to blend colors into the frame's background color.
-- `indent-bars-color-by-depth`: How and whether to alter the color of the indent bars by indentation depth.  Defaults to using the foreground of the `outline-*` faces.
 
 ## Current Depth highlighting
 - `indent-bars-highlight-current-depth`: How and whether to highlight the bars at the indentation depth of the current line.  The current depth bar can change color (including blending with the pre-existing color), as well as structure (size, pad, pattern, zigzag).
@@ -150,7 +150,7 @@ The main customization variables are categorized below.  See the documentation o
 - `indent-bars-no-stipple-char-font-weight`: Optional font weight to use for the face displaying the no-stipple character.
 - `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when they are unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
 
-## Treesitter support
+## Treesitter
 - `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to help determine appropriate bar depth.
 - `indent-bars-treesit-scope`: A mapping of language to tree-sitter scope node types, for local scope highlight.
 - `indent-bars-treesit-scope-min-lines`: The minimum number of lines a scope node must occupy to be considered a valid scope.
@@ -158,10 +158,10 @@ The main customization variables are categorized below.  See the documentation o
 - `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types inside of which inhibit styling blank lines at, like "module". 
 - `indent-bars-treesit-update-delay`: Delay in seconds for updating the treesitter scope highlight.
 
-## Out-of-scope alternate styling variables
-If tree-sitter scope is active (`indent-bars-treesit-scope`), the settings above apply only to the _in-scope_ text. To permit configuring the appearance of the out-of-scope bars, a parallel set of custom variables with `indent-bars-ts-` prefixes are created.
+### Tree-sitter _out-of-scope_ alternate styling variables
+If tree-sitter scope is active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ text. You can separately configure the appearance of the _out-of-scope_ bars — bars outside the custom tree-sitter scope.  To do so a parallel set of custom variables with `indent-bars-ts-` prefixes is used.  These variables can be set similarly to their in-scop counterparts to _fully_ configure out-of-scope bar appearance, including depth highlighting.  Note that scope highlighting is completely independent of depth highlighting.  
 
-These can be used in the same manner as above to _fully_ configure the appearance of the "out-of-scope" bars (i.e. bars outside the custom tree-sitter scope), including depth highlighting.  Note that scope highlighting is completely independent of depth highlighting.  The `ts` parallel variables for out-of-scope styling are:
+The `ts` parallel variables for out-of-scope styling are:
 
 - [I] `indent-bars-ts-color` 
 - `indent-bars-ts-width-frac`
@@ -172,16 +172,24 @@ These can be used in the same manner as above to _fully_ configure the appearanc
 - [I] `indent-bars-ts-color-by-depth`
 - [I] `indent-bars-ts-highlight-current-depth`
 
-Each of these parallel variables has an equivalent form to their equivalent non-`ts` version (the "parent" variable), with two difference:
+Each of these parallel variables has the same form as their equivalent non-`ts` version (the "parent" variable), with two difference:
 
-1. Some (marked with [I] above) can be specified as a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted) means that any unspecified `:key` values are inherited from its "parent".  `no-inherit` means to omit any missing key values.
+1. Some (marked with [I] above) can optionally have _inheritance_ from their parent configured, for `:key` based elements.  To do so, set these to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted) means that any unspecified `:key` values are inherited from the parent variable.  `no-inherit` means to omit any missing key values when styling out-of-scope bars.
 2. For any non-`:key` type values, the specific value `'unspecified` can be set to indicate using the parent's value for that slot.
 
 For example, a setting of:
 
-`indent-bars-ts-color = '(inherit unspecified :blend 0.15)` means to use the color from the parent variable `indent-bars-color`, set `:blend` to 0.15, and inherit any other missing keyword values from from `indent-bars-color` for out-of-scope bar coloring.
+```elisp
+(setopt indent-bars-ts-color '(inherit unspecified :blend 0.15))
+```
 
-The easiest way to configure inheritance and unspecified values in the `ts` variables is via customize.
+means to configure the color of out-of-scope bars as follows:
+
+1. use the color from the parent variable `indent-bars-color`
+2. set `:blend` to 0.15
+3. inherit any other missing keyword values from from `indent-bars-color`
+
+The easiest way to configure inheritance and unspecified values in the `ts` variables is via the customize interface.
 
 # Details and Caveats
 
