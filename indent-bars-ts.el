@@ -16,10 +16,10 @@
 ;; For Developers:
 ;;
 ;; Note the shorthand substitutions for style related prefixes (slot
-;; accessors and variable; see file-local-variables at the end):
+;; accessors and variables); see file-local-variables at the end:
 ;; 
 ;;    ibts/  => indent-bars-ts-scope- (slot accessors)
-;;    ibtcs  => indent-bars-ts-current-scope (struct)
+;;    ibtcs  => indent-bars-ts-current-scope (scope struct)
 
 ;;; Code:
 

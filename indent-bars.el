@@ -50,8 +50,8 @@
 ;; To temporarily alter the current style, it's enough to bind the
 ;; variable `indent-bars-current-style' dynamically.
 ;;
-;; Note the shorthand substitution for style related slot
-;; (see file-local-variables at the end):
+;; Note the shorthand substitution for style related slot;
+;; see file-local-variables at the end:
 ;; 
 ;;    ibs/  => indent-bars-style-
 
@@ -317,7 +317,7 @@ between the usual color for that bar and the frame background.
 The original colors are specified in `indent-bars-color-by-depth'
 or `indent-bars-color'.  In this manner the current-depth
 highlight can be made a more (or less) prominent version of the
-default coloring.
+default coloring, just by setting BLEND.
 
 If any of WIDTH, PAD, PATTERN, or ZIGZAG are set, the stipple bar
 pattern at the current level will be altered as well.  Note that
