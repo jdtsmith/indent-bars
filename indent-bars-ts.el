@@ -15,8 +15,46 @@
 
 ;; For Developers:
 ;;
-;; Note the shorthand substitutions for style related prefixes (slot
-;; accessors and variables); see file-local-variables at the end:
+;; This file interfaces treesitter scope queries with font-lock-based
+;; bar drawing.  Some of this happens during normal font-lock,
+;; querying treesitter for node information at point (typically at the
+;; beginning of the line).  The scope highlight capability depends on
+;; the position of the point, and so requires some subtle interface
+;; between movement, tree-sitter, and font-lock.  At any given point
+;; there is a scope range (pair of markers) which determines how the
+;; bars get displayed.  Small movements can change the scope.
+;; 
+;; The technique is as follows:
+;; 
+;;  - A post-command hook sets up an idle-time callback if none exists.
+;;  - In idle time, this checks for changes to the associated buffer
+;;    or position of point.
+;;  - If either of these has changed, they are saved, and tree-sitter
+;;    is queried for the innermost "scope" node configured for the
+;;    buffer's language.  Short nodes occupying too-few lines are not
+;;    considered.  A nil scope node indicates the entire file is the
+;;    scope.
+;;  - Font-lock operations occur on an "extended window", which is the
+;;    current window bounds +- 50%.
+;;  - If the scope node's bounds have not changed from their last
+;;    stored (marker) values (modulo insertions/deletions), and the
+;;    prior extended window fully encloses the the current window
+;;    bounds, no update is needed.
+;;  - If either the node has changed, or it has not changed, but its
+;;    prior extended window bounds have been breached, mask
+;;    (intersect) the new scope node with the extended window:
+;;  - Store the new masked node range.
+;;  - Compute the union of the new and old masked node range bounds,
+;;    and flush font-lock over the associated region(s): typically
+;;    just a few tens of lines each.
+;;  - Font-lock automatically re-applies indentation bars, consulting
+;;    the saved masked node range to determine whether a given line is
+;;    in-scope or out-of-scope.
+;;    
+;;
+;; Note the shorthand substitutions for
+;; style related prefixes (slot accessors and variables); see
+;; file-local-variables at the end:
 ;; 
 ;;    ibts/  => indent-bars-ts-scope- (slot accessors)
 ;;    ibtcs  => indent-bars-ts-current-scope (scope struct)
@@ -327,14 +365,14 @@ ranges and update.  Note that the updated node range clips to an
 			node (ibts/query ibtcs) nil 'innermost
 			indent-bars-treesit-scope-min-lines))))
       (let* ((old (ibts/range ibtcs))	      ;old node range markers
-	     (old-clip (ibts/clip-win ibtcs)) ;old clipping window
+	     (old-clip (ibts/clip-win ibtcs)) ;old extended clipping window
 	     (win (cons (window-start) (window-end)))
 	     (new (if scope ; no scope = full file
 		      (cons (treesit-node-start scope) (treesit-node-end scope))
 		    (cons (point-min) (point-max)))))
-	(unless (and (= (car new) (car old)) ; if node spans the
-		     (= (cdr new) (cdr old)) ; same positions and the
-		     (>= (car win) (car old-clip)) ; window is inside old range:
+	(unless (and (= (car new) (car old)) ; if node is unchanged (spans
+		     (= (cdr new) (cdr old)) ; the same positions) and the
+		     (>= (car win) (car old-clip)) ; window is inside old clip range:
 		     (<= (cdr win) (cdr old-clip))) ; no update needed
 	  (let* ((marg (/ (- (cdr win) (car win)) 2)) ; add a bit of space
 		 (clip-wide (cons (max (point-min) (- (car win) marg))
