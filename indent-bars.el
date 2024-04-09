@@ -353,13 +353,6 @@ non-nil, any stipple appearance parameters will be ignored."
 		  (:zigzag (float :tag "Zig-Zag")))))
   :group 'indent-bars)
 
-(defcustom indent-bars-depth-update-delay 0.075
-  "Minimum delay time in seconds between depth highlight updates.
-Has effect only if `indent-bars-highlight-current-depth' is
-non-nil.  Set to 0 for instant depth updates."
-  :type 'float
-  :group 'indent-bars)
-
 (defcustom indent-bars-highlight-selection-method 'context
   "Method for selecting bar depth for current indentation highlight.
 If nil, the last showing bar on the current line is selected for
@@ -372,6 +365,13 @@ last bar showing for highlight."
   :type '(choice (const :tag "Containing" nil)
 		 (const :tag "On Bar" on-bar)
 		 (const :tag "Context" context)))
+
+(defcustom indent-bars-depth-update-delay 0.075
+  "Minimum delay time in seconds between depth highlight updates.
+Has effect only if `indent-bars-highlight-current-depth' is
+non-nil.  Set to 0 for instant depth updates."
+  :type 'float
+  :group 'indent-bars)
 
 ;;;;; Other
 (defcustom indent-bars-display-on-blank-lines t

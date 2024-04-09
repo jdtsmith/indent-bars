@@ -100,7 +100,7 @@ is set."
 		 (repeat :tag "Node types" string))
   :group 'indent-bars-ts)
 
-(defcustom indent-bars-ts-update-delay 0.125
+(defcustom indent-bars-treesit-update-delay 0.125
   "Idle time in seconds for treesitter scope updates to occur.
 This has effect only if `indent-bars-treesit-scope' is non-nil."
   :type 'float
@@ -357,7 +357,7 @@ ranges and update.  Note that the updated node range clips to an
   "Update treesit scope when possible."
   (unless indent-bars-ts--scope-timer
     (setq indent-bars-ts--scope-timer
-	  (run-with-idle-timer indent-bars-ts-update-delay nil
+	  (run-with-idle-timer indent-bars-treesit-update-delay nil
 			       #'indent-bars-ts--update-scope1))))
 
 ;;;; Setup
