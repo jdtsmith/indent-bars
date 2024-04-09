@@ -1,5 +1,5 @@
 ;;; indent-bars.el --- Highlight indentation with bars -*- lexical-binding: t; -*-
-;; Copyright (C) 2023  J.D. Smith
+;; Copyright (C) 2023-2024  J.D. Smith
 
 ;; Author: J.D. Smith
 ;; Homepage: https://github.com/jdtsmith/indent-bars
