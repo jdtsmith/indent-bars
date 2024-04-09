@@ -319,16 +319,19 @@ ranges and update.  Note that the updated node range clips to an
 		   (= (buffer-modified-tick) (ibts/tick ibtcs))))
     (setf (ibts/tick ibtcs) (buffer-modified-tick)
 	  (ibts/point ibtcs) (point))
-    (when-let ((node (treesit-node-on
-		      (max (point-min) (1- (point))) (point)
-		      indent-bars-ts--parser))
-	       (scope (indent-bars-ts--node-query
-		       node (ibts/query ibtcs) nil 'innermost
-		       indent-bars-treesit-scope-min-lines)))
+    (let* ((node (treesit-node-on
+		  (max (point-min) (1- (point))) (point)
+		  indent-bars-ts--parser))
+	   (scope (and node
+		       (indent-bars-ts--node-query
+			node (ibts/query ibtcs) nil 'innermost
+			indent-bars-treesit-scope-min-lines))))
       (let* ((old (ibts/range ibtcs))	      ;old node range markers
 	     (old-clip (ibts/clip-win ibtcs)) ;old clipping window
 	     (win (cons (window-start) (window-end)))
-	     (new (cons (treesit-node-start scope) (treesit-node-end scope))))
+	     (new (if scope ; no scope = full file
+		      (cons (treesit-node-start scope) (treesit-node-end scope))
+		    (cons (point-min) (point-max)))))
 	(unless (and (= (car new) (car old)) ; if node spans the
 		     (= (cdr new) (cdr old)) ; same positions and the
 		     (>= (car win) (car old-clip)) ; window is inside old range:
@@ -342,8 +345,7 @@ ranges and update.  Note that the updated node range clips to an
 		    (indent-bars--current-indentation-depth)))
 	    (cl-loop for rng in (indent-bars-ts--union old new)
 		     for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
-		     if (and beg end)
-		     do
+		     if (and beg end) do
 		     (message "Flushing %d lines" (count-lines beg end))
 		     (font-lock-flush beg end))
 	    (set-marker (car old) (car new))
