@@ -923,7 +923,7 @@ and can return an updated depth."
 	 (d (indent-bars--depth c)) 	;last visible bar
 	 ppss-ind)
     (when indent-bars--ppss
-      (let* ((p (point))
+      (let* ((p (prog1 (point) (forward-line 0)))
 	     (ppss (syntax-ppss)) 	; moves point!
 	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
 	     (sl (and indent-bars-no-descend-lists (nth 1 ppss))))
