@@ -1181,6 +1181,11 @@ greater than zero."
 		 ,@(when hl-bg `(:background ,hl-bg)))
 	       (ibs/current-stipple-face s)))))))
 
+(defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
+  "Highlight bar at DEPTH in buffer BUF."
+  (with-current-buffer buf
+    (indent-bars--update-current-depth-highlight depth)))
+
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
 Rate limit set by `indent-bars-depth-update-delay'.  If FORCE is
@@ -1196,7 +1201,8 @@ non-nil, update depth even if it has not changed."
 	  (setq indent-bars--highlight-timer
 		(run-with-idle-timer
 		 indent-bars-depth-update-delay nil
-		 #'indent-bars--update-current-depth-highlight depth)))))))
+		 #'indent-bars--update-current-depth-highlight-in-buffer
+		 (current-buffer) depth)))))))
 
 ;;;; Stipple Display
 (defsubst indent-bars--block (n)
