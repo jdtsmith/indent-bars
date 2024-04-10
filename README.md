@@ -10,7 +10,7 @@ This package provides indentation _guide bars_ enhanced by tree-sitter:
 - Bar appearance is _highly_ configurable: color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
 - Bars can have optional depth-based coloring, with a cyclical color palette you can customize.
 - Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
-- Bars can be drawn on blank lines.
+- Bars can appear on blank lines.
 - Bar depth can be held constant inside multi-line strings and lists. 
 - Works in the terminal, using a vertical bar character.
 
