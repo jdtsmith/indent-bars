@@ -83,7 +83,7 @@
   :prefix "indent-bars-")
 
 ;;;;; Stipple Bar Shape
-(defcustom indent-bars-width-frac 0.4
+(defcustom indent-bars-width-frac 0.3
   "The width of the indent bar as a fraction of the character width.
 Applies to stipple-based bars only."
   :type '(float :tag "Width Fraction"
@@ -100,7 +100,7 @@ A float, the fraction of the character width.  Applies to
 	  :type-error "Fraction must be between 0 and 1")
   :group 'indent-bars-style)
 
-(defcustom indent-bars-pattern " .  . "
+(defcustom indent-bars-pattern " ..  .. "
   "A pattern specifying the vertical structure of indent bars.
 Space signifies blank regions, and any other character signifies
 filled regions.  The pattern length is scaled to match the
