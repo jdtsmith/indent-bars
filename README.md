@@ -17,7 +17,7 @@ This package provides indentation _guide bars_ enhanced by tree-sitter:
 ## What's New
 
 - **v0.5**: A major update with many new features and improvements.
-  - Stipples are now free from artifacts when showing the same buffer in multiple windows.
+  - Stipples are now free from artifacts when the same buffer appears in multiple windows.
   - Position-aware tree-sitter _scope focus_ with completely configurable out-of-scope styling.
   - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
   - Two new highlight selection "methods" including a new default ("context").
