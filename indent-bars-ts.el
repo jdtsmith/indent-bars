@@ -84,7 +84,7 @@
   (cl-labels ((ts-cust (var &rest r)
 		(eval `(indent-bars--alt-custom
 			"ts" ,var "Tree-sitter (out-of-scope)" ,@r))))
-      (ts-cust 'color '(unspecified :blend 0.15) 'add-inherit)
+      (ts-cust 'color '(unspecified :blend 0.1) 'add-inherit)
       (dolist (c '( width-frac pad-frac pattern zigzag ;simple types
 		    no-stipple-char-font-weight))
 	(ts-cust c 'unspecified))
