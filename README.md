@@ -1,5 +1,6 @@
 # indent-bars: fast, configurable indentation guide-bars for Emacs.
-<img align="right" width="480" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c">
+
+<img align="right" width="500" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c"/>
 
 This package provides indentation _guide bars_ enhanced by tree-sitter:
 
