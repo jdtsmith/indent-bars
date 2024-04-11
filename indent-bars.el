@@ -83,7 +83,7 @@
   :prefix "indent-bars-")
 
 ;;;;; Stipple Bar Shape
-(defcustom indent-bars-width-frac 0.3
+(defcustom indent-bars-width-frac 0.375
   "The width of the indent bar as a fraction of the character width.
 Applies to stipple-based bars only."
   :type '(float :tag "Width Fraction"
@@ -852,7 +852,6 @@ Useful for calling after theme changes."
 	(indent-bars--depth-palette style)
 	(ibs/current-depth-palette style)
 	(indent-bars--current-depth-palette style)
-	
 	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
   
