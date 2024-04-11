@@ -554,7 +554,7 @@ Additional `format' arguments can be passed as R."
   "Create and record a new style struct with TAG.
 A new style is only created if an existing style with that TAG is
 no yet recorded."
-  (or (seq-find (lambda (s) (eq (ibs/tag s) tag)) indent-bars--styles)
+  (or (seq-find (lambda (s) (equal (ibs/tag s) tag)) indent-bars--styles)
       (let ((style (ibs/create tag)))
 	(cl-pushnew style indent-bars--styles :test #'equal)
 	style)))
