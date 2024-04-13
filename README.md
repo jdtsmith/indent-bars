@@ -1,5 +1,10 @@
 # indent-bars: fast, configurable indentation guide-bars for Emacs.
-
+<p align="center">
+<a href="#faqs"><b>FAQ</b></a> ⏐
+<a href="#installconfig"><b>INSTALL</b></a> ⏐
+<a href="#customization"><b>CUSTOMIZE</b></a> ⏐
+<a href="#details-and-caveats"><b>MORE DETAILS</b></a>
+</p>
 <img align="right" width="500" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c"/><img align="right" width="10" height="476" src="https://github.com/jdtsmith/indent-bars/assets/93749/c4df4fbe-7aab-4b4e-bb89-7c6a70755e9d"/>
 
 This package provides indentation _guide bars_ enhanced by tree-sitter:
@@ -240,7 +245,7 @@ Experiment with these to see what you prefer.
 
 `indent-bars` can optionally use tree-sitter in supported files to enable several features:
 
-1. **Scope Focus**: The current tree-sitter scope can be focused, with out of scope bars de-emphasized in their display.  This can be configured by specifying matching "scope" node types (e.g. functions, blocks, etc.).  The innermost node (covering sufficient lines) will then be rendered using the normal bar color and style.  Bars which are _out-of-scope_ have alternative styling applied.  See configuration, above.
+1. **Scope Focus**: The current tree-sitter scope can be _focused_, with out-of-scope bars de-emphasized in their display (or actually, styled however you want).  This can be configured by [specifying matching "scope"](#configuring-tree-sitter) node types (e.g. functions, blocks, etc.) for each language of interest.  The innermost node (covering sufficient lines) will then be rendered using the normal bar color and style.  Bars which are _out-of-scope_ have alternative styling applied.
 1. **Blank Line Display**: It can be nice to omit the display of bars on blank lines at the top structural level (e.g. in a _module_).  Tree-sitter can help `indent-bars` identify those lines.
 1. **Wrap Detection**: It can be useful to prevent drawing excess bars in wrapped entities like argument lists, literal dictionaries, or other heirarchical multi-line structures.  Tree-sitter can help detect these and inhibit unwanted bars (see also `indent-bars-no-descend-string/list`, which do not require tree-sitter).
 
