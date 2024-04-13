@@ -173,7 +173,7 @@ Custom variables affecting character-based bar display, e.g. in the terminal:
 
 ## Treesitter
 
-Main treesitter configuration variables:
+### Main treesitter configuration variables:
 
 - `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to help determine appropriate bar depth.
 - `indent-bars-treesit-scope`: A mapping of language to tree-sitter scope node types, for local scope highlight (_scope focus_).
@@ -183,8 +183,6 @@ Main treesitter configuration variables:
 - `indent-bars-treesit-update-delay`: Delay in seconds for updating the treesitter scope highlight.
 
 ### Tree-sitter _out-of-scope_ alternate styling variables
-
-Out of scope style variables:
 
 If tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars. You can separately configure the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope.  To do so, a parallel set of custom variables with an `indent-bars-ts-` prefix is used.  These variables can be set similarly to their in-scop counterparts to _fully_ configure out-of-scope bar appearance, including depth highlighting.  Note that scope highlighting is completely independent of depth highlighting.
 
