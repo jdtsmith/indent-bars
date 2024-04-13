@@ -173,7 +173,7 @@ Custom variables affecting character-based bar display, e.g. in the terminal:
 
 ## Treesitter
 
-### Main treesitter configuration variables:
+### Main treesitter configuration variables
 
 - `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to help determine appropriate bar depth.
 - `indent-bars-treesit-scope`: A mapping of language to tree-sitter scope node types, for local scope highlight (_scope focus_).
