@@ -219,14 +219,6 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 # Details and Caveats
 
-## Speed
-
-`indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
-
-The heaviest operations are **tree-sitter** support (especially scope highlighting), and **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with.  Using with tab-based indentation is also slightly slower than with space-based.
-
-Both indentation-depth highlighting and current-tree-sitter-scope highlighting are protected by timers to avoid unnecessary loads (e.g. when pixel-scrolling).  Note that indentation-depth highlighting is _very_ fast and can safely be set to 0 seconds (though bars will then flash rapidly as you scroll).  Tree-sitter scope requires querying the tree-sitter core, which can be somewhat slower, so be careful setting its timer too low.
-
 ## Indentation
 
 `indent-bars` works with either space- or tab-based indentation.  If possible, prefer space indentation, as it is faster.  Note that some modes explicitly enable or disable `indent-tabs-mode`.
@@ -325,6 +317,14 @@ Note that in mixed gui/terminal sessions of the same Emacs process, you need to 
 
 - Works equally for terminal and GUI.
 - Works even for emacs ports which do not support or mis-handle stipple display (see [Compatibility](#compatibility)).
+- 
+## Speed
+
+`indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
+
+The heaviest operations are **tree-sitter** support (especially scope highlighting), and **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with.  Using with tab-based indentation is also slightly slower than with space-based.
+
+Both indentation-depth highlighting and current-tree-sitter-scope highlighting are protected by timers to avoid unnecessary loads (e.g. when pixel-scrolling).  Note that indentation-depth highlighting is _very_ fast and can safely be set to 0 seconds (though bars will then flash rapidly as you scroll).  Tree-sitter scope requires querying the tree-sitter core, which can be somewhat slower, so be careful setting its timer too low.
 
 # Related Packages
 
