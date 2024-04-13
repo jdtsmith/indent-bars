@@ -225,7 +225,7 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 ## Current Depth Highlight
 
-`indent-bars` can highlight the bar at the current depth, and supports a few different ways to determine which bar that is (see `indent-bars-highlight-selection-method`):
+`indent-bars` can highlight the bar at the current depth, and supports a few different ways to determine which bar gets selected for highlight (see `indent-bars-highlight-selection-method`):
 
 1. `nil`: The simplest version selects the depth of the last-visible bar on the current line for highlight.
 2. `on-bar`:  The old default, which selects the depth of the "unseen" bar that the first character of text on the current line covers up.
