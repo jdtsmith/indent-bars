@@ -186,7 +186,7 @@ Main treesitter configuration variables:
 
 Out of scope style variables:
 
-If tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ text. You can separately configure the appearance of the _out-of-scope_ bars — bars outside the custom tree-sitter scope.  To do so a parallel set of custom variables with `indent-bars-ts-` prefixes is used.  These variables can be set similarly to their in-scop counterparts to _fully_ configure out-of-scope bar appearance, including depth highlighting.  Note that scope highlighting is completely independent of depth highlighting.  
+If tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars. You can separately configure the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope.  To do so, a parallel set of custom variables with an `indent-bars-ts-` prefix is used.  These variables can be set similarly to their in-scop counterparts to _fully_ configure out-of-scope bar appearance, including depth highlighting.  Note that scope highlighting is completely independent of depth highlighting.
 
 The `ts` parallel variables for out-of-scope styling are:
 
@@ -201,8 +201,8 @@ The `ts` parallel variables for out-of-scope styling are:
 
 Each of these parallel variables has the same form as their equivalent non-`ts` version (the "parent" variable), with two difference:
 
-1. Some (marked with [I] above) can optionally have _inheritance_ from their parent configured, for `:key` based elements.  To do so, set these to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted) means that any unspecified `:key` values are inherited from the parent variable.  `no-inherit` means to omit any missing key values when styling out-of-scope bars.
-2. For any non-`:key` type values, the specific value `'unspecified` can be set to indicate using the parent's value for that slot.
+1. Some (marked with [I] above) can optionally have _inheritance_ from their parent configured, specifying whether missing `:key` based elements are inherited from the in-scope style.  To configure inheritance, you can optionally set these variable values to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted) means that any unspecified `:key` values are inherited from the parent variable.  `no-inherit` means to omit any missing key values when styling out-of-scope bars.
+2. For any non-`:key` type values, the specific symbol value `'unspecified` can be set to indicate using the parent's value for that slot.
 
 For example, a setting of:
 
@@ -216,7 +216,7 @@ means to configure the color of out-of-scope bars as follows:
 2. set `:blend` to 0.15
 3. inherit any other missing keyword values from from `indent-bars-color`
 
-The easiest way to configure inheritance and unspecified values in the `ts` variables is via the customize interface.
+The easiest way to configure inheritance and unspecified values in the `ts` variables is via the customize interface; see the group `indent-bars-ts-style`. 
 
 # Details and Caveats
 
