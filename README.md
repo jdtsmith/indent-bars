@@ -100,7 +100,6 @@ See [tree-sitter](#tree-sitter), and also the [Wiki page](https://github.com/jdt
 > [!IMPORTANT]
 > For `indent-bars` to display fancy guide bars, your port and version of emacs must correctly display the `:stipple` face attribute.  **Most do**, but some do not.
 
-`indent-bars` can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but can optionally be configured to do so always; see [Character Display](#character-display).
 
 Known `:stipple` support, by Emacs build:
 
@@ -114,9 +113,9 @@ Known `:stipple` support, by Emacs build:
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
-Please [open an issue](../../issues) with any updates/corrections to this list.
+Please [open an issue](../../issues) with any updates/corrections to this list.  See also [Testing Stipples](#testing-stipples).
 
-See also [Testing Stipples](#testing-stipples).
+`indent-bars` can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but this can be made the default; see [Character Display](#character-display).
 
 # Customization
 `M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  
