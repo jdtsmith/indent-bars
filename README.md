@@ -20,7 +20,7 @@ This package provides indentation _guide bars_ enhanced by tree-sitter:
 - Works in the terminal, using a vertical bar character.
 
 ## What's New
-
+- **v0.5.1**: Correctly handle scope highlight when multiple windows show the same buffer.
 - **v0.5**: A major update with many new features and improvements.
   - Stipples are now free from artifacts when the same buffer appears in multiple windows.
   - Position-aware tree-sitter _scope focus_ with completely configurable out-of-scope styling.
