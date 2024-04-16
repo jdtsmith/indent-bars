@@ -314,6 +314,21 @@ of ranges that either cover."
       (list a b) ; no overlap, use both
     (list (cons (car a) (max (cdr a) (cdr b))))))
 
+(defun indent-bars-ts--union-all (ranges)
+  "Return the union of all ranges in the list RANGES.
+Each range is a (start . end) cons."
+  (let* ((ranges (sort ranges (lambda (a b) (< (car a) (car b)))))
+	 (u ranges)
+	 (cur (car ranges))
+	 new)
+    (dolist (r (cdr ranges))
+      (setq u (indent-bars-ts--union cur r))
+      (if (= (length u) 1)
+	  (setq cur (car u))
+	(push (car u) new)
+	(setq u (cdr u) cur (car u))))
+    (append u new)))
+
 (defun indent-bars-ts--intersection (a b)
   "Return the intersection between ranges A and B.
 Ranges A and B are (start . end) conses.  Their intersection is a
@@ -358,8 +373,9 @@ ranges and update.  Note that the updated node range clips to an
 		     (= (buffer-modified-tick) (ibts/tick ibtcs))))
       (setf (ibts/tick ibtcs) (buffer-modified-tick)
 	    (ibts/point ibtcs) (point))
-      (let* ((node (treesit-node-on
-		    (max (point-min) (1- (point))) (point)
+      (let* ((pmn (point-min)) (pmx (point-max))
+	     (node (treesit-node-on
+		    (max pmn (1- (point))) (point)
 		    indent-bars-ts--parser))
 	     (scope (and node
 			 (indent-bars-ts--node-query
@@ -370,26 +386,35 @@ ranges and update.  Note that the updated node range clips to an
 	       (win (cons (window-start) (window-end)))
 	       (new (if scope		; no scope = full file
 			(cons (treesit-node-start scope) (treesit-node-end scope))
-		      (cons (point-min) (point-max)))))
+		      (cons pmn pmx))))
 	  (unless (and (= (car new) (car old)) ; if node is unchanged (spans
 		       (= (cdr new) (cdr old)) ; the same positions) and the
 		       (>= (car win) (car old-clip)) ; window is inside old clip range:
 		       (<= (cdr win) (cdr old-clip))) ; no update needed
 	    (let* ((marg (/ (- (cdr win) (car win)) 2)) ; add a bit of space
-		   (clip-wide (cons (max (point-min) (- (car win) marg))
-				    (min (point-max) (+ (cdr win) marg)))))
-	      (setf (ibts/start-bars ibtcs)
+		   (wide-clip (cons (max pmn (- (car win) marg))
+				    (min pmx (+ (cdr win) marg))))
+		   (wins (get-buffer-window-list nil nil t))
+		   (all-clips	 ; across all windows showing this buf
+		    (indent-bars-ts--union-all
+		     (append (mapcar
+			      (lambda (w)
+				(cons (window-start w) (window-end w)))
+			      (cdr wins))
+			     (list wide-clip)))))
+	      (setf (indent-bars-ts-scope-start-bars indent-bars-ts-current-scope)
 		    (save-excursion
 		      (goto-char (car new))
 		      (indent-bars--current-indentation-depth)))
-	      (cl-loop for rng in (indent-bars-ts--union old new)
-		       for (beg . end) = (indent-bars-ts--intersection rng clip-wide)
-		       if (and beg end) do
-		       (font-lock-flush beg end))
+	      (dolist (rng (indent-bars-ts--union old new))
+		(cl-loop
+		 for wc in all-clips
+		 for (beg . end) = (indent-bars-ts--intersection rng wc)
+		 if (and beg end (> end beg)) do (font-lock-flush beg end)))
 	      (set-marker (car old) (car new))
 	      (set-marker (cdr old) (cdr new))
-	      (set-marker (car old-clip) (car clip-wide))
-	      (set-marker (cdr old-clip) (cdr clip-wide)))))))))
+	      (set-marker (car old-clip) (car wide-clip))
+	      (set-marker (cdr old-clip) (cdr wide-clip)))))))))
 
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
