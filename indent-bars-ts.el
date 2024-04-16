@@ -317,17 +317,15 @@ of ranges that either cover."
 (defun indent-bars-ts--union-all (ranges)
   "Return the union of all ranges in the list RANGES.
 Each range is a (start . end) cons."
-  (let* ((ranges (sort ranges (lambda (a b) (< (car a) (car b)))))
-	 (u ranges)
-	 (cur (car ranges))
-	 new)
-    (dolist (r (cdr ranges))
-      (setq u (indent-bars-ts--union cur r))
-      (if (= (length u) 1)
-	  (setq cur (car u))
-	(push (car u) new)
-	(setq u (cdr u) cur (car u))))
-    (append u new)))
+  (let* ((urs (sort ranges (lambda (a b) (< (car a) (car b)))))
+	 (cur (car urs)) new)
+    (dolist (r (cdr urs))
+      (setq urs (indent-bars-ts--union cur r))
+      (if (= (length urs) 1)
+	  (setq cur (car urs))
+	(push (car urs) new) ; lower range has no overlap
+	(setq urs (cdr urs) cur (car urs))))
+    (append urs new)))
 
 (defun indent-bars-ts--intersection (a b)
   "Return the intersection between ranges A and B.
