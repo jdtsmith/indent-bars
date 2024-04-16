@@ -11,7 +11,7 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 
 - Uses stipple face properties with font-lock for fast performance.
 - Optional tree-sitter support, including _scope focus_, among [other features](#tree-sitter).
-- Supports either space or tab-based indentation, learning indentation spacing from the active mode.
+- Supports either space or tab-based indentation.
 - Bar appearance is _highly_ configurable: color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
 - Bars can have optional depth-based coloring, with a cyclical color palette you can customize.
 - Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
