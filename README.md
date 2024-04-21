@@ -51,7 +51,7 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 - **I get too many bars inside function definitions and calls**: <br>You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter).
 - **I want a bar in the very first column!**: <br>Set `indent-bars-starting-column` to 0.
 - **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** <br>Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the crazy-fast updates, set this to 0.
-- **I turned on treesitter support but nothing happened**: <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language of interest. [More info](#configuring-tree-sitter).
+- **I turned on treesitter support but nothing happened**: <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest. [More info](#configuring-tree-sitter).
 - **How can I change the style of the out-of-scope bars?**: <br>Using a [parallel set](#tree-sitter-out-of-scope-alternate-styling-variables) of `ts-` customizations.
  
 # Install/config
