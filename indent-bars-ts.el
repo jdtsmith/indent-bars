@@ -447,7 +447,8 @@ performed."
   (setq
    indent-bars--display-form nil
    indent-bars--handle-blank-lines-form nil)
-  (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t))
+  (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
+  (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))
 
 ;;;###autoload
 (defun indent-bars-ts-setup ()
