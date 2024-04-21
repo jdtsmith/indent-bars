@@ -254,7 +254,7 @@ Experiment with these to see what you prefer.
 Simply configure `indent-bars-treesit-scope` with the node types for which "local scope" highlighting nodes are of interest.  This must be done for each tree-sitter language you use.  This scope could be as granular as classes and functions, or include detailed block statements.  You can disable scoping for "short blocks" using `indent-bars-treesit-scope-min-lines`, so that, e.g., a quick `if` statement does not capture scope. I recommend starting with the minimal possible set of node types, adding as needed.
 
 #### Wrap
-indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that the default of `indent-bars-no-descend-list`, which does not require tree-sitter, may be sufficient for your uses.
+`indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that the default of `indent-bars-no-descend-list`, which does not require tree-sitter, may be sufficient for your uses.
 
 #### Ignore certain blank lines
 You can assign a single (usually top-level) node type to ignore when drawing bars on blanks linkes; see `indent-bars-treesit-ignore-blank-lines-types` (which, please note, is configured as a list of _strings_, unlike `indent-bars-treesit-wrap/scope`).
