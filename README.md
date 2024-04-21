@@ -20,13 +20,14 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 - Works in the terminal, using a vertical bar character.
 
 ## What's New
-- **v0.5.1**: Correctly handle scope highlight when multiple windows show the same buffer.
-- **v0.5**: A major update with many new features and improvements.
-  - Stipples are now free from artifacts when the same buffer appears in multiple windows.
-  - Position-aware tree-sitter _scope focus_ with completely configurable out-of-scope styling.
+- **v0.5.2**: Ensure all old tree-sitter scopes regions are correctly invalidated when the scope is updated.
+- **v0.5.1**: Correctly handle tree-sitter scope highlight when multiple windows show the same buffer.
+- **v0.5**: A major new release with many added features and improvements.
+  - Stipple-based bars are now free from artifacts when the same buffer appears in multiple windows.
+  - Position-aware tree-sitter _scope focus_ with fully configurable out-of-scope styling.
   - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
   - Two new highlight selection "methods" including a new default ("context").
-  - Inhibit string and list bar descent even without treesitter using Emacs' syntax capabilities.
+  - Inhibit string and list bar descent without tree-sitter, using Emacs' syntax capabilities.
 - **v0.2.2**:
   - Rate-limit updates of the current highlight depth; see `indent-bars-depth-update-delay`. 
 - **v0.2**: 
