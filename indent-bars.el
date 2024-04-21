@@ -1280,7 +1280,8 @@ ROT should be less than W."
 ;; buffer in both windows.  In practice that means that all stipple
 ;; face attributes must be set via filtered face remaps, with the
 ;; filter set to match the pattern size (width and height) as well as
-;; gutter offset "rot" value in that window.
+;; gutter offset "rot" value in that window, which we combine into a
+;; single integer.
 ;;
 ;; Note: a bug in Emacs <29 means `face-remapping-alist' is
 ;; unintentionally shared between indirect and master buffers.  Fixed
