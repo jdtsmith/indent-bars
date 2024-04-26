@@ -268,12 +268,20 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
 (defvar-local ibtcs nil  ; N.B. see shorthands at bottom of file
   "The current `indent-bars-ts-scope' struct.")
 
-(defsubst indent-bars-ts--out-of-scope (pos)
-  "Return whether POS is outside the current treesitter scope.
+(defvar-local indent-bars-ts--scope-timer nil)
+(defun indent-bars-ts--out-of-scope (pos)
+  "Return t if POS is outside the current treesitter scope.
 If there is no scope defined, every position is considered in
-scope."
-  (and ibtcs (or (< pos (car (ibts/range ibtcs)))
-		 (> pos (cdr (ibts/range ibtcs))))))
+scope.  When the timer is running, only consider the most
+recently clipped node ranges in scope."
+  (when ibtcs
+    (if indent-bars-ts--scope-timer
+	;; while timer is active, use clipped node ranges
+	(cl-loop for (beg . end) in (ibts/invalid-ranges ibtcs)
+		 if (and (>= pos beg) (<= pos end)) return nil
+		 finally return t)
+      (or (< pos (car (ibts/range ibtcs)))
+	  (> pos (cdr (ibts/range ibtcs)))))))
 
 (defun indent-bars-ts--display ()
   "Display indentation bars, accounting for current treesitter scope."
@@ -362,7 +370,22 @@ both) of them cover."
 	      l)))
     l))
 
-(defvar-local indent-bars-ts--scope-timer nil)
+(defun indent-bars-ts--update-invalid-ranges (ranges)
+  "Update the current invalid ranges with RANGES."
+  (let ((invlds (ibts/invalid-ranges ibtcs)) parent)
+    (while (and ranges invlds)
+      (setcar (car invlds) (caar ranges))
+      (move-marker (cdar invlds) (cdar ranges))
+      (setq ranges (cdr ranges) parent invlds invlds (cdr invlds)))
+    (if invlds (setcdr parent nil) ; truncate
+      (when ranges 			; allocate more markers
+	(setf (ibts/invalid-ranges ibtcs)
+	      (append (mapcar
+		       (lambda (r) (cons (car r)
+					 (set-marker (make-marker) (cdr r))))
+		       ranges)
+		      (ibts/invalid-ranges ibtcs)))))))
+
 (defun indent-bars-ts--update-scope1 (buf)
   "Perform the treesitter scope font-lock update in buffer BUF.
 If the buffer is modified or the point has moved, re-query the
@@ -392,9 +415,9 @@ with 50% padding on either side."
 		   (= (cdr new) (cdr old)) ; the same positions) and the
 		   (>= (car win) (car last-clip-win)) ; window inside last clip
 		   (<= (cdr win) (cdr last-clip-win))) ; no update needed
-	(let* ((marg (/ (- (cdr win) (car win)) 2)) ; a bit of space
-	       (wide-clip (cons (max pmn (- (car win) marg))
-				(min pmx (+ (cdr win) marg))))
+	(let* ((margin (* (- (cdr win) (car win)) 3))  ; 3 pages worth
+	       (wide-clip (cons (max pmn (- (car win) margin))
+				(min pmx (+ (cdr win) margin))))
 	       (all-clips	    ; for all windows showing this buf
 		(indent-bars-ts--union-all
 		 (cons wide-clip
@@ -408,8 +431,8 @@ with 50% padding on either side."
 		(indent-bars-ts--intersect-all ; font-lock invalidates
 		 (cons pmn pmx)
 		 (indent-bars-ts--union-all (append new-invlds old-invlds)))))
-	  (setf (ibts/invalid-ranges ibtcs) new-invlds
-		(ibts/start-bars ibtcs)
+	  (indent-bars-ts--update-invalid-ranges new-invlds)
+	  (setf (ibts/start-bars ibtcs)
 		(save-excursion
 		  (goto-char (car new))
 		  (indent-bars--current-indentation-depth)))
