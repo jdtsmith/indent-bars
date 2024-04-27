@@ -275,13 +275,8 @@ If there is no scope defined, every position is considered in
 scope.  When the timer is running, only consider the most
 recently clipped node ranges in scope."
   (when ibtcs
-    (if indent-bars-ts--scope-timer
-	;; while timer is active, use clipped node ranges
-	(cl-loop for (beg . end) in (ibts/invalid-ranges ibtcs)
-		 if (and (>= pos beg) (<= pos end)) return nil
-		 finally return t)
-      (or (< pos (car (ibts/range ibtcs)))
-	  (> pos (cdr (ibts/range ibtcs)))))))
+    (or (< pos (car (ibts/range ibtcs)))
+	(> pos (cdr (ibts/range ibtcs))))))
 
 (defun indent-bars-ts--display ()
   "Display indentation bars, accounting for current treesitter scope."
@@ -320,72 +315,6 @@ of ranges that either cover."
       (list a b) ; no overlap, use both
     (list (cons (car a) (max (cdr a) (cdr b))))))
 
-(defun indent-bars-ts--union-all (ranges)
-  "Return the union of all ranges in the list RANGES.
-Each range is a (start . end) cons.  Note that this alters the
-input list by side effect."
-  (let* ((urs (sort ranges (lambda (a b) (< (car a) (car b)))))
-	 (cur (car urs)) new)
-    (dolist (r (cdr urs))
-      (setq urs (indent-bars-ts--union cur r))
-      (if (= (length urs) 1)
-	  (setq cur (car urs))
-	(push (car urs) new) ; lower range has no overlap
-	(setq urs (cdr urs) cur (car urs))))
-    (append urs new)))
-
-(defun indent-bars-ts--intersection (a b)
-  "Return the intersection between ranges A and B.
-Ranges A and B are (start . end) conses.  Their intersection is a
-single range that both cover, or nil if none."
-  (indent-bars-ts--order-ranges a b)
-  (unless (or (< (cdr a) (car b)) (> (car b) (cdr a)))
-    (cons (car b) (min (cdr a) (cdr b)))))
-
-(defun indent-bars-ts--intersect-all (clip ranges)
-  "Clip the range CLIP against all RANGES, returning all which are non-nil.
-RANGES is a list of (start . end) conses, and CLIP is one such
-range to clip against."
-  (cl-loop for r in ranges
-	   for i = (indent-bars-ts--intersection clip r)
-	   if i collect i))
-
-(defun indent-bars-ts--symdiff (a b)
-  "Return the symmetric difference between ranges A and B.
-Ranges A and B are (start . end) conses.  Their symmetric
-difference is a list of ranges, possibly nil, that one (but not
-both) of them cover."
-  (let ((l ()))
-    (indent-bars-ts--order-ranges a b)
-    (if (< (cdr a) (car b))
-	(push a l)			; no overlap below, add a
-      (unless (= (car a) (car b))
-	(push (cons (car a) (car b)) l)))
-    (if (> (car b) (cdr a))
-	(push b l)			; no overlap above, add b
-      (unless (= (cdr a) (cdr b))
-	(push (if (> (cdr a) (cdr b))
-		  (cons (cdr b) (cdr a))
-		(cons (cdr a) (cdr b)))
-	      l)))
-    l))
-
-(defun indent-bars-ts--update-invalid-ranges (ranges)
-  "Update the current invalid ranges with RANGES."
-  (let ((invlds (ibts/invalid-ranges ibtcs)) parent)
-    (while (and ranges invlds)
-      (setcar (car invlds) (caar ranges))
-      (move-marker (cdar invlds) (cdar ranges))
-      (setq ranges (cdr ranges) parent invlds invlds (cdr invlds)))
-    (if invlds (setcdr parent nil) ; truncate
-      (when ranges 			; allocate more markers
-	(setf (ibts/invalid-ranges ibtcs)
-	      (append (mapcar
-		       (lambda (r) (cons (car r)
-					 (set-marker (make-marker) (cdr r))))
-		       ranges)
-		      (ibts/invalid-ranges ibtcs)))))))
-
 (defun indent-bars-ts--update-scope1 (buf)
   "Perform the treesitter scope font-lock update in buffer BUF.
 If the buffer is modified or the point has moved, re-query the
@@ -398,6 +327,7 @@ with 50% padding on either side."
   (with-current-buffer buf
     (setq indent-bars-ts--scope-timer nil)
     (let* ((pmn (point-min)) (pmx (point-max))
+	   (old (ibts/range ibtcs))
 	   (node (treesit-node-on
 		  (max pmn (1- (point))) (point)
 		  indent-bars-ts--parser))
@@ -405,42 +335,19 @@ with 50% padding on either side."
 		       (indent-bars-ts--node-query
 			node (ibts/query ibtcs) nil 'innermost
 			indent-bars-treesit-scope-min-lines)))
-	   (old (ibts/range ibtcs))	; old node range markers
 	   (new (if scope		; no scope = full file
 		    (cons (treesit-node-start scope) (treesit-node-end scope))
-		  (cons pmn pmx)))
-	   (last-clip-win (ibts/clip-win ibtcs)) ; primary clip window
-	   (win (cons (window-start) (window-end))))
-      (unless (and (= (car new) (car old)) ; if node is unchanged (spans
-		   (= (cdr new) (cdr old)) ; the same positions) and the
-		   (>= (car win) (car last-clip-win)) ; window inside last clip
-		   (<= (cdr win) (cdr last-clip-win))) ; no update needed
-	(let* ((margin (* (- (cdr win) (car win)) 3))  ; 3 pages worth
-	       (wide-clip (cons (max pmn (- (car win) margin))
-				(min pmx (+ (cdr win) margin))))
-	       (all-clips	    ; for all windows showing this buf
-		(indent-bars-ts--union-all
-		 (cons wide-clip
-		       (mapcar (lambda (w)
-				 (cons (window-start w) (window-end w)))
-			       (cdr (get-buffer-window-list nil nil t))))))
-	       (old-invlds (ibts/invalid-ranges ibtcs))
-	       (new-invlds ; clip new node against all showing window ranges
-		(indent-bars-ts--intersect-all new all-clips))
-	       (all-invlds ; combine old and new ranges + clip to buffer
-		(indent-bars-ts--intersect-all ; font-lock invalidates
-		 (cons pmn pmx)
-		 (indent-bars-ts--union-all (append new-invlds old-invlds)))))
-	  (indent-bars-ts--update-invalid-ranges new-invlds)
-	  (setf (ibts/start-bars ibtcs)
-		(save-excursion
-		  (goto-char (car new))
-		  (indent-bars--current-indentation-depth)))
-	  (set-marker (car old) (car new)) ;updates ibts/range
-	  (set-marker (cdr old) (cdr new))
-	  (set-marker (car last-clip-win) (car wide-clip))
-	  (set-marker (cdr last-clip-win) (cdr wide-clip))
-	  (dolist (inv all-invlds) (font-lock-flush (car inv) (cdr inv))))))))
+		  (cons pmn pmx))))
+      (unless (and (= (car new) (car old))  ; if node is unchanged (spans
+		   (= (cdr new) (cdr old))) ; same range) no update needed
+	(setf (ibts/start-bars ibtcs)
+	      (save-excursion
+		(goto-char (car new))
+		(indent-bars--current-indentation-depth)))
+	(dolist (inv (indent-bars-ts--union old new))
+	  (font-lock-flush (car inv) (cdr inv)))
+	(set-marker (car old) (car new)) ;updates ibts/range
+	(set-marker (cdr old) (cdr new))))))
 
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
