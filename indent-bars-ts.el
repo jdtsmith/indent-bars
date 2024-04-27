@@ -374,9 +374,8 @@ performed."
   (when indent-bars-ts--scope-timer
     (cancel-timer indent-bars-ts--scope-timer)
     (setq indent-bars-ts--scope-timer nil))
-  (setq
-   indent-bars--display-form nil
-   indent-bars--handle-blank-lines-form nil)
+  (kill-local-variable 'indent-bars--display-form)
+  (kill-local-variable 'indent-bars--handle-blank-lines-form)
   (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
   (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))
 
@@ -416,9 +415,10 @@ performed."
     ;; Emphasis Scope: use alternate styling outside current scope
     (when-let ((types (alist-get lang indent-bars-treesit-scope)))
       (indent-bars-ts--init-scope)
-      (setq ibtcs (ibts/create)
-	    indent-bars--display-form '(indent-bars-ts--display)
-	    indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
+      (setq ibtcs (ibts/create))
+      (setq-local
+       indent-bars--display-form '(indent-bars-ts--display)
+       indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
       (setf (ibts/query ibtcs)
 	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
       (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
