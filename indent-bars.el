@@ -1183,8 +1183,9 @@ greater than zero."
 
 (defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
   "Highlight bar at DEPTH in buffer BUF."
-  (with-current-buffer buf
-    (indent-bars--update-current-depth-highlight depth)))
+  (if (buffer-live-p buf)
+      (with-current-buffer buf
+	(indent-bars--update-current-depth-highlight depth))))
 
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
