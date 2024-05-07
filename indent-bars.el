@@ -1183,8 +1183,9 @@ greater than zero."
 
 (defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
   "Highlight bar at DEPTH in buffer BUF."
-  (with-current-buffer buf
-    (indent-bars--update-current-depth-highlight depth)))
+  (if (buffer-live-p buf)
+      (with-current-buffer buf
+	(indent-bars--update-current-depth-highlight depth))))
 
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
@@ -1548,7 +1549,7 @@ Adapted from `highlight-indentation-mode'."
   ;; Remap/Resize
   (unless indent-bars--no-stipple
     (setq indent-bars--stipple-remaps (make-hash-table))
-    (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
+    (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples nil t)
     (indent-bars--update-all-stipples)) ; sets all remaps for current buffer
 
   ;; Current depth Highlighting
