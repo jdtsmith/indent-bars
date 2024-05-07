@@ -1548,7 +1548,7 @@ Adapted from `highlight-indentation-mode'."
   ;; Remap/Resize
   (unless indent-bars--no-stipple
     (setq indent-bars--stipple-remaps (make-hash-table))
-    (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
+    (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples nil t)
     (indent-bars--update-all-stipples)) ; sets all remaps for current buffer
 
   ;; Current depth Highlighting
