@@ -20,11 +20,14 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 - Works in the terminal, using a vertical bar character.
 
 ## What's New
+- **v0.6.0**: 
+  - Simplify tree-sitter scope drawing. 
+  - New option `indent-bars-ts-styling-scope` to swap the roles of in-scope and out-of-scope style.
 - **v0.5.2**: Ensure all old tree-sitter scopes regions are correctly invalidated when the scope is updated.
 - **v0.5.1**: Correctly handle tree-sitter scope highlight when multiple windows show the same buffer.
 - **v0.5**: A major new release with many added features and improvements.
   - Stipple-based bars are now free from artifacts when the same buffer appears in multiple windows.
-  - Position-aware tree-sitter _scope focus_ with fully configurable out-of-scope styling.
+  - Position-aware tree-sitter _scope focus_ with fully configurable in-scope/out-of-scope styling.
   - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
   - Two new highlight selection "methods" including a new default ("context").
   - Inhibit string and list bar descent without tree-sitter, using Emacs' syntax capabilities.
@@ -53,7 +56,8 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 - **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** <br>Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the crazy-fast updates, set this to 0.
 - **I turned on treesitter support but nothing happened**: <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest. [More info](#configuring-tree-sitter).
 - **How can I change the style of the out-of-scope bars?**: <br>Using a [parallel set](#tree-sitter-out-of-scope-alternate-styling-variables) of `ts-` customizations.
- 
+- **What if I want out-of-scope text to have the default style, and in-scope text to be special?** You want to set `indent-bars-ts-styling-scope` to `'in-scope`. 
+
 # Install/config
 
 Not yet in a package database; simply clone and point `use-package` at the correct path.  You can also simply use the `vc-package-install` command newly released with Emacs 29.
@@ -183,15 +187,20 @@ For more information, check [the details](#tree-sitter-details).
 - `indent-bars-treesit-update-delay`: Delay in seconds for updating the treesitter scope highlight.
 - `indent-bars-treesit-wrap`: A mapping of language to tree-sitter wrap types (as symbols), to avoid adding extra bars e.g. in wrapped function arguments.  Note that this is considered only after the `no-descend` options above.
 - `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types (as strings) inside of which to inhibit styling blank lines at, like "module". 
+- `indent-bars-ts-styling-scope`: Determine whether the `*-ts-*` variables apply to in-scope or (by default) out-of-scope styling. 
 
-### Tree-sitter _out-of-scope_ alternate styling variables
+### Tree-sitter alternate styling variables
 
-If tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars. You can separately configure the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope.  Usually you'd want to de-emphasize out-of-scope bars somehow, but that's not required (go crazy).  To customize bar appearance outside the current scope, use the parallel set of custom variables with an `indent-bars-ts-` prefix.  Each of these variables can be set similarly to their in-scope counterparts to _fully_ configure out-of-scope bar appearance, including color, depth highlighting, bar pattern, etc.  
+By default, if tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars. You can separately configure an alternate style for the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope.  Usually you'd want to de-emphasize out-of-scope bars somehow, but that's not required (go crazy).
+
+To customize alternate bar appearance, use the parallel set of custom variables with an `indent-bars-ts-` prefix.  Each of these variables can be set similarly to their default counterparts to _fully_ configure alternate bar appearance, including color, depth highlighting, bar pattern, etc.
+
+You can interchange the role of in-scope and out-of-scope using `indent-bars-ts-scope-styling`.  This is useful if you prefer to have the _default_ style (e.g. the bar style in non-tree-sitter-enabled buffers) match the out-of-scope style within tree-sitter buffers (i.e. if you want to _emphasize_ scope, not _de-emphasize_ out-of-scope).
 
 > [!NOTE]
 > _Scope focus_ highlighting is completely independent of _depth highlighting_, and you can enable one or the other, or both. 
 
-The `ts` parallel custom variables for out-of-scope styling are:
+The `ts` parallel custom variables for alternate styling are:
 
 - [I] `indent-bars-ts-color` 
 - `indent-bars-ts-width-frac`
@@ -204,7 +213,7 @@ The `ts` parallel custom variables for out-of-scope styling are:
 
 Each of these parallel variables has the same form as their equivalent non-`ts` version (the "parent" variable), with two difference:
 
-1. Some (marked with [I] above) can optionally use _inheritance_ from their parent.  Inheritance means any missing `:key` based elements are _inherited_ from the in-scope (parent) style.  To configure their inheritance, you can optionally set these variable values to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted and `value` is simply used as-is) means that any unspecified `:key` values are inherited from the parent variable.  The symbol `no-inherit` means to omit any missing key values when styling out-of-scope bars.
+1. Some (marked with [I] above) can optionally use _inheritance_ from their parent.  Inheritance means any missing `:key` based elements are _inherited_ from the in-scope (parent) style.  To configure their inheritance, you can optionally set these variable values to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted and `value` is simply used as-is) means that any unspecified `:key` values are inherited from the parent variable.  The symbol `no-inherit` means to omit any missing key values for the alternate styling.
 2. For any non-`:key` type values, the specific symbol value `'unspecified` can be set to indicate using the parent's value for that slot.
 
 For example, a setting of:
@@ -213,7 +222,7 @@ For example, a setting of:
 (setopt indent-bars-ts-color '(inherit unspecified :blend 0.15))
 ```
 
-means to configure the color of out-of-scope bars as follows:
+means to configure the color of alternate style bars as follows:
 
 1. use the color from the parent variable `indent-bars-color` (since it is `unspecified` here)
 2. set `:blend` to 0.15
@@ -241,7 +250,7 @@ Experiment with these to see what you prefer.
 
 `indent-bars` can optionally use tree-sitter in supported files to enable several features:
 
-1. **Scope Focus**: The current tree-sitter scope can be _focused_, with out-of-scope bars de-emphasized in their display (or actually, styled however you want).  This can be configured by [specifying matching "scope"](#configuring-tree-sitter) node types (e.g. functions, blocks, etc.) for each language of interest.  The innermost node (covering sufficient lines) will then be rendered using the normal bar color and style.  Bars which are _out-of-scope_ have alternative styling applied.
+1. **Scope Focus**: The current tree-sitter scope can be _focused_, with out-of-scope bars de-emphasized or in-scope bars emphasized in their display (or actually, styled however you want).  This can be configured by [specifying matching "scope"](#configuring-tree-sitter) node types (e.g. functions, blocks, etc.) for each language of interest.  The innermost node (covering sufficient lines) will then be rendered distinctly from _out-of-scope_ bars.
 1. **Selective Blank Line Display**: By default, `indent-bars` displays bars on blank lines (though this can be [configured](#bar-setup-and-location)), so that they remain continuous.  It can be nice to omit the display of blank lines bars at the top structural level (e.g. in a _module_), to make divisions between top-level constructs more visible.  Tree-sitter can help `indent-bars` identify those lines.
 1. **Wrap Detection**: It can be useful to prevent excess bars inside wrapped entities which move indent to "line things up." These include things like argument lists, literal dictionaries, or other heirarchical multi-line structures.  Tree-sitter can help detect these and inhibit unwanted bars (but [see also](#bar-setup-and-location) `indent-bars-no-descend-string/list`, which do not require tree-sitter).
 
