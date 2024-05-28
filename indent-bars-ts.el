@@ -21,40 +21,26 @@
 ;; beginning of the line).  The scope highlight capability depends on
 ;; the position of the point, and so requires some subtle interface
 ;; between movement, tree-sitter, and font-lock.  At any given point
-;; there is a scope range (pair of markers) which determines how the
-;; bars get displayed.  Small movements can change the scope.
+;; there is a scope range (a pair of markers) which determines how the
+;; bars get displayed.  Small movements can change the scope
+;; signficantly.
 ;; 
 ;; The technique is as follows:
 ;; 
 ;;  - A post-command hook sets up an idle-time callback if none exists.
-;;  - In idle time, this checks for changes to the associated buffer
-;;    or position of point.
-;;  - If either of these has changed, they are saved, and tree-sitter
-;;    is queried for the innermost "scope" node configured for the
-;;    buffer's language.  Short nodes occupying too-few lines are not
-;;    considered.  A nil scope node indicates the entire file is the
-;;    scope.
-;;  - Font-lock operations occur on an "extended window", which is the
-;;    current window bounds +- 50%.
-;;  - If the scope node's bounds have not changed from their last
-;;    stored (marker) values (modulo insertions/deletions), and the
-;;    prior extended window fully encloses the the current window
-;;    bounds, no update is needed.
-;;  - If either the node has changed, or it has not changed, but its
-;;    prior extended window bounds have been breached, mask
-;;    (intersect) the new scope node with the extended window:
-;;  - Store the new masked node range.
-;;  - Compute the union of the new and old masked node range bounds,
-;;    and flush font-lock over the associated region(s): typically
-;;    just a few tens of lines each.
+;;  - In idle time, check for the innermost "scope" node at point.
+;;  - If the node boundaries have changed from the last time they were
+;;    saved (modulo insertion deletion changes markers can track),
+;;    invalidate font-lock over the node's boundaries.
+;;  - Short nodes occupying too-few lines are not considered.  A nil
+;;    scope node indicates the entire file is the scope.
 ;;  - Font-lock automatically re-applies indentation bars, consulting
-;;    the saved masked node range to determine whether a given line is
+;;    the saved node range to determine whether a given line is
 ;;    in-scope or out-of-scope.
 ;;    
 ;;
-;; Note the shorthand substitutions for
-;; style related prefixes (slot accessors and variables); see
-;; file-local-variables at the end:
+;; Note the shorthand substitutions for style related prefixes (slot
+;; accessors and variables); see file-local-variables at the end:
 ;; 
 ;;    ibts/  => indent-bars-ts-scope- (slot accessors)
 ;;    ibtcs  => indent-bars-ts-current-scope (scope struct)
