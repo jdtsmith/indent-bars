@@ -4,7 +4,7 @@
 ;; Author: J.D. Smith
 ;; Homepage: https://github.com/jdtsmith/indent-bars
 ;; Package-Requires: ((emacs "27.1") (compat "29.1.4.5"))
-;; Version: 0.5.2
+;; Version: 0.6.0
 ;; Keywords: convenience
 ;; Prefix: indent-bars
 ;; Separator: -
