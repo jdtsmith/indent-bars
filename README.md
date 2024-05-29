@@ -338,7 +338,7 @@ Note that in mixed gui/terminal sessions of the same Emacs process, you may need
 
 - Works equally for terminal and GUI.
 - Works even for emacs ports which do not support or mis-handle stipple display (see [Compatibility](#compatibility)).
-- 
+
 ## Speed
 
 `indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
