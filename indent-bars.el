@@ -1553,7 +1553,7 @@ Adapted from `highlight-indentation-mode'."
 	(add-hook 'font-lock-extend-region-functions
 		  #'indent-bars--extend-blank-line-regions 95 t))))
 
-(declare-function indent-bars-ts-setup "indent-bars-ts")
+(declare-function indent-bars-ts-mode "indent-bars-ts")
 
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
@@ -1580,7 +1580,7 @@ Adapted from `highlight-indentation-mode'."
 	(or indent-bars-no-descend-string indent-bars-no-descend-lists))
   
   ;; Treesitter
-  (if indent-bars-treesit-support (indent-bars-ts-setup)) ; autoloads
+  (if indent-bars-treesit-support (indent-bars-ts-mode 1)) ; autoloads
 
   ;; Remap/Resize
   (unless indent-bars--no-stipple

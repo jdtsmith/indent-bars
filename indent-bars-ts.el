@@ -374,6 +374,47 @@ performed."
 	    (cons indent-bars-style indent-bars-ts-alt-style)
 	  (cons indent-bars-ts-alt-style indent-bars-style))))
 
+(defun indent-bars-ts--setup (lang)
+  "Setup indent-bars treesitter support in this buffer for language LANG."
+  (setq indent-bars-ts--parser
+	(cl-find lang (treesit-parser-list) :key #'treesit-parser-language))
+
+  ;; Wrap: prevent additional bars inside wrapped entities
+  (when-let ((types (alist-get lang indent-bars-treesit-wrap)))
+    (setq indent-bars-ts--wrap-query
+	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))
+	  indent-bars--update-depth-function
+	  #'indent-bars-ts--update-indentation-depth))
+
+  ;; Strings (avoid descending deeper inside strings using TS)
+  (when (stringp indent-bars-no-descend-string)
+    (let ((query `([(,indent-bars-no-descend-string)] @s))
+	  (pm (point-min)))
+      (setq indent-bars-ts--string-query (treesit-query-compile lang query))
+      ;; Test it to be sure it works
+      (condition-case err
+	  (treesit-query-capture indent-bars-ts--parser
+				 indent-bars-ts--string-query pm pm t)
+	(treesit-query-error
+	 (setq indent-bars-no-descend-string nil)
+	 (message "%s. See `indent-bars-no-descend-string'.\n%s"
+		  "indent-bars: malformed treesitter string query; disabling"
+		  err))
+	(:success (setq indent-bars--update-depth-function
+			#'indent-bars-ts--update-indentation-depth)))))
+
+  ;; Emphasis Scope: use alternate styling outside(/inside) current scope
+  (when-let ((types (alist-get lang indent-bars-treesit-scope)))
+    (indent-bars-ts--init-scope)
+    (setq ibtcs (ibts/create))
+    (setq-local
+     indent-bars--display-form '(indent-bars-ts--display)
+     indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
+    (setf (ibts/query ibtcs)
+	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
+    (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
+    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown)))
+
 (defun indent-bars-ts--teardown ()
   "Teardown indent-bars-ts."
   (when indent-bars-ts--scope-timer
@@ -385,49 +426,16 @@ performed."
   (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))
 
 ;;;###autoload
-(defun indent-bars-ts-setup ()
-  "Setup indent-bars for using with treesiter."
-  (when-let (((fboundp #'treesit-available-p))
-	     ((treesit-available-p))
-	     (lang (treesit-language-at (point-min))))
-    (setq indent-bars-ts--parser
-	  (cl-find lang (treesit-parser-list) :key #'treesit-parser-language))
-
-    ;; Wrap: prevent additional bars inside wrapped entities
-    (when-let ((types (alist-get lang indent-bars-treesit-wrap)))
-      (setq indent-bars-ts--wrap-query
-	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))
-	    indent-bars--update-depth-function
-	    #'indent-bars-ts--update-indentation-depth))
-
-    ;; Strings (avoid descending deeper inside strings using TS)
-    (when (stringp indent-bars-no-descend-string)
-      (let ((query `([(,indent-bars-no-descend-string)] @s))
-	    (pm (point-min)))
-	(setq indent-bars-ts--string-query (treesit-query-compile lang query))
-	;; Test it to be sure it works
-	(condition-case err
-	    (treesit-query-capture indent-bars-ts--parser
-				   indent-bars-ts--string-query pm pm t)
-	  (treesit-query-error
-	   (setq indent-bars-no-descend-string nil)
-	   (message "%s. See `indent-bars-no-descend-string'.\n%s"
-		    "indent-bars: malformed treesitter string query; disabling"
-		    err))
-	  (:success (setq indent-bars--update-depth-function
-			  #'indent-bars-ts--update-indentation-depth)))))
-
-    ;; Emphasis Scope: use alternate styling outside(/inside) current scope
-    (when-let ((types (alist-get lang indent-bars-treesit-scope)))
-      (indent-bars-ts--init-scope)
-      (setq ibtcs (ibts/create))
-      (setq-local
-       indent-bars--display-form '(indent-bars-ts--display)
-       indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
-      (setf (ibts/query ibtcs)
-	    (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
-      (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
-      (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))))
+(define-minor-mode indent-bars-ts-mode
+  "Minor mode for indent-bars using treesitter."
+  :group 'indent-bars-ts
+  (if indent-bars-ts-mode
+      (if-let (((fboundp #'treesit-available-p))
+	       ((treesit-available-p))
+	       (lang (treesit-language-at (point-min))))
+	  (indent-bars-ts--setup lang)
+	(setq indent-bars-ts-mode nil))
+    (indent-bars-ts--teardown)))
 
 (provide 'indent-bars-ts)
 ;;; indent-bars-ts.el ends here
