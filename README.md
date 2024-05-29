@@ -129,10 +129,10 @@ Please [open an issue](../../issues) with any updates/corrections to this list. 
 
 # Customization
 
-`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  There are many customization variables and bar styling in particular is highly configurable, so use Custom!
+`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  There are many customization variables and bar styling in particular is highly configurable, so use Customize!
 
 > [!TIP]
-> The easiest way to achieve a particular style is to customize the groups `indent-bars`, and sub-group `indent-bars-style` and (if you use TS) `indent-bars-ts` + `indent-bars-ts-style`.  While in the Customize interface, pull up one of your buffers in another window on the same frame.  When you make changes (`C-c C-c` is convenient in custom buffers), the bar style/etc. will automatically update.  When you are happy, you can either "Set for Future Sessions", or "Show Saved Lisp Expression" for the variables you changed and copy them into your init file.
+> The easiest way to achieve a particular style is to customize the groups `indent-bars`, sub-group `indent-bars-style` and (if you use TS) `indent-bars-ts` + `indent-bars-ts-style`.  While in the Customize interface, pull up one of your buffers with bars in another window on the same frame.  When you make changes to variables (`C-c C-c` is convenient in custom buffers), the bar style/etc. will automatically update.  When you are happy, you can either "Set for Future Sessions", or "Show Saved Lisp Expression" for the variables you changed and copy them into your init file.
 
 See some [examples](examples.md) with relevant settings.
 
