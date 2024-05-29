@@ -48,19 +48,19 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 # FAQ's
 
 - **I don't see anything/bars are garbled!** <br>While most do, not all Emacsen support stipples; see [Compatibility](#compatibility).
-- **How can I find out if my Emacs supports stipples?!**  <br>See [Testing Stipples](#testing-stipples).
+- **How can I find out if my Emacs supports stipples?!** <br>See [Testing Stipples](#testing-stipples).
 - **These bars are too instrusive!** <br>Reduce the `:blend` value in `indent-bars-color` closer to zero. Consider disabling `indent-bars-color-by-depth`.
 - **I can barely see the bars!** <br>Increase the `:blend` value in `indent-bars-color` closer to one.
 - **I want completely unique indent guidebars so as to flex on my colleagues!** <br>Check the [Examples](examples.md) for some ideas.  The sky is the limit (submit your examples).
 - **I use Emacs on the terminal, you insensitive clod!** <br>`indent-bars` will just work for you (though you don't get any fancy bar patterns).
 - **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.** <br>Maybe [this](examples.md#minimal) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with [`indent-bars-prefer-character`](#character-display).
-- **I get too many bars inside function definitions and calls**: <br>You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter-details).
-- **I want a bar in the very first column!**: <br>Set `indent-bars-starting-column` to 0.
-- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!**: <br>Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the crazy-fast updates, set this to 0.
-- **I turned on treesitter support but nothing happened**: <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest. [More info](#configuring-tree-sitter).
-- **How can I change the style of the out-of-scope bars?**: <br>Using an [alternate set](#tree-sitter-alternate-styling-variables) of `ts-` customizations.
+- **I get too many bars inside function definitions and calls** <br>You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter-details).
+- **I want a bar in the very first column!** <br>Set `indent-bars-starting-column` to 0.
+- **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** <br>Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the crazy-fast updates, set this to 0.
+- **I turned on treesitter support but nothing happened** <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest. [More info](#configuring-tree-sitter).
+- **How can I change the style of the out-of-scope bars?** <br>Using an [alternate set](#tree-sitter-alternate-styling-variables) of `ts-` customizations.
 - **What if I want out-of-scope text to have the default style, and in-scope text to be special?**: <br>You want to set `indent-bars-ts-styling-scope` to `'in-scope`. 
-- **My treesitter scope makes no sense!**: <br>A common mistake is adding too many node types for your language to the `indent-bars-treesit-scope` variable.  Start small, with thing you _know_ you want (function, method, class, etc.).
+- **My treesitter scope makes no sense!** <br>A common mistake is adding too many node types for your language to the `indent-bars-treesit-scope` variable.  Start small, with thing you _know_ you want (function, method, class, etc.).
 
 
 # Install/config
