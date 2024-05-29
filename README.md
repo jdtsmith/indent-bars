@@ -194,9 +194,9 @@ For more information, check [the details](#tree-sitter-details).
 
 ### Tree-sitter alternate styling variables
 
-By default, if tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars[^1]. You can separately configure an alternate style for the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope[^1].  Usually you'd want to de-emphasize out-of-scope bars somehow, but that's not required (go crazy).
+By default, if tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars[^2]. You can separately configure an alternate style for the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope[^2].  Usually you'd want to de-emphasize out-of-scope bars somehow, but that's not required (go crazy).
 
-[^1]: Or visa versa if `indent-bars-ts-styling-scope` is `in-scope`.
+[^2]: Or visa versa if `indent-bars-ts-styling-scope` is `in-scope`.
 
 To customize alternate bar appearance, use the parallel set of custom variables with an `indent-bars-ts-` prefix.  Each of these variables can be set similarly to their default counterparts to _fully_ configure alternate bar appearance, including color, depth highlighting, bar pattern, etc.
 
