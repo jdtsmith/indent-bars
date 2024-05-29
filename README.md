@@ -123,10 +123,11 @@ Please [open an issue](../../issues) with any updates/corrections to this list. 
 `indent-bars` can also be used *without stipples*, drawing a simple vertical character (like `│`) instead.  It automatically does this in non-graphical displays (terminals), but this can be made the default; see [Character Display](#character-display).
 
 # Customization
-`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  
 
-> [!NOTE]
-> When changing any of these custom variables while `indent-bars` is enabled, you must `M-x indent-bars-reset` in the buffers of interest to see the resulting changes.
+`M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  There are many customization variables and bar styling in particular is highly configurable, so use Custom!
+
+> [!TIP]
+> The easiest way to achieve a particular style is to customize the groups `indent-bars`, and sub-group `indent-bars-style` and (if you use TS) `indent-bars-ts` + `indent-bars-ts-style`.  While in the Customize interface, pull up one of your buffers in another window on the same frame.  When you make changes (`C-c C-c` is convenient in custom buffers), the bar style/etc. will automatically update.  When you are happy, you can either "Set for Future Sessions", or "Show Saved Lisp Expression" for the variables you changed and copy them into your init file.
 
 See some [examples](examples.md) with relevant settings.
 
@@ -269,7 +270,7 @@ Simply configure `indent-bars-treesit-scope` with the node types for which "loca
 You can assign a single (usually top-level) node type to ignore when drawing bars on blanks linkes; see `indent-bars-treesit-ignore-blank-lines-types` (which, please note, is configured as a list of _strings_, unlike `indent-bars-treesit-wrap/scope`).
 
 #### Identifying treesit node types of interest
-The easiest way to discover node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did.  
+The easiest way to discover node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did (this will happen automatically if you change the scope node in the Customize interface).
 
 Please document good tree-sitter settings for other languages in the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
 
@@ -316,7 +317,7 @@ To get the stipple bars to appear in the correct location within their column, `
 
 For terminals, (and everywhere, if `indent-bars-prefer-character` is set), `indent-bars` will not attempt stipple display, but instead use simple characters (e.g. `│`; see [an example](examples.md#in-terminal)).
 
-Note that in mixed gui/terminal sessions of the same Emacs process, you need to `M-x indent-bars-reset` when switching a given buffer between graphical and terminal frames.
+Note that in mixed gui/terminal sessions of the same Emacs process, you may need to `M-x indent-bars-reset` when switching a given buffer between graphical and terminal frames.
 
 ### Advantages/Disadvantages
 
