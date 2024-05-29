@@ -44,6 +44,7 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
    - other minor improvements
 - **v0.1**: Initial stipple-based indentation.
 
+
 # FAQ's
 
 - **I don't see anything/bars are garbled!** <br>While most do, not all Emacsen support stipples; see [Compatibility](#compatibility).
@@ -59,6 +60,8 @@ This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter
 - **I turned on treesitter support but nothing happened**: <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest. [More info](#configuring-tree-sitter).
 - **How can I change the style of the out-of-scope bars?**: <br>Using an [alternate set](#tree-sitter-alternate-styling-variables) of `ts-` customizations.
 - **What if I want out-of-scope text to have the default style, and in-scope text to be special?** You want to set `indent-bars-ts-styling-scope` to `'in-scope`. 
+- **My treesitter scope makes no sense** A common mistake is adding too many node types for your language to the `indent-bars-treesit-scope` variable.  Start small, with thing you _know_ you want (function, method, class, etc.).
+
 
 # Install/config
 
@@ -200,7 +203,7 @@ By default, if tree-sitter and _scope focus_ are active (`indent-bars-treesit-sc
 
 To customize alternate bar appearance, use the parallel set of custom variables with an `indent-bars-ts-` prefix.  Each of these variables can be set similarly to their default counterparts to _fully_ configure alternate bar appearance, including color, depth highlighting, bar pattern, etc.
 
-You can interchange the role of in-scope and out-of-scope using `indent-bars-ts-scope-styling`.  This is useful if you prefer to have the _default_ style (e.g. the bar style in non-tree-sitter-enabled buffers) match the out-of-scope style within tree-sitter buffers (i.e. if you want to _emphasize_ scope, not _de-emphasize_ out-of-scope).
+You can interchange the role of in-scope and out-of-scope using `indent-bars-ts-styling-scope`.  This is useful if you prefer to have the _default_ style (e.g. the bar style in non-tree-sitter-enabled buffers) match the out-of-scope style within tree-sitter buffers (i.e. if you want to _emphasize_ scope, not _de-emphasize_ out-of-scope).
 
 > [!NOTE]
 > _Scope focus_ highlighting is completely independent of _current depth highlighting_, and you can style them separately, or enable one or the other, or both. 
