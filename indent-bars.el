@@ -350,8 +350,7 @@ non-nil, any stipple appearance parameters will be ignored."
 		  (:width (float :tag "Bar Width"))
 		  (:pad (float :tag "Bar Padding (from left)"))
 		  (:pattern (string :tag "Fill Pattern"))
-		  (:zigzag (float :tag "Zig-Zag")))))
-  :group 'indent-bars)
+		  (:zigzag (float :tag "Zig-Zag"))))))
 
 (defcustom indent-bars-highlight-selection-method 'context
   "Method for selecting bar depth for current indentation highlight.
@@ -370,43 +369,37 @@ showing for highlight (i.e. the same as CONTEXT nil)."
   "Minimum delay time in seconds between depth highlight updates.
 Has effect only if `indent-bars-highlight-current-depth' is
 non-nil.  Set to 0 for instant depth updates."
-  :type 'float
-  :group 'indent-bars)
+  :type 'float)
 
 ;;;;; Other
 (defcustom indent-bars-display-on-blank-lines t
   "Whether to display bars on blank lines."
-  :type 'boolean
-  :group 'indent-bars)
+  :type 'boolean)
 
 (defcustom indent-bars-no-descend-string t
   "Configure bar behavior inside strings.
 If non-nil, displayed bars inside the string will go no deeper
 than the indent level of the string's starting line."
   :local t
-  :type 'boolean
-  :group 'indent-bars)
+  :type 'boolean)
 
 (defcustom indent-bars-no-descend-lists t
   "Configure bar behavior inside lists.
 If non-nil, displayed bars will go no deeper than the indent
 level at the starting line of the innermost containing list."
   :local t
-  :type 'boolean
-  :group 'indent-bars)
+  :type 'boolean)
 
 (defcustom indent-bars-prefer-character nil
   "Use characters instead of stipple to draw bars.
 Normally characters are used on terminal only.  A non-nil value
 specifies using character bars exclusively.  See
 `indent-bars-no-stipple-char'."
-  :type 'boolean
-  :group 'indent-bars)
+:type 'boolean)
 
 (defcustom indent-bars-no-stipple-char ?\│
   "Character to display when stipple is unavailable (as in the terminal)."
-  :type 'char
-  :group 'indent-bars)
+  :type 'char)
 
 (defcustom indent-bars-no-stipple-char-font-weight nil
   "Font weight to use to draw the character bars.
@@ -414,42 +407,36 @@ If non-nil, set the no-stipple character font weight accordingly."
   :type `(choice
           (const :tag "Use Default Weight" nil)
           ,@(mapcar (lambda (item) (list 'const (aref item 1)))
-                    font-weight-table))
-  :group 'indent-bars)
+                    font-weight-table)))
 
 (defcustom indent-bars-unspecified-bg-color "black"
   "Color to use as the frame background color if unspecified.
 Unless actively set, most terminal frames do not have a
 background color specified.  This setting controls the background
 color to use for color blending in that case."
-  :type 'color
-  :group 'indent-bars)
+:type 'color)
 
 (defcustom indent-bars-unspecified-fg-color "white"
   "Color to use as the default foreground color if unspecified."
-  :type 'color
-  :group 'indent-bars)
+  :type 'color)
 
 (defcustom indent-bars-starting-column nil
   "The starting column on which to display the first bar.
 Set to nil, for the default behavior (first bar at the first
 indent level) or an integer value for some other column."
   :type '(choice (const :tag "Default: 1st indent position" nil)
-		 (integer :tag "Specified column"))
-  :group 'indent-bars)
+		 (integer :tag "Specified column")))
 
 (defcustom indent-bars-spacing-override nil
   "Override for default, major-mode based indentation spacing.
 Set only if the default guessed spacing is incorrect.  Becomes
 buffer-local automatically."
   :local t
-  :type '(choice integer (const :tag "Discover automatically" :value nil))
-  :group 'indent-bars)
+  :type '(choice integer (const :tag "Discover automatically" :value nil)))
 
 (defcustom indent-bars-treesit-support nil
   "Whether to enable tree-sitter support (if available)."
-  :type 'boolean
-  :group 'indent-bars)
+  :type 'boolean)
 
 ;;;;; Color Utilities
 (defun indent-bars--frame-background-color()
@@ -1614,7 +1601,7 @@ Adapted from `highlight-indentation-mode'."
 (define-minor-mode indent-bars-mode
   "Indicate indentation with configurable bars."
   :global nil
-  :group 'indent-bars
+  
   (if indent-bars-mode
       (if (and (daemonp) (not (frame-parameter nil 'client)))
 	  (add-hook 'after-make-frame-functions #'indent-bars-setup-and-remove
