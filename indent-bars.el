@@ -356,12 +356,12 @@ non-nil, any stipple appearance parameters will be ignored."
 (defcustom indent-bars-highlight-selection-method 'context
   "Method for selecting bar depth for current indentation highlight.
 If nil, the last showing bar on the current line is selected for
-highlight.  If the symbol \\='on-bar, and the start of the text
-on the line would have fallen directly on a bar, highlight that
-bar depth instead.  If \\='context, use \\='on-bar logic, but
-only if a directly adjacent (non-blank) context line is indented
-deeper, by more than one indent spacing.  Otherwise select the
-last bar showing for highlight."
+highlight.  If the symbol `on-bar', and the start of the text on
+the line would have fallen directly on a bar, highlight that bar
+depth instead.  If `context', use `on-bar' logic, but only if a
+directly adjacent (non-blank) context line is indented deeper, by
+more than one indent spacing.  Otherwise select the last bar
+showing for highlight (i.e. the same as CONTEXT nil)."
   :type '(choice (const :tag "Containing" nil)
 		 (const :tag "On Bar" on-bar)
 		 (const :tag "Context" context)))
@@ -728,8 +728,8 @@ If ADD-INHERIT is non-nil, expand the type to a cons:
 
   (inherit . type)
 
-where INHERIT is either \\='inherit or \\='no-inherit, depending
-on the value of NO-INHERIT.  
+where INHERIT is either `inherit' or `no-inherit', depending
+on the value of NO-INHERIT.
 
 Additional `defcustom` keyword arguments can be given as R."
   (require 'cus-edit)
@@ -797,9 +797,9 @@ Considers ([no-]inherit . rest) inheritance."
 (defun indent-bars--style (style name)
   "Return the value of style variable NAME for STYLE.
 Determines variables to use based on the style tag.  For style
-variable values of the form (\\='inherit|\\='no-inherit . plist),
+variable values of the form (`inherit'|`no-inherit' . plist),
 inheritance of the plist is handled.  If style is the symbol
-\\='any, return the first non-nil value for all styles in
+`any', return the first non-nil value for all styles in
 `indent-bars--styles'."
   (if (eq style 'any)
       (cl-some (lambda (s) (indent-bars--style1 s name))
@@ -809,7 +809,7 @@ inheritance of the plist is handled.  If style is the symbol
 (defun indent-bars--custom-inherit (old new)
   "Inherit the values of NEW and OLD, which can be values or lists.
 NEW and OLD must have the same form, composed of atoms
-and (optionally) a final plist.  The symbol \\='unspecified in
+and (optionally) a final plist.  The symbol `unspecified' in
 NEW indicates that that value should be replaced by the
 corresponding value in OLD.  Any trailing PLIST in NEW and OLD
 will be merged (with NEW taking precedence).  The merged value is
@@ -904,7 +904,7 @@ Skips any fully blank lines."
 If ON-BAR is nil, return the depth of the last visible bar on the
 line.  If ON-BAR is non-nil and content begins at a column where
 a bar would otherwise have fallen, report the depth of
-that (undrawn) bar.  If ON-BAR is the symbol \\='context, and the
+that (undrawn) bar.  If ON-BAR is the symbol `context', and the
 first non-blank line immediately above or below the current line
 is not at a deeper indentation level (by at least one bar
 spacing), disable on-bar and use the last-visible-bar depth for
