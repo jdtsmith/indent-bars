@@ -16,29 +16,50 @@
 ;; For Developers:
 ;;
 ;; This file interfaces treesitter scope queries with font-lock-based
-;; bar drawing.  Some of this happens during normal font-lock,
-;; querying treesitter for node information at point (typically at the
-;; beginning of the line).  The scope highlight capability depends on
-;; the position of the point, and so requires some subtle interface
-;; between movement, tree-sitter, and font-lock.  At any given point
-;; there is a scope range (a pair of markers) which determines how the
-;; bars get displayed.  Small movements can change the scope
-;; signficantly.
+;; indent bar drawing.  "Scope" is defined as the range of the
+;; innermost node covering point that matches the user-configured
+;; scope node types for the language of interest.  For any given
+;; location of point, there is a scope range (a pair of markers) which
+;; helps determine how the bars get displayed.  Short nodes occupying
+;; too-few lines are (optionally) not considered.  A nil scope node
+;; indicates the entire file is the scope.  Note that even small
+;; movements can change the scope and hence bar styling signficantly.
+
+;; The font-lock aspect does not differ much from normal (non-TS) bar
+;; drawing, except there is now an alternate set of bar styles (in-
+;; vs. out-of-scope), and bars on a single line can be either all one,
+;; all the other, or a combination of the two styles.  The forms in
+;; the configured font-lock keywords (FACE eval forms) consult the
+;; current scope range to determine how to style bars on a line.
+
+;; But since bar fontification now depends not just on the text in the
+;; buffer, but on the position of point, this presents a few
+;; challenges to maintain efficiency.  The adopted technique is as
+;; follows:
 ;; 
-;; The technique is as follows:
-;; 
-;;  - A post-command hook sets up an idle-time callback if none exists.
-;;  - In idle time, check for the innermost "scope" node at point.
-;;  - If the node boundaries have changed from the last time they were
-;;    saved (modulo insertion deletion changes markers can track),
-;;    invalidate font-lock over the node's boundaries.
-;;  - Short nodes occupying too-few lines are not considered.  A nil
-;;    scope node indicates the entire file is the scope.
-;;  - Font-lock automatically re-applies indentation bars, consulting
-;;    the saved node range to determine whether a given line is
-;;    in-scope or out-of-scope.
-;;    
+;;  - A post-command hook sets up an idle-time callback (if none
+;;    exists).
+;;  - In idle time, we check for the innermost "scope" node at point.
+;;  - If the scope node boundaries have changed from the last time
+;;    they were saved (modulo simple marker movement), we apply a
+;;    special property `indent-bars-invalid' to the union of the old
+;;    and new scope regions.
+;;  - This property is also added to `font-lock-extra-managed-props',
+;;    and so font-lock removes these as it adds bars to modified and
+;;    otherwise invalidated text.
+;;  - In a `window-scroll-functions' function (see
+;;    `indent-bars-ts--update-bars-on-scroll') we check the current
+;;    window range for visible text marked has having invalid bars:
+;;    `indent-bars-invalid' = t.
+;;  - We then search for and draws bars within this text "by hand"
+;;    (reusing the font-lock keywords and keyword functions).
 ;;
+;; Note that `window-scroll-functions' are called quite late, after
+;; font-locking, so very often (during text changes, but also when new
+;; `fontified'=nil text comes into view) this function can return
+;; quickly without doing anything, as font-lock will have handled
+;; things.
+
 ;; Note the shorthand substitutions for style related prefixes (slot
 ;; accessors and variables); see file-local-variables at the end:
 ;; 
