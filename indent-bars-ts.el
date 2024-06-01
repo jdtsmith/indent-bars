@@ -278,12 +278,11 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
   "A structure for tracking treesitter-based scope information."
   ( range (cons (point-min-marker) (point-min-marker)) :type cons
     :documentation "The current scope node's range.")
-  ( clip-win (cons (point-max-marker) (point-max-marker)) :type cons
-    :documentation "The clipping window for the current scope.")
   ( start-bars 0 :type integer
     :documentation "The number of bars shown at start of current scope.")
   ( invalid-ranges nil :type list
-    :documentation "List of current invalid ranges -- (start . end) conses.")
+    :documentation "List of current invalid ranges.
+One or more (start . end) conses.")
   ( query nil :type ts-query
     :documentation "The treesitter scope query object."))
 
