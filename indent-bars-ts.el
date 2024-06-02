@@ -381,9 +381,28 @@ ranges of the current scope."
 	 (scope (buffer-local-value 'ibtcs (window-buffer win)))
 	 (rngs (indent-bars-ts--intersect-all
 		(cons start end) (ibts/invalid-ranges scope))))
-    (message "On scroll with %S: %d" (selected-window) start)
+    ;; (message "WS: %s %d" win start)
     (cl-loop for (beg . end) in rngs do
 	     (indent-bars-ts--add-bars-in-range beg end))))
+
+(defvar-local indent-bars-ts--invalid-range-markers nil)
+(defun indent-bars-ts--update-invalid-ranges (ranges)
+  "Update invalid ranges for the current scope with RANGES.
+Also sets the `indent-bars-invalid' property on the indicates
+ranges.  Re-uses markers for efficiency."
+  (let* ((lm (length indent-bars-ts--invalid-range-markers))
+	 (lr (length ranges)))
+    (when (> lr lm)
+      (dotimes (_ (- lr lm))
+	(push (cons (make-marker) (make-marker))
+	      indent-bars-ts--invalid-range-markers))
+      (setq lm lr))
+    (setf (ibts/invalid-ranges ibtcs)
+	  (nthcdr (- lm lr) indent-bars-ts--invalid-range-markers))
+    (cl-loop for (beg . end) in ranges
+	     for (mbeg . mend) in (ibts/invalid-ranges ibtcs) do
+	     (put-text-property beg end 'indent-bars-invalid t)
+	     (set-marker mbeg beg) (set-marker mend end))))
 
 (defun indent-bars-ts--update-scope1 (buf)
   "Perform the treesitter scope font-lock update in buffer BUF.
@@ -413,9 +432,7 @@ window."
 		(save-excursion
 		  (goto-char (car new))
 		  (indent-bars--current-indentation-depth)))
-	  (setf (ibts/invalid-ranges ibtcs) (indent-bars-ts--union old new))
-	  (cl-loop for (beg . end) in (ibts/invalid-ranges ibtcs) do
-		   (put-text-property beg end 'indent-bars-invalid t))
+	  (indent-bars-ts--update-invalid-ranges (indent-bars-ts--union old new))
 	  (set-marker (car old) (car new)) ;updates ibts/range
 	  (set-marker (cdr old) (cdr new))
 	  ;; Arrange to check the current window's bars, just in case
