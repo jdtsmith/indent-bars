@@ -280,9 +280,6 @@ mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
     :documentation "The current scope node's range.")
   ( start-bars 0 :type integer
     :documentation "The number of bars shown at start of current scope.")
-  ( invalid-ranges nil :type list
-    :documentation "List of current invalid ranges.
-One or more (start . end) conses.")
   ( query nil :type ts-query
     :documentation "The treesitter scope query object."))
 
@@ -373,36 +370,41 @@ range to clip against."
 	   for i = (indent-bars-ts--intersection clip r)
 	   if i collect i))
 
+(defun indent-bars-ts--add-bars-in-range (start end)
+  "Add bars if needed between START and END.
+Bars are added on all visible ranges of text (considering both
+text properties and overlays) with a non-nil
+`indent-bars-invalid' property.  START is assumed to be visible.
+Based loosely on `jit-lock-function' and `jit-lock-fontify-now'."
+  (when-let ((invld-start (text-property-any start end 'indent-bars-invalid t)))
+    (cl-loop for vs = invld-start then
+	     (next-single-char-property-change ve 'indent-bars-invalid nil end)
+	     for ve = (next-single-char-property-change vs 'indent-bars-invalid nil end)
+	     do
+	     (put-text-property vs ve 'indent-bars-invalid nil)
+	     (indent-bars-ts--draw-all-bars-between vs ve)
+	     while (< ve end))
+    ;; (with-silent-modifications
+    ;;   (save-match-data
+    ;; 	(cl-loop
+    ;; 	 for vs = start then (next-single-char-property-change ve 'invisible nil end)
+    ;; 	 for ve = (next-single-char-property-change vs 'invisible nil end) do
+    ;; 	 (cl-loop for (beg . end) in (indent-bars-ts--intersect-all (cons vs ve) invld-rngs) do
+    ;; 		  (put-text-property beg end 'indent-bars-invalid nil)
+    ;; 		  (indent-bars-ts--draw-all-bars-between beg end))
+    ;; 	 while (< ve end))))
+    ))
+
 (defun indent-bars-ts--update-bars-on-scroll (win start)
-  "Update bars as needed within the window WIN after START.
+  "Update bars as needed within the window WIN from START.
 To be added to `window-scroll-functions'.  Consults the invalid
 ranges of the current scope."
-  (let* ((end (window-end win t))
-	 (scope (buffer-local-value 'ibtcs (window-buffer win)))
-	 (rngs (indent-bars-ts--intersect-all
-		(cons start end) (ibts/invalid-ranges scope))))
-    ;; (message "WS: %s %d" win start)
-    (cl-loop for (beg . end) in rngs do
-	     (indent-bars-ts--add-bars-in-range beg end))))
-
-(defvar-local indent-bars-ts--invalid-range-markers nil)
-(defun indent-bars-ts--update-invalid-ranges (ranges)
-  "Update invalid ranges for the current scope with RANGES.
-Also sets the `indent-bars-invalid' property on the indicates
-ranges.  Re-uses markers for efficiency."
-  (let* ((lm (length indent-bars-ts--invalid-range-markers))
-	 (lr (length ranges)))
-    (when (> lr lm)
-      (dotimes (_ (- lr lm))
-	(push (cons (make-marker) (make-marker))
-	      indent-bars-ts--invalid-range-markers))
-      (setq lm lr))
-    (setf (ibts/invalid-ranges ibtcs)
-	  (nthcdr (- lm lr) indent-bars-ts--invalid-range-markers))
-    (cl-loop for (beg . end) in ranges
-	     for (mbeg . mend) in (ibts/invalid-ranges ibtcs) do
-	     (put-text-property beg end 'indent-bars-invalid t)
-	     (set-marker mbeg beg) (set-marker mend end))))
+  (indent-bars-ts--add-bars-in-range (max (point-min) (- start jit-lock-chunk-size))
+				     (min (point-max) (+ (or (window-end win) (+ start jit-lock-chunk-size))
+							 jit-lock-chunk-size))
+				     ;; (max (point-min) (- start jit-lock-chunk-size))
+				     ;; (min (point-max) (+ end jit-lock-chunk-size))
+				     ))
 
 (defun indent-bars-ts--update-scope1 (buf)
   "Perform the treesitter scope font-lock update in buffer BUF.
@@ -428,19 +430,17 @@ window."
 		    (cons pmn pmx))))
 	(unless (and (= (car new) (car old)) ; if node is unchanged (spans
 		     (= (cdr new) (cdr old))) ; same range) no update needed
+	  (cl-loop for (beg . end) in (indent-bars-ts--union old new) do
+		   (put-text-property beg end 'indent-bars-invalid t))
 	  (setf (ibts/start-bars ibtcs)
 		(save-excursion
 		  (goto-char (car new))
 		  (indent-bars--current-indentation-depth)))
-	  (indent-bars-ts--update-invalid-ranges (indent-bars-ts--union old new))
 	  (set-marker (car old) (car new)) ;updates ibts/range
 	  (set-marker (cdr old) (cdr new))
-	  ;; Arrange to check the current window's bars, just in case
-	  ;; font-lock doesn't handle everything itself
-	  (run-at-time 0 nil (let ((win (selected-window)))
-			       (lambda ()
-				 (indent-bars-ts--update-bars-on-scroll
-				  win (window-start win))))))))))
+	  (let ((win (selected-window)))
+	    (indent-bars-ts--update-bars-on-scroll
+	     win (window-start win))))))))
 
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
@@ -449,30 +449,6 @@ window."
 	  (run-with-idle-timer indent-bars-treesit-update-delay nil
 			       #'indent-bars-ts--update-scope1
 			       (current-buffer)))))
-
-(defun indent-bars-ts--add-bars-in-range (start end)
-  "Add bars if needed between START and END.
-Bars are added on all visible ranges of text (considering both
-text properties and overlays) with a non-nil
-`indent-bars-invalid' property.  START is assumed to be visible.
-Based loosely on `jit-lock-function' and `jit-lock-fontify-now'."
-  (when-let ((invld-start (text-property-any start end 'indent-bars-invalid t))
-	     (invld-rngs
-	      (cl-loop for vs = invld-start then
-		       (next-single-char-property-change ve 'indent-bars-invalid nil end)
-		       for ve = (next-single-char-property-change vs 'indent-bars-invalid nil end)
-		       collect (cons vs ve) while (< ve end))))
-    (message "abir: found some invalid ranges: %S" invld-rngs)
-    (with-silent-modifications
-      (save-match-data
-	(cl-loop
-	 for vs = start then (next-single-char-property-change ve 'invisible nil end)
-	 for ve = (next-single-char-property-change vs 'invisible nil end) do
-	 (cl-loop for (beg . end) in (indent-bars-ts--intersect-all (cons vs ve) invld-rngs) do
-		  (message "Adding invalid bars %d:%d" beg end)
-		  (put-text-property beg end 'indent-bars-invalid nil)
-		  (indent-bars-ts--draw-all-bars-between beg end))
-	 while (< ve end))))))
 
 ;;;; Setup
 (defun indent-bars-ts--init-scope (&optional force)
