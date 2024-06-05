@@ -312,34 +312,34 @@ recently clipped node ranges in scope."
   (let ((beg (match-beginning 0)))
     (unless (indent-bars-ts--ignore-blank beg)
       (if (indent-bars-ts--out-of-scope beg) ;fully out of scope
-	  (indent-bars--handle-blank-lines (match-beginning 0) (match-end 0)
+	  (indent-bars--display-blank-lines (match-beginning 0) (match-end 0)
 					   (cdr indent-bars-ts-in-out-style))
 	;; Switch from out of scope to in scope after start-bars
-	(indent-bars--handle-blank-lines (match-beginning 0) (match-end 0)
+	(indent-bars--display-blank-lines (match-beginning 0) (match-end 0)
 					 (cdr indent-bars-ts-in-out-style)
 					 (ibts/start-bars ibtcs)
 					 (car indent-bars-ts-in-out-style))))))
 
-(defun indent-bars-ts--draw-all-bars-between (start end)
-  "Search for and draw all bars between START and END.
-The beginning of line at START is used to locate real and (if
-configured) blank-line bars, which are drawn according to the
-appropriate style.  This is basically a very tiny, bar-only
-version of what `font-lock-fontify-region-keywords' does."
-  (save-excursion
-    (goto-char start)
-    (forward-line 0)
-    (setq start (point))
-    (while (and (< (point) end)
-		(re-search-forward
-		 (caar indent-bars--font-lock-keywords) end t))
-      (indent-bars-ts--display))
-    (when indent-bars-display-on-blank-lines
-      (goto-char start)
-      (while (and (< (point) end)
-		  (re-search-forward
-		   (caar indent-bars--font-lock-blank-line-keywords) end t))
-	(indent-bars-ts--handle-blank-lines)))))
+;; (defun indent-bars-ts--draw-all-bars-between (start end)
+;;   "Search for and draw all bars between START and END.
+;; The beginning of line at START is used to locate real and (if
+;; configured) blank-line bars, which are drawn according to the
+;; appropriate style.  This is basically a very tiny, bar-only
+;; version of what `font-lock-fontify-region-keywords' does."
+;;   (save-excursion
+;;     (goto-char start)
+;;     (forward-line 0)
+;;     (setq start (point))
+;;     (while (and (< (point) end)
+;; 		(re-search-forward
+;; 		 (caar indent-bars--font-lock-keywords) end t))
+;;       (indent-bars-ts--display))
+;;     (when indent-bars-display-on-blank-lines
+;;       (goto-char start)
+;;       (while (and (< (point) end)
+;; 		  (re-search-forward
+;; 		   (caar indent-bars--font-lock-blank-line-keywords) end t))
+;; 	(indent-bars-ts--handle-blank-lines)))))
 
 (defmacro indent-bars-ts--order-ranges (a b)
   "Order ranges A and B by start position."
@@ -394,17 +394,6 @@ Based loosely on `jit-lock-function' and `jit-lock-fontify-now'."
     ;; 		  (indent-bars-ts--draw-all-bars-between beg end))
     ;; 	 while (< ve end))))
     ))
-
-(defun indent-bars-ts--update-bars-on-scroll (win start)
-  "Update bars as needed within the window WIN from START.
-To be added to `window-scroll-functions'.  Consults the invalid
-ranges of the current scope."
-  (indent-bars-ts--add-bars-in-range (max (point-min) (- start jit-lock-chunk-size))
-				     (min (point-max) (+ (or (window-end win) (+ start jit-lock-chunk-size))
-							 jit-lock-chunk-size))
-				     ;; (max (point-min) (- start jit-lock-chunk-size))
-				     ;; (min (point-max) (+ end jit-lock-chunk-size))
-				     ))
 
 (defun indent-bars-ts--update-scope1 (buf)
   "Perform the treesitter scope font-lock update in buffer BUF.
@@ -507,7 +496,6 @@ performed."
     (make-local-variable 'font-lock-extra-managed-props)
     (cl-pushnew 'indent-bars-invalid font-lock-extra-managed-props)
     (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
-    (add-hook 'window-scroll-functions #'indent-bars-ts--update-bars-on-scroll nil t)
     (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown)))
 
 (defun indent-bars-ts--teardown ()

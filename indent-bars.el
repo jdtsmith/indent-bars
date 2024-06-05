@@ -71,6 +71,7 @@
 
 ;;;; Variables
 (defvar indent-bars-mode)
+(defvar-local indent-bars--regexp nil)
 ;;;; Customization
 (defgroup indent-bars nil
   "Highlight indentation bars."
@@ -1020,13 +1021,13 @@ the number of bars actually displayed."
   (let* ((nb (min max (/ (- tab-width off -1) indent-bars-spacing)))
 	 (str (apply #'indent-bars--blank-string style off nb
 		     bar-from tab-width r)))
-    (put-text-property p (+ p 1) 'display str)
+    (put-text-property p (+ p 1) 'ib-display str)
     nb))
 
 (defun indent-bars--draw-line (style nbars start end &optional
 				     invent switch-after style2)
   "Draw NBARS bars on the line between positions START and END.
-Bars are drawn in style STYLE, `indent-bars-style' by default
+Bars are drawn in style STYLE, `indent-bars-style' by default.
 START is assumed to be on a line beginning position.  Drawing
 starts at a column determined by `indent-bars-starting-column'.
 Tabs at the line beginning have appropriate display properties
@@ -1064,44 +1065,40 @@ needed."
       (cl-incf start (+ (mod vp tab-width) (/ vp tab-width))))
     (when (<= bar nbars)		; still bars to show
       (if indent-bars--no-stipple
-	  (setq prop 'display fun #'indent-bars--no-stipple-char)
+	  (setq prop 'ib-display fun #'indent-bars--no-stipple-char)
 	(setq prop 'face fun #'indent-bars--face))
       (let ((pos (if tabs start (+ start indent-bars--offset))))
 	(while (and (<= bar nbars) (< pos end))
-	  (put-text-property pos (1+ pos)
-			     prop (funcall fun
-					   (cond ((integerp switch-after)
-						  (prog1
-						      (if (> switch-after 0) style style2)
-						    (cl-decf switch-after)
-						    (if (<= switch-after 0)
-							(setq switch-after t))))
-						 ((eq switch-after t) style2)
-						 (t style))
-					   bar))
+	  (put-text-property
+	   pos (1+ pos)
+	   prop (funcall fun
+			 (cond ((integerp switch-after)
+				(prog1
+				    (if (> switch-after 0) style style2)
+				  (cl-decf switch-after)
+				  (if (<= switch-after 0)
+				      (setq switch-after t))))
+			       ((eq switch-after t) style2)
+			       (t style))
+			 bar))
 	  (cl-incf bar)
 	  (cl-incf pos indent-bars-spacing))
 	;; STILL bars to show: invent them (if requested)
 	(if (and invent (<= bar nbars))
 	    (put-text-property
-	     end (1+ end) 'display
+	     end (1+ end) 'ib-display
 	     (concat (indent-bars--blank-string
 		      style (- pos end) (- nbars bar -1) bar nil
 		      switch-after style2)
 		     "\n")))))))
 
-;;;; Font Lock
-(defvar-local indent-bars--font-lock-keywords nil)
-(defvar indent-bars--font-lock-blank-line-keywords nil)
-
-(defvar indent-bars-orig-unfontify-region nil)
-(defun indent-bars--unfontify (beg end)
-  "Unfontify region between BEG and END.
-Removes the display properties in addition to the normal managed
-font-lock properties."
-  (let ((font-lock-extra-managed-props
-         (append '(display) font-lock-extra-managed-props)))
-    (funcall indent-bars-orig-unfontify-region beg end)))
+(defsubst indent-bars--context-bars (end)
+  "Maximum number of bars at point and END.
+Moves point."
+  (max (indent-bars--current-indentation-depth)
+       (progn
+	 (goto-char (1+ end))		; end is always eol
+	 (indent-bars--current-indentation-depth))))
 
 (defun indent-bars--display (beg end &optional style switch-after style2)
   "Draw indentation bars from BEG..END, based on line contents.
@@ -1114,15 +1111,7 @@ passed, uses `indent-bars-style' for drawing."
     (when (> n 0) (indent-bars--draw-line style n beg end nil
 					  switch-after style2))))
 
-(defsubst indent-bars--context-bars (end)
-  "Maximum number of bars at point and END.
-Moves point."
-  (max (indent-bars--current-indentation-depth)
-       (progn
-	 (goto-char (1+ end))		; end is always eol
-	 (indent-bars--current-indentation-depth))))
-
-(defun indent-bars--handle-blank-lines (beg end &optional style switch-after style2)
+(defun indent-bars--display-blank-lines (beg end &optional style switch-after style2)
   "Display the appropriate bars over the blank-only lines from BEG..END.
 Only called if `indent-bars-display-on-blank-lines' is non-nil.
 To be called on complete multi-line blank line regions.
@@ -1134,8 +1123,7 @@ line indentation, above and below.  Drawing using
 in `indent-bars--draw-line'.
 
 Note: blank lines at the very beginning or end of the buffer are
-not indicated, even if they otherwise would be.  This function is
-configured by default in `indent-bars--handle-blank-lines-form'."
+not indicated, even if they otherwise would be."
   (let ((pm (point-max)) ctxbars)
     (save-excursion
       (goto-char (1- beg))
@@ -1151,23 +1139,65 @@ configured by default in `indent-bars--handle-blank-lines-form'."
 	    (beginning-of-line 2)))))
     nil))
 
-(defvar font-lock-beg) (defvar font-lock-end) ; Dynamic font-lock variables!
-(defun indent-bars--extend-blank-line-regions ()
-  "Extend the region about to be font-locked to include stretches of blank lines."
-  ;; (message "request to extend: %d->%d" font-lock-beg font-lock-end)
-  (let ((changed nil) (chars " \t\n"))
-    (goto-char font-lock-beg)
-    (when (< (skip-chars-backward chars) 0)
-      (unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
-      (when (< (point) font-lock-beg)
-	(setq changed t font-lock-beg (point))))
-    (goto-char font-lock-end)
-    (when (> (skip-chars-forward chars) 0)
-      (unless (bolp) (beginning-of-line 1))
-      (when (> (point) font-lock-end)
-	(setq changed t font-lock-end (point))))
-    ;; (if changed (message "expanded to %d->%d" font-lock-beg font-lock-end))
-    changed))
+;;;; jit-lock
+;; (defvar indent-bars--orig-unfontify-region nil)
+(defvar indent-bars--orig-fontify-region nil)
+
+;; Dynamic jit-lock variables
+(defvar jit-lock-start) (defvar jit-lock-end)
+(defun indent-bars--extend-blank-line-regions (&rest _r)
+  "Eagerly extend the region about to be jit-locked.
+This extends the region to include complete stretches of blank
+lines.  Sets the dynamic variables `jit-lock-start' and
+`jit-lock-end'."
+  (save-excursion
+    (let ((chars " \t\n"))
+      (goto-char jit-lock-start)
+      (when (< (skip-chars-backward chars) 0)
+	(unless (bolp) (beginning-of-line 2)) ; spaces at end don't count
+	(when (< (point) jit-lock-start)
+	  (setq jit-lock-start (point))))
+      (goto-char jit-lock-end)
+      (when (> (skip-chars-forward chars) 0)
+	(unless (bolp) (beginning-of-line 1))
+	(when (> (point) jit-lock-end)
+	  (setq jit-lock-end (point)))))))
+
+(defvar-local indent-bars--display-function 'indent-bars--display)
+(defvar-local indent-bars--display-blank-lines-function
+    'indent-bars--display-blank-lines)
+(defun indent-bars--draw-all-bars-between (start end)
+  "Search for and draw all bars between START and END.
+The beginning of line at START is used to locate real and (if
+configured) blank-line bars, which are drawn according to the
+appropriate style.  This is basically a very tiny, bar-only
+version of what `font-lock-fontify-region-keywords' does."
+  (save-excursion
+    (goto-char start)
+    (forward-line 0)
+    (while (and (< (point) end)
+		(re-search-forward indent-bars--regexp end t))
+      (if (match-beginning 2)
+	  (funcall indent-bars--display-blank-lines-function
+		   (match-beginning 2) (match-end 2))
+	(funcall indent-bars--display-function
+		 (match-beginning 1) (match-end 1))))))
+
+(defun indent-bars--fontify-default (beg end verbose)
+  "Add indent-bars from BEG to END after calling font-lock there.
+VERBOSE is provided by font-lock."
+  ;; First fontify with font-lock (clears then sets 'face)
+  (funcall indent-bars--orig-fontify-region beg end verbose)
+  ;; Then draw bars (which may overwrite 'face in a few places)
+  (remove-text-properties beg end '(ib-display nil))
+  (indent-bars--draw-all-bars-between beg end))
+
+(defvar indent-bars--fontify-function 'indent-bars--fontify-default)
+(defun indent-bars--fontify (beg end verbose)
+  "Fontify the region from BEG to END.
+VERBOSE is provided by font-lock.  To be set as the
+`font-lock-fontify-region-function'."
+  (funcall indent-bars--fontify-function beg end verbose))
 
 ;;;; Current indentation depth highlighting
 (defvar-local indent-bars--current-depth 0)
@@ -1527,31 +1557,35 @@ Adapted from `highlight-indentation-mode'."
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
-(defvar indent-bars--display-form
-  '(indent-bars--display (match-beginning 1) (match-end 1)))
-(defvar indent-bars--handle-blank-lines-form
-  '(indent-bars--handle-blank-lines (match-beginning 0) (match-end 0)))
+;; (defvar indent-bars--display-form
+;;   '(indent-bars--display (match-beginning 1) (match-end 1)))
+;; (defvar indent-bars--handle-blank-lines-form
+;;   '(indent-bars--display-blank-lines (match-beginning 0) (match-end 0)))
 (defun indent-bars--setup-font-lock ()
-  "Setup font lock keywords and functions for indent-bars."
-  (unless (eq font-lock-unfontify-region-function #'indent-bars--unfontify)
-    (setq indent-bars-orig-unfontify-region font-lock-unfontify-region-function))
-  (setq-local font-lock-unfontify-region-function #'indent-bars--unfontify)
-  (setq indent-bars--font-lock-keywords ; basic blank prefix detection
-	`((,(rx-to-string `(seq bol
-				(group
-				 ,(if (not indent-tabs-mode)
-				      `(>= ,(1+ indent-bars--offset) ?\s)
-				    '(+ (any ?\t ?\s))))
-				(not (any ?\t ?\s ?\n))))
-	   (1 ,indent-bars--display-form))))
-  (font-lock-add-keywords nil indent-bars--font-lock-keywords t)
-  (if indent-bars-display-on-blank-lines
-      (let ((re (rx bol (* (or ?\s ?\t ?\n)) ?\n))) ; multi-line blank regions
-	(setq indent-bars--font-lock-blank-line-keywords
-	      `((,re (0 ,indent-bars--handle-blank-lines-form))))
-	(font-lock-add-keywords nil indent-bars--font-lock-blank-line-keywords t)
-	(add-hook 'font-lock-extend-region-functions
-		  #'indent-bars--extend-blank-line-regions 95 t))))
+  "Wrap the `font-lock-fontify-region-function' to provide bars."
+  ;; Setup to wrap font-lock
+  (unless (eq font-lock-fontify-region-function #'indent-bars--fontify)
+    (setq ;; indent-bars--orig-unfontify-region font-lock-unfontify-region-function
+     indent-bars--orig-fontify-region font-lock-fontify-region-function)
+    (setq-local ;; font-lock-unfontify-region-function #'indent-bars--unfontify
+     font-lock-fontify-region-function #'indent-bars--fontify))
+  (setq indent-bars--regexp
+	(rx-to-string
+	 `(seq bol (or (and
+			;; group 1: basic blank indent detection
+			(group
+			 ,(if (not indent-tabs-mode)
+			      `(>= ,(1+ indent-bars--offset) ?\s)
+			    '(+ (any ?\t ?\s))))
+			(not (any ?\t ?\s ?\n)))
+		       ;; group 2: multi-line blank regions
+		       ,@(if indent-bars-display-on-blank-lines
+			     '((group (* (or ?\s ?\t ?\n)) ?\n)))))))
+  
+  ;; Extend blank line regions maximally when fontifying
+  (when indent-bars-display-on-blank-lines
+    (add-hook 'jit-lock-after-change-extend-region-functions
+	      #'indent-bars--extend-blank-line-regions 95 t)))
 
 (declare-function indent-bars-ts-mode "indent-bars-ts")
 
@@ -1595,7 +1629,8 @@ Adapted from `highlight-indentation-mode'."
     (setq indent-bars--current-depth 0)
     (indent-bars--highlight-current-depth))
   
-  ;; Font-lock
+  ;;Jit/Font-lock
+  (cl-pushnew 'ib-display (alist-get 'display char-property-alias-alist))
   (indent-bars--setup-font-lock)
   (font-lock-flush))
 
@@ -1615,18 +1650,19 @@ Adapted from `highlight-indentation-mode'."
 	       indent-bars--stipple-remaps)
       (setq indent-bars--stipple-remaps nil)))
   
-  (font-lock-remove-keywords nil indent-bars--font-lock-keywords)
-  (font-lock-remove-keywords nil indent-bars--font-lock-blank-line-keywords)
+  (when indent-bars--orig-fontify-region
+    (setq ;; font-lock-unfontify-region-function
+     ;; indent-bars--orig-unfontify-region
+     font-lock-fontify-region-function
+     indent-bars--orig-fontify-region))
+  (remove-text-properties (point-min) (point-max) '(ib-display nil))
   (font-lock-flush)
   (font-lock-ensure)
   
-  (when indent-bars-orig-unfontify-region
-    (setq font-lock-unfontify-region-function
-	  indent-bars-orig-unfontify-region))
   (setq indent-bars--current-depth 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
-  (remove-hook 'font-lock-extend-region-functions
+  (remove-hook 'jit-lock-after-change-extend-region-functions
 	       #'indent-bars--extend-blank-line-regions t)
   (remove-hook 'window-state-change-functions
 	       #'indent-bars--window-change t)
