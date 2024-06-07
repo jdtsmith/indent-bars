@@ -39,27 +39,17 @@
 ;; 
 ;;  - A post-command hook sets up an idle-time callback (if none
 ;;    exists).
-;;  - In idle time, we check for the innermost "scope" node at point.
-;;  - If the scope node boundaries have changed from the last time
-;;    they were saved (modulo simple marker movement), we apply a
-;;    special property `indent-bars-invalid' to the union of the old
-;;    and new scope regions.
-;;  - This property is also added to `font-lock-extra-managed-props',
-;;    and so font-lock removes these as it adds bars to modified and
-;;    otherwise invalidated text.
-;;  - In a `window-scroll-functions' function (see
-;;    `indent-bars-ts--update-bars-on-scroll') we check the current
-;;    window range for visible text marked has having invalid bars:
-;;    `indent-bars-invalid' = t.
-;;  - We then search for and draws bars within this text "by hand"
-;;    (reusing the font-lock keywords and keyword functions).
-;;
-;; Note that `window-scroll-functions' are called quite late, after
-;; font-locking, so very often (during text changes, but also when new
-;; `fontified'=nil text comes into view) this function can return
-;; quickly without doing anything, as font-lock will have handled
-;; things.
-
+;;  - In idle time, we query treesitter for the innermost "scope" node
+;;    at point, based on user config (`indent-bars-treesit-scope').
+;;  - If the scope boundaries have changed from the last time they
+;;    were saved (modulo simple marker movement), we invalidate the
+;;    fontification over the union of the old and new scope regions.
+;;  - jit-lock is modified to apply an `indent-bars-font-lock-pending'
+;;    property to modified (or context-refontified) text.
+;;  - font-lock and jit-lock are configured to skip font-lock when it
+;;    is not pending on the region in being fontified.  See
+;;    `indent-bars--fontify'.
+;;    
 ;; Note the shorthand substitutions for style related prefixes (slot
 ;; accessors and variables); see file-local-variables at the end:
 ;; 
@@ -71,6 +61,7 @@
 ;;;; Requires
 (require 'cl-lib)
 (require 'seq)
+(require 'jit-lock)
 (require 'indent-bars)
 (require 'treesit nil t)
 
@@ -296,50 +287,28 @@ recently clipped node ranges in scope."
     (or (< pos (car (ibts/range ibtcs)))
 	(> pos (cdr (ibts/range ibtcs))))))
 
-(defun indent-bars-ts--display ()
-  "Display indentation bars, accounting for current treesitter scope."
-  (if (indent-bars-ts--out-of-scope (match-beginning 1))
-      (indent-bars--display (match-beginning 1) (match-end 1)
+(defun indent-bars-ts--display (beg end)
+  "Display indentation bars from BEG to END, respecting treesitter scope."
+  (if (indent-bars-ts--out-of-scope beg)
+      (indent-bars--display beg end
 			    (cdr indent-bars-ts-in-out-style))
     ;; In scope: switch from out to in-scope style
-    (indent-bars--display (match-beginning 1) (match-end 1)
+    (indent-bars--display beg end
 			  (cdr indent-bars-ts-in-out-style)
 			  (ibts/start-bars ibtcs)
 			  (car indent-bars-ts-in-out-style))))
 
-(defun indent-bars-ts--handle-blank-lines ()
-  "Display bars on blank lines, respecting treesitter scope."
-  (let ((beg (match-beginning 0)))
-    (unless (indent-bars-ts--ignore-blank beg)
-      (if (indent-bars-ts--out-of-scope beg) ;fully out of scope
-	  (indent-bars--display-blank-lines (match-beginning 0) (match-end 0)
-					   (cdr indent-bars-ts-in-out-style))
-	;; Switch from out of scope to in scope after start-bars
-	(indent-bars--display-blank-lines (match-beginning 0) (match-end 0)
-					 (cdr indent-bars-ts-in-out-style)
-					 (ibts/start-bars ibtcs)
-					 (car indent-bars-ts-in-out-style))))))
-
-;; (defun indent-bars-ts--draw-all-bars-between (start end)
-;;   "Search for and draw all bars between START and END.
-;; The beginning of line at START is used to locate real and (if
-;; configured) blank-line bars, which are drawn according to the
-;; appropriate style.  This is basically a very tiny, bar-only
-;; version of what `font-lock-fontify-region-keywords' does."
-;;   (save-excursion
-;;     (goto-char start)
-;;     (forward-line 0)
-;;     (setq start (point))
-;;     (while (and (< (point) end)
-;; 		(re-search-forward
-;; 		 (caar indent-bars--font-lock-keywords) end t))
-;;       (indent-bars-ts--display))
-;;     (when indent-bars-display-on-blank-lines
-;;       (goto-char start)
-;;       (while (and (< (point) end)
-;; 		  (re-search-forward
-;; 		   (caar indent-bars--font-lock-blank-line-keywords) end t))
-;; 	(indent-bars-ts--handle-blank-lines)))))
+(defun indent-bars-ts--display-blank-lines (beg end)
+  "Display bars on blank lines between BEG and END, respecting treesitter scope."
+  (unless (indent-bars-ts--ignore-blank beg)
+    (if (indent-bars-ts--out-of-scope beg) ;fully out of scope
+	(indent-bars--display-blank-lines beg end
+					  (cdr indent-bars-ts-in-out-style))
+      ;; Switch from out of scope to in scope after start-bars
+      (indent-bars--display-blank-lines beg end
+					(cdr indent-bars-ts-in-out-style)
+					(ibts/start-bars ibtcs)
+					(car indent-bars-ts-in-out-style)))))
 
 (defmacro indent-bars-ts--order-ranges (a b)
   "Order ranges A and B by start position."
@@ -353,47 +322,6 @@ of ranges that either cover."
   (if (< (cdr a) (car b))
       (list a b) ; no overlap, use both
     (list (cons (car a) (max (cdr a) (cdr b))))))
-
-(defun indent-bars-ts--intersection (a b)
-  "Return the intersection between ranges A and B.
-Ranges A and B are (start . end) conses.  Their intersection is a
-single range that both cover, or nil if none."
-  (indent-bars-ts--order-ranges a b)
-  (unless (or (< (cdr a) (car b)) (> (car b) (cdr a)))
-    (cons (car b) (min (cdr a) (cdr b)))))
-
-(defun indent-bars-ts--intersect-all (clip ranges)
-  "Clip the range CLIP against all RANGES, returning all which are non-nil.
-RANGES is a list of (start . end) conses, and CLIP is one such
-range to clip against."
-  (cl-loop for r in ranges
-	   for i = (indent-bars-ts--intersection clip r)
-	   if i collect i))
-
-(defun indent-bars-ts--add-bars-in-range (start end)
-  "Add bars if needed between START and END.
-Bars are added on all visible ranges of text (considering both
-text properties and overlays) with a non-nil
-`indent-bars-invalid' property.  START is assumed to be visible.
-Based loosely on `jit-lock-function' and `jit-lock-fontify-now'."
-  (when-let ((invld-start (text-property-any start end 'indent-bars-invalid t)))
-    (cl-loop for vs = invld-start then
-	     (next-single-char-property-change ve 'indent-bars-invalid nil end)
-	     for ve = (next-single-char-property-change vs 'indent-bars-invalid nil end)
-	     do
-	     (put-text-property vs ve 'indent-bars-invalid nil)
-	     (indent-bars-ts--draw-all-bars-between vs ve)
-	     while (< ve end))
-    ;; (with-silent-modifications
-    ;;   (save-match-data
-    ;; 	(cl-loop
-    ;; 	 for vs = start then (next-single-char-property-change ve 'invisible nil end)
-    ;; 	 for ve = (next-single-char-property-change vs 'invisible nil end) do
-    ;; 	 (cl-loop for (beg . end) in (indent-bars-ts--intersect-all (cons vs ve) invld-rngs) do
-    ;; 		  (put-text-property beg end 'indent-bars-invalid nil)
-    ;; 		  (indent-bars-ts--draw-all-bars-between beg end))
-    ;; 	 while (< ve end))))
-    ))
 
 (defun indent-bars-ts--update-scope1 (buf)
   "Perform the treesitter scope font-lock update in buffer BUF.
@@ -420,16 +348,13 @@ window."
 	(unless (and (= (car new) (car old)) ; if node is unchanged (spans
 		     (= (cdr new) (cdr old))) ; same range) no update needed
 	  (cl-loop for (beg . end) in (indent-bars-ts--union old new) do
-		   (put-text-property beg end 'indent-bars-invalid t))
+		   (jit-lock-refontify beg end)) ; sets fontified=nil
 	  (setf (ibts/start-bars ibtcs)
 		(save-excursion
 		  (goto-char (car new))
 		  (indent-bars--current-indentation-depth)))
 	  (set-marker (car old) (car new)) ;updates ibts/range
-	  (set-marker (cdr old) (cdr new))
-	  (let ((win (selected-window)))
-	    (indent-bars-ts--update-bars-on-scroll
-	     win (window-start win))))))))
+	  (set-marker (cdr old) (cdr new)))))))
 
 (defun indent-bars-ts--update-scope ()
   "Update treesit scope when possible."
@@ -438,6 +363,53 @@ window."
 	  (run-with-idle-timer indent-bars-treesit-update-delay nil
 			       #'indent-bars-ts--update-scope1
 			       (current-buffer)))))
+
+;;;; Jit-lock support
+;; Dynamic jit-lock variables
+(defvar jit-lock-start) (defvar jit-lock-end)
+(defun indent-bars-ts--mark-change (&rest _r)
+  "Mark changed regions with a special property.
+Applies the `indent-bars-font-lock-pending' property to the
+affected text (which font-lock removes).  This allows us to keep
+separate track of regions where bars are pending, and where
+font-lock is pending."
+  (put-text-property jit-lock-start jit-lock-end 'indent-bars-font-lock-pending t))
+
+;; This advice is necessary because jit-lock sets fontified=nil in an
+;; idle-timer when contextual fontification (= "rest of buffer") is
+;; enabled.  An eventual multi-backend jit-lock would do this for us.
+(defvar indent-bars-ts-mode)
+(defun indent-bars-ts--context-fontify (fun)
+  "Wrap FUN to keep track of context fontification.
+Added as `:around' advice to `jit-lock-context-unfontify-pos'.
+Applies `indent-bars-font-lock-pending' property to the newly
+invalidated text."
+  (let ((orig-context jit-lock-context-unfontify-pos))
+    (funcall fun)
+    (when (and indent-bars-ts-mode
+	       (> jit-lock-context-unfontify-pos orig-context))
+      (put-text-property orig-context jit-lock-context-unfontify-pos
+			 'indent-bars-font-lock-pending t))))
+
+(defun indent-bars-ts--font-lock-inhibit (beg end)
+  "Check if font-lock is needed on the region between BEG and END.
+Checks for the property `indent-bars-font-lock-pending',
+inhibiting font-lock if it is not pending in the region.  The
+property is removed if found."
+  (let (pending)
+    (when (setq pending (text-property-any beg end 'indent-bars-font-lock-pending t))
+      (put-text-property pending end 'indent-bars-font-lock-pending nil))
+    (not pending)))
+
+(defvar indent-bars-ts--orig-fontify-buffer nil)
+(defun indent-bars-ts--fontify-buffer (&rest r)
+  "Fontify the buffer after setting the pending property.
+`indent-bars-ts--orig-fontify-buffer' is called with arguments R."
+  (save-restriction
+    (widen)
+    (put-text-property (point-min) (point-max) 'indent-bars-font-lock-pending t)
+    (apply indent-bars-ts--orig-fontify-buffer r)))
+
 
 ;;;; Setup
 (defun indent-bars-ts--init-scope (&optional force)
@@ -454,6 +426,19 @@ performed."
 	(if (eq indent-bars-ts-styling-scope 'out-of-scope)
 	    (cons indent-bars-style indent-bars-ts-alt-style)
 	  (cons indent-bars-ts-alt-style indent-bars-style))))
+
+(defun indent-bars-ts--finalize-font-lock ()
+  "Finalize font-lock for indent-bars display with treesitter support."
+  (unless (eq indent-bars-ts--orig-fontify-buffer #'indent-bars-ts--fontify-buffer)
+    (setq-local indent-bars-ts--orig-fontify-buffer font-lock-fontify-buffer-function))
+  (setq-local indent-bars--inhibit-font-lock #'indent-bars-ts--font-lock-inhibit
+	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer)
+  ;; We must mark the fontified=nil from font-lock and contextual
+  (add-hook 'jit-lock-after-change-extend-region-functions
+	    #'indent-bars-ts--mark-change 96 t)
+  (when (eq jit-lock-contextually t)
+    (advice-add #'jit-lock-context-fontify :around #'indent-bars-ts--context-fontify))
+  (indent-bars-ts--fontify-buffer))
 
 (defun indent-bars-ts--setup (lang)
   "Setup indent-bars treesitter support in this buffer for language LANG."
@@ -489,24 +474,27 @@ performed."
     (indent-bars-ts--init-scope)
     (setq ibtcs (ibts/create))
     (setq-local
-     indent-bars--display-form '(indent-bars-ts--display)
-     indent-bars--handle-blank-lines-form '(indent-bars-ts--handle-blank-lines))
+     indent-bars--display-function #'indent-bars-ts--display
+     indent-bars--display-blank-lines-function #'indent-bars-ts--display-blank-lines)
     (setf (ibts/query ibtcs)
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (make-local-variable 'font-lock-extra-managed-props)
-    (cl-pushnew 'indent-bars-invalid font-lock-extra-managed-props)
     (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
-    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown)))
+    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))
+  
+  (indent-bars-ts--finalize-font-lock))
 
 (defun indent-bars-ts--teardown ()
-  "Teardown indent-bars-ts."
+  "Teardown indent-bars-ts in the buffer.
+To be set in `indent-bars--teardown-functions'."
   (when indent-bars-ts--scope-timer
     (cancel-timer indent-bars-ts--scope-timer)
     (setq indent-bars-ts--scope-timer nil))
-  (kill-local-variable 'indent-bars--display-form)
-  (kill-local-variable 'indent-bars--handle-blank-lines-form)
+  (setq font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer)
   (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
-  (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))
+  (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown)
+  (remove-hook 'jit-lock-after-change-extend-region-functions
+	       #'indent-bars-ts--mark-change t))
 
 ;;;###autoload
 (define-minor-mode indent-bars-ts-mode
