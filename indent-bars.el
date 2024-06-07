@@ -172,7 +172,7 @@ side of the bar; see `indent-bars-pad-frac' and
 
 ;;;;; Bar Colors
 (defcustom indent-bars-color
-  '(highlight :face-bg t :blend 0.5)
+  '(highlight :face-bg t :blend 0.375)
   "The main indent bar color.
 The format is a list of 1 required element, followed by an
 optional plist (keyword/value pairs):
