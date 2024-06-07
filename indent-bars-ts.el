@@ -375,21 +375,25 @@ separate track of regions where bars are pending, and where
 font-lock is pending."
   (put-text-property jit-lock-start jit-lock-end 'indent-bars-font-lock-pending t))
 
-;; This advice is necessary because jit-lock sets fontified=nil in an
-;; idle-timer when contextual fontification (= "rest of buffer") is
-;; enabled.  An eventual multi-backend jit-lock would do this for us.
 (defvar indent-bars-ts-mode)
 (defun indent-bars-ts--context-fontify (fun)
   "Wrap FUN to keep track of context fontification.
 Added as `:around' advice to `jit-lock-context-unfontify-pos'.
 Applies `indent-bars-font-lock-pending' property to the newly
 invalidated text."
-  (let ((orig-context jit-lock-context-unfontify-pos))
+  (let (orig)
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+	(when (and indent-bars-ts-mode jit-lock-context-unfontify-pos)
+	  (setf (alist-get buffer orig) jit-lock-context-unfontify-pos))))
     (funcall fun)
-    (when (and indent-bars-ts-mode
-	       (> jit-lock-context-unfontify-pos orig-context))
-      (put-text-property orig-context jit-lock-context-unfontify-pos
-			 'indent-bars-font-lock-pending t))))
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+	(when (and indent-bars-ts-mode jit-lock-context-unfontify-pos
+		   (assq buffer orig)
+		   (> jit-lock-context-unfontify-pos (alist-get buffer orig)))
+	  (put-text-property (alist-get buffer orig) jit-lock-context-unfontify-pos
+			     'indent-bars-font-lock-pending t))))))
 
 (defun indent-bars-ts--font-lock-inhibit (beg end)
   "Check if font-lock is needed on the region between BEG and END.
