@@ -431,13 +431,16 @@ performed."
 	    (cons indent-bars-style indent-bars-ts-alt-style)
 	  (cons indent-bars-ts-alt-style indent-bars-style))))
 
-(defun indent-bars-ts--finalize-font-lock ()
-  "Finalize font-lock for indent-bars display with treesitter support."
+(defun indent-bars-ts--finalize-jit-lock ()
+  "Finalize jit-lock for indent-bars display with treesitter support.
+This sets up jit-lock and font-lock to record our special
+`indent-bars-font-lock-pending' property on text it is updating
+due to edits or contextual fontification."
   (unless (eq indent-bars-ts--orig-fontify-buffer #'indent-bars-ts--fontify-buffer)
     (setq-local indent-bars-ts--orig-fontify-buffer font-lock-fontify-buffer-function))
   (setq-local indent-bars--inhibit-font-lock #'indent-bars-ts--font-lock-inhibit
 	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer)
-  ;; We must mark the fontified=nil from font-lock and contextual
+  ;; We must mark the fontified=nil from after-change and contextual
   (add-hook 'jit-lock-after-change-extend-region-functions
 	    #'indent-bars-ts--mark-change 96 t)
   (when (eq jit-lock-contextually t)
@@ -482,11 +485,10 @@ performed."
      indent-bars--display-blank-lines-function #'indent-bars-ts--display-blank-lines)
     (setf (ibts/query ibtcs)
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
-    (make-local-variable 'font-lock-extra-managed-props)
     (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
     (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown))
   
-  (indent-bars-ts--finalize-font-lock))
+  (indent-bars-ts--finalize-jit-lock))
 
 (defun indent-bars-ts--teardown ()
   "Teardown indent-bars-ts in the buffer.
