@@ -1199,7 +1199,7 @@ and END.  If it returns non-nil, skip font-lock."
     (with-silent-modifications
       (remove-text-properties beg end '(indent-bars-display nil))
       (indent-bars--draw-all-bars-between beg end))
-    `(jit-lock-bounds ,beg ,end)))
+    `(jit-lock-bounds ,beg . ,end)))
 
 ;;;; Current indentation depth highlighting
 (defvar-local indent-bars--current-depth 0)
