@@ -85,18 +85,20 @@
 
 (defvar indent-bars-depth-update-delay)
 (defvar indent-bars-custom-set nil)
+(defvar indent-bars--custom-set-inhibit nil)
 (defun indent-bars--custom-set (sym val)
   "Set SYM to VAL, and reset indent-bars in the `other-window'."
   (set-default-toplevel-value sym val)
-  (when (boundp 'indent-bars-mode)
-    (cl-loop for win in (window-list)
-	     if (buffer-local-value 'indent-bars-mode (window-buffer win)) do
-	     (with-selected-window win
-	       (indent-bars-reset)
-	       (let ((indent-bars-depth-update-delay 0))
-		 (indent-bars--highlight-current-depth 'force))
-	       (run-hooks 'indent-bars-custom-set))
-	     and return win)))
+  (when (and (not indent-bars--custom-set-inhibit) (boundp 'indent-bars-mode))
+    (let ((indent-bars--custom-set-inhibit t)) ; prevent re-entry
+      (cl-loop for win in (window-list)
+	       if (buffer-local-value 'indent-bars-mode (window-buffer win)) do
+	       (with-selected-window win
+		 (indent-bars-reset)
+		 (let ((indent-bars-depth-update-delay 0))
+		   (indent-bars--highlight-current-depth 'force))
+		 (run-hooks 'indent-bars-custom-set))
+	       and return win))))
 
 ;;;;; Stipple Bar Shape
 (defcustom indent-bars-width-frac 0.375
@@ -770,6 +772,7 @@ on the value of NO-INHERIT.
 Additional `defcustom` keyword arguments can be given as R."
   (require 'cus-edit)
   (let* ((optname (symbol-name opt))
+	 (indent-bars--custom-set-inhibit t)
 	 (group (intern (concat "indent-bars-" alt "-style")))
 	 (symname (concat "indent-bars-" optname))
 	 (sym (intern (concat "indent-bars-" optname)))
