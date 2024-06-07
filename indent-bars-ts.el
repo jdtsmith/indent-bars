@@ -10,8 +10,9 @@
 ;;  - Uses treesitter to avoid adding bars to blank lines in strings
 ;;    or other configurable node types.
 ;;  - Enable alternate styling for bars inside or outside the
-;;    treesitter "scope", where scope is defined as the wrapping
-;;    elements configured in `indent-bars-treesitscope`.
+;;    treesitter "scope" at point, where scope is defined as the
+;;    innermost wrapping node containing point mentioned in
+;;    `indent-bars-treesit-scope` for the current buffer's language.
 
 ;; For Developers:
 ;;
@@ -44,11 +45,12 @@
 ;;  - If the scope boundaries have changed from the last time they
 ;;    were saved (modulo simple marker movement), we invalidate the
 ;;    fontification over the union of the old and new scope regions.
-;;  - jit-lock is modified to apply an `indent-bars-font-lock-pending'
-;;    property to modified (or context-refontified) text.
-;;  - font-lock and jit-lock are configured to skip font-lock when it
-;;    is not pending on the region in being fontified.  See
-;;    `indent-bars--fontify'.
+;;  - jit-lock is modified to apply a special
+;;    `indent-bars-font-lock-pending' property to modified (or
+;;    contextually-refontified) text.
+;;  - font-lock and jit-lock are configured to skip the core font-lock
+;;    region fontification function when it is not pending in the
+;;    region.  See `indent-bars--fontify'.
 ;;    
 ;; Note the shorthand substitutions for style related prefixes (slot
 ;; accessors and variables); see file-local-variables at the end:
