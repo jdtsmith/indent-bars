@@ -98,7 +98,7 @@
 	       and return win))))
 
 ;;;;; Stipple Bar Shape
-(defcustom indent-bars-width-frac 0.375
+(defcustom indent-bars-width-frac 0.25
   "The width of the indent bar as a fraction of the character width.
 Applies to stipple-based bars only."
   :type '(float :tag "Width Fraction"
@@ -169,7 +169,7 @@ side of the bar; see `indent-bars-pad-frac' and
 
 ;;;;; Bar Colors
 (defcustom indent-bars-color
-  '(highlight :face-bg t :blend 0.375)
+  '(highlight :face-bg t :blend 0.3)
   "The main indent bar color.
 The format is a list of 1 required element, followed by an
 optional plist (keyword/value pairs):

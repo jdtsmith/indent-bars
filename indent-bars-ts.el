@@ -96,7 +96,7 @@ with alternate styling using the *-ts-* variables."
 			"ts" ,var ,(format "Tree-sitter (%s)"
 					   indent-bars-ts-styling-scope)
 			,@r))))
-    (ts-cust 'color '(unspecified :blend 0.1) 'add-inherit)
+    (ts-cust 'color '(unspecified :blend 0.08) 'add-inherit)
     (dolist (c '( width-frac pad-frac pattern zigzag ;simple types
 		  no-stipple-char-font-weight))
       (ts-cust c 'unspecified))
