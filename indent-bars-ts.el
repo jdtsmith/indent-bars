@@ -18,7 +18,7 @@
 ;;
 ;; This file interfaces treesitter scope queries with font-lock-based
 ;; indent bar drawing.  "Scope" is defined as the range of the
-;; innermost node covering point that matches the user-configured
+;; innermost node containing point that matches the user-configured
 ;; scope node types for the language of interest.  For any given
 ;; location of point, there is a scope range (a pair of markers) which
 ;; helps determine how the bars get displayed.  Short nodes occupying
