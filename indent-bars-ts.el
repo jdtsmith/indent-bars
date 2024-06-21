@@ -438,7 +438,7 @@ performed."
 This sets up jit-lock and font-lock to record our special
 `indent-bars-font-lock-pending' property on text it is updating
 due to edits or contextual fontification."
-  (unless (eq indent-bars-ts--orig-fontify-buffer #'indent-bars-ts--fontify-buffer)
+  (unless (eq font-lock-fontify-buffer-function 'indent-bars-ts--fontify-buffer)
     (setq-local indent-bars-ts--orig-fontify-buffer font-lock-fontify-buffer-function))
   (setq-local indent-bars--inhibit-font-lock #'indent-bars-ts--font-lock-inhibit
 	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer)
