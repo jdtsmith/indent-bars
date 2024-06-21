@@ -117,7 +117,7 @@ A float, the fraction of the character width.  Applies to
   :group 'indent-bars-style
   :set #'indent-bars--custom-set)
 
-(defcustom indent-bars-pattern " ..  .. "
+(defcustom indent-bars-pattern " . . ."
   "A pattern specifying the vertical structure of indent bars.
 Space signifies blank regions, and any other character signifies
 filled regions.  The pattern length is scaled to match the
@@ -169,7 +169,7 @@ side of the bar; see `indent-bars-pad-frac' and
 
 ;;;;; Bar Colors
 (defcustom indent-bars-color
-  '(highlight :face-bg t :blend 0.3)
+  '(highlight :face-bg t :blend 0.325)
   "The main indent bar color.
 The format is a list of 1 required element, followed by an
 optional plist (keyword/value pairs):
