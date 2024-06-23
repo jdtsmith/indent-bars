@@ -394,8 +394,9 @@ invalidated text."
 	(when (and indent-bars-ts-mode jit-lock-context-unfontify-pos
 		   (assq buffer orig)
 		   (> jit-lock-context-unfontify-pos (alist-get buffer orig)))
-	  (put-text-property (alist-get buffer orig) jit-lock-context-unfontify-pos
-			     'indent-bars-font-lock-pending t))))))
+	  (with-silent-modifications
+	    (put-text-property (alist-get buffer orig) jit-lock-context-unfontify-pos
+			       'indent-bars-font-lock-pending t)))))))
 
 (defun indent-bars-ts--font-lock-inhibit (beg end)
   "Check if font-lock is needed on the region between BEG and END.
