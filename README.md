@@ -1,4 +1,4 @@
-# indent-bars: fast, configurable indentation guide-bars for Emacs.
+# indent-bars: fast, configurable indentation guide-bars for Emacs
 <p align="center">
 <a href="#faqs"><b>FAQ</b></a> ⏐
 <a href="#installconfig"><b>INSTALL</b></a> ⏐
@@ -7,16 +7,16 @@
 </p>
 <img align="right" width="500" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c"/><img align="right" width="10" height="476" src="https://github.com/jdtsmith/indent-bars/assets/93749/c4df4fbe-7aab-4b4e-bb89-7c6a70755e9d"/>
 
-This package provides indentation _guide bars_ in Emacs, enhanced by tree-sitter:
+This package provides indentation _guide bars_ in Emacs, with optional tree-sitter enhancement:
 
-- Uses stipple face properties with font-lock for fast performance.
+- Optimized for speed.
 - Optional tree-sitter support, including _scope focus_, among [other features](#tree-sitter-details).
 - Supports either space or tab-based indentation.
-- Bar appearance is _highly_ configurable: color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
-- Bars can have optional depth-based coloring, with a cyclical color palette you can customize.
+- Bar appearance is _highly_ [configurable](https://github.com/jdtsmith/indent-bars/edit/main/README.md#customization): color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
+- Bars can have optional depth-based coloring, with a cyclical color palette you can [customize](https://github.com/jdtsmith/indent-bars/edit/main/README.md#customization).
 - Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
 - Bars can appear on blank lines.
-- Bar depth can be held constant inside multi-line strings and lists. 
+- Bar depth can be held constant inside multi-line strings and lists.
 - Works in the terminal, using a vertical bar character.
 
 ## What's New
@@ -114,11 +114,11 @@ See [tree-sitter](#tree-sitter-details), and also the [Wiki page](https://github
 Known `:stipple` support, by Emacs build:
 
 - Linux:
-  - "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but had a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6); this was fixed in Emacs [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html) and will presumably be released with Emacs 30.
+  - "Pure GTK" (`--with-pgtk` build flag) versions support stipples, but had a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6); these issues were fixed in Emacs [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html) and will presumably be released with Emacs 30.
   - Cairo builds (`--with-cairo`) have been [reported](../../issues/33#issuecomment-1768888990) not to display stipples.
   - All other builds do support stipples.
 - Mac:  The [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support, but others do not.  `M-x version` should say `Carbon`, not `NS`.
-- Windows: Emacs on Windows does not (apparently) support stipples.
+- Windows: Emacs on Windows will support stipples starting at v30.
 - Terminal: Stipples are not supported on terminal emacs.
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
@@ -140,10 +140,10 @@ The main customization variables are categorized below.  See the documentation o
 
 ## Bar colors
 
-Custom variables for configuring bar color, including rotating depth-based palette:
+Custom variables for configuring bar color, including depth-based palettes:
 
 - `indent-bars-color`: The main bar color, either a color name or face, from which foreground or background color will be taken.  Also used to set a `:blend` factor, to blend colors into the frame's background color.
-- `indent-bars-color-by-depth`: How and whether to alter the color of the indent bars by indentation depth.  Defaults to using the foreground of the `outline-*` faces, but many options are possible.
+- `indent-bars-color-by-depth`: How and whether to alter the color of the indent bars by their indentation depth.  Defaults to using the foreground of the `outline-*` faces, but many options are possible, including face sets or a custom color palette.
 
 ## Bar shape and size
 
@@ -158,9 +158,9 @@ Variables affecting the visual appearance of bars (color aside):
 
 Configuration for highlighting the current indentation bar depth:
 
-- `indent-bars-highlight-current-depth`: How and whether to highlight the bars at the indentation depth of the current line.  The current depth bar can change color (including blending with the pre-existing color), as well as structure (size, pad, pattern, zigzag).
-- `indent-bars-highlight-selection-method`: Method used to select which bar is highlighted.  The default (`'context`) considers surrounding lines for a more natural selection depth.  
-- `indent-bars-depth-update-delay`: Delay in seconds after which depth highlighting occurs. 
+- `indent-bars-highlight-current-depth`: How and whether to highlight the bars at the indentation depth of the current line.  The current depth bar can change color (including blending with the pre-existing color), as well as appearance (size, pad, pattern, zigzag).
+- `indent-bars-highlight-selection-method`: Method used to select which bar is highlighted as the current depth.  The default (`'context`) considers surrounding lines for a more natural selection depth.
+- `indent-bars-depth-update-delay`: Command delay in seconds after which depth highlighting occurs. 
 
 ## Bar setup and location
 
@@ -189,26 +189,26 @@ For more information, check [the details](#tree-sitter-details).
 
 - `indent-bars-treesit-support`: Whether to use tree-sitter (if available) to (optionally) highlight the current scope and help determine bar depth.
 - `indent-bars-treesit-scope`: A mapping of language to tree-sitter scope node types (as symbols), for local scope highlight (aka _scope focus_).
-- `indent-bars-treesit-scope-min-lines`: The minimum number of lines a scope node must occupy to be considered a valid scope.
+- `indent-bars-treesit-scope-min-lines`: The minimum number of lines a scope node must occupy to be considered a valid containing scope.
 - `indent-bars-treesit-update-delay`: Delay in seconds for updating the treesitter scope highlight.
-- `indent-bars-treesit-wrap`: A mapping of language to tree-sitter wrap types (as symbols), to avoid adding extra bars e.g. in wrapped function arguments.  Note that this is considered only after the `no-descend` options above.
-- `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types (as strings) inside of which to inhibit styling blank lines at, like "module". 
-- `indent-bars-ts-styling-scope`: Determine whether the `*-ts-*` variables apply to in-scope or (by default) out-of-scope styling.  This is important because one of these styles is shared with the bar style in non-TS buffers.  This allows the default style in non-TS buffers to match either the in-scope or out-of-scope styling.
+- `indent-bars-treesit-wrap`: A mapping of language to tree-sitter wrap types (as symbols), to avoid adding extra bars e.g. in wrapped function arguments.  Note that this is considered only after the `no-descend` options above (which may be sufficient on their own).
+- `indent-bars-treesit-ignore-blank-lines-types`: A list of tree-sitter node types (as strings) inside of which to inhibit styling blank lines, like "module". 
+- `indent-bars-ts-styling-scope`: Determine whether the `*-ts-*` variables apply to in-scope or (by default) out-of-scope styling.  This is important because one of these styles is shared with the bar style in non-TS buffers.  This allows the default style in non-TS buffers to match either the in-scope (default) or out-of-scope styling.
 
 ### Tree-sitter alternate styling variables
 
 By default, if tree-sitter and _scope focus_ are active (`indent-bars-treesit-scope`), the style and highlight settings above apply only to the _in-scope_ bars[^2]. You can separately configure an alternate style for the appearance of the _out-of-scope_ bars — i.e. the bars outside the current tree-sitter scope[^2].  Usually you'd want to de-emphasize out-of-scope bars somehow, but that's not required (go crazy).
 
-[^2]: Or visa versa if `indent-bars-ts-styling-scope` is `in-scope`.
+[^2]: Or visa versa if `indent-bars-ts-styling-scope` is set to `in-scope`.
 
-To customize alternate bar appearance, use the parallel set of custom variables with an `indent-bars-ts-` prefix.  Each of these variables can be set similarly to their default counterparts to _fully_ configure alternate bar appearance, including color, depth highlighting, bar pattern, etc.
+To customize the alternate bar appearance, you use the parallel set of custom variables with an `indent-bars-ts-` prefix.  Each of these variables can be set similarly to their default counterparts to _fully_ configure alternate bar appearance, including color, depth highlighting, bar pattern, etc.
 
 You can interchange the role of in-scope and out-of-scope using `indent-bars-ts-styling-scope`.  This is useful if you prefer to have the _default_ style (e.g. the bar style in non-tree-sitter-enabled buffers) match the out-of-scope style within tree-sitter buffers (i.e. if you want to _emphasize_ scope, not _de-emphasize_ out-of-scope).
 
 > [!NOTE]
-> _Scope focus_ highlighting is completely independent of _current depth highlighting_, and you can style them separately, or enable one or the other, or both. 
+> _Scope focus_ highlighting is completely independent of _current depth highlighting_, and you can style them separately, or enable one or the other, both, or neither.  
 
-The `ts` custom variables for alternate styling are:
+The `ts` custom variables for configuring the alternate styling are:
 
 - [I] `indent-bars-ts-color` 
 - `indent-bars-ts-width-frac`
@@ -236,7 +236,7 @@ means to configure the color of alternate style bars as follows:
 2. set `:blend` to 0.15
 3. inherit any other missing keyword values from `indent-bars-color`
 
-The easiest way to configure inheritance and unspecified values in the `ts` variables is via the customize interface; see the group `indent-bars-ts-style`. 
+The easiest way to configure inheritance and unspecified values in the `ts` variables is via the customize interface; see the customize group `indent-bars-ts-style`. 
 
 # Details and Caveats
 
@@ -250,7 +250,7 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 1. `nil`: The simplest version selects the depth of the last-visible bar on the current line for highlight.
 2. `on-bar`:  The old default, which selects the depth of the "unseen" bar that the first character of text on the current line covers up.
-3. `context`: The new default, which selects the last-visible bar _unless_ an adjacent non-blank line is indented deeper by at least one indent spacing, in which case the `on-bar` approach is used.
+3. `context`: The new default, a blend of these two.  It selects the last-visible bar _unless_ an adjacent non-blank line is indented deeper by at least one indent spacing, in which case the `on-bar` approach is used.
 
 Experiment with these to see what you prefer.
 
@@ -258,32 +258,35 @@ Experiment with these to see what you prefer.
 
 `indent-bars` can optionally use tree-sitter in supported files to enable several features:
 
-1. **Scope Focus**: The current tree-sitter scope can be _focused_, with out-of-scope bars de-emphasized or in-scope bars emphasized in their display (or actually, styled however you want).  This can be configured by [specifying matching "scope"](#configuring-tree-sitter) node types (e.g. functions, blocks, etc.) for each language of interest.  The innermost node (covering sufficient lines) will then be rendered distinctly from _out-of-scope_ bars.
+1. **Scope Focus**: The current tree-sitter scope can be _focused_, with out-of-scope bars de-emphasized or in-scope bars emphasized (or actually, styled however you want).  This can be configured by [specifying matching "scope"](#configuring-tree-sitter) node types (e.g. functions, blocks, etc.) for each language of interest.  The innermost node (covering sufficient lines) will then be rendered distinctly from _out-of-scope_ bars.
 1. **Selective Blank Line Display**: By default, `indent-bars` displays bars on blank lines (though this can be [configured](#bar-setup-and-location)), so that they remain continuous.  It can be nice to omit the display of blank lines bars at the top structural level (e.g. in a _module_), to make divisions between top-level constructs more visible.  Tree-sitter can help `indent-bars` identify those lines.
 1. **Wrap Detection**: It can be useful to prevent excess bars inside wrapped entities which move indent to "line things up." These include things like argument lists, literal dictionaries, or other heirarchical multi-line structures.  Tree-sitter can help detect these and inhibit unwanted bars (but [see also](#bar-setup-and-location) `indent-bars-no-descend-string/list`, which do not require tree-sitter).
 
 > [!NOTE]
-> `indent-bars`' tree-sitter capabilities require Emacs 29 or later built with tree-sitter support, and the appropriate tree-sitter grammars installed for your languages of interest.  Additional node type configuration by language required; see below.
+> `indent-bars`' tree-sitter capabilities require Emacs 29 or later built with tree-sitter support, and the appropriate tree-sitter grammars installed for your languages of interest.  Additional node type configuration by language is required; see below.
 
 ### Configuring tree-sitter
 
 #### Scope
-Simply configure `indent-bars-treesit-scope` with the node types for which "local scope" highlighting nodes are of interest.  This must be done for each tree-sitter language you use.  This scope could be as granular as classes and functions, or include detailed block statements.  You can disable scoping for "short blocks" using `indent-bars-treesit-scope-min-lines`, so that, e.g., a quick `if` statement does not capture scope. I recommend starting with the minimal possible set of node types, adding as needed.
+Simply configure `indent-bars-treesit-scope` with the languages and node types for which "local scope" highlighting nodes are of interest.  This must be done for each tree-sitter language you use.  This scope could be as granular as classes and functions, or include detailed block statements.  You can disable scoping for "short blocks" using `indent-bars-treesit-scope-min-lines`, so that, e.g., a quick `if` statement does not capture scope. I recommend starting with the minimal possible set of scope node types, adding as needed.
+
+> [TIP]
+> If you don't know the name treesitter uses for your language, evaluate `(treesit-language-at (point-min))` in a ts-enabled buffer.
 
 #### Wrap
-`indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that the default of `indent-bars-no-descend-list`, which does not require tree-sitter, may be sufficient for your uses.
+`indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that `indent-bars-no-descend-list`, which does not require tree-sitter and is on by default, may be sufficient for your uses.
 
 #### Ignore certain blank lines
 You can assign a single (usually top-level) node type to ignore when drawing bars on blanks linkes; see `indent-bars-treesit-ignore-blank-lines-types` (which, please note, is configured as a list of _strings_, unlike `indent-bars-treesit-wrap/scope`).
 
 #### Identifying treesit node types of interest
-The easiest way to discover node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did (this will happen automatically if you change the scope node in the Customize interface).
+The easiest way to discover node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did (this will happen automatically if you make the change in the Customize interface).
 
 Please document good tree-sitter settings for other languages in the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
 
 ## Moving by columns
 
-If `indent-bars-display-on-blank-lines` is set, the newline at the end of blank lines may have a `'display` property set to show the bars.  Emacs does not deal correctly with display properties containing newlines when moving by columns.  This is not normally a problem, but in one instance it is a nuisance: `evil-mode` tries to "preserve" column during line moves, so can trigger this emacs misfeature.  The symptom is that point jumps a line and moves over as you move down with evil.  A solution is [here](https://github.com/jdtsmith/indent-bars/issues/22#issuecomment-1793886072). 
+If `indent-bars-display-on-blank-lines` is set, the newline at the end of blank lines may have a `'display` property set to show the bars.  Emacs does not deal correctly with display properties containing newlines when moving by columns.  This is not normally a problem, but in one instance it is a nuisance: `evil-mode` tries to "preserve" column during line moves, so can trigger this emacs misfeature.  The symptom is that point jumps a line and moves over as you move down with evil.  A workaround is [here](https://github.com/jdtsmith/indent-bars/issues/22#issuecomment-1793886072). 
 
 ## Display
 
@@ -314,11 +317,11 @@ This should then look something like (note the blue vertical bars):
 
 <img width="668" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/dd0f65f5-3cdc-4865-a66d-41365cecadd0">
 
-If you determine that stipples do not work in your version of Emacs, consider upgrading to a version which supports them, reporting the bug, or setting `indent-bars-prefer-character=t`.
+If you determine that stipples do not work in your version of Emacs, consider upgrading to a [version which supports them](https://github.com/jdtsmith/indent-bars/edit/main/README.md#compatibility), reporting the bug, or setting `indent-bars-prefer-character=t`.
 
 #### Per-buffer stipple offsets
 
-To get the stipple bars to appear in the correct location within their column, `indent-bars` must consider the starting horizontal pixel position of the current window, and "rotate" the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.  Until v0.5, showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets could lead to unexpected bar artifacts, since the offset applies *per-buffer*, not per-window.  In v0.5, an alternate method for applying the stipple pattern was used to solve this.
+To get the stipple bars to appear in the correct location within their column, `indent-bars` must consider the starting horizontal pixel position of the current window, and "rotate" the stipple pattern accordingly.  It does this automatically, per buffer, so you shouldn't ever notice problems, even when re-sizing or re-arranging windows, changing font size, etc.  Until v0.5, showing the *same buffer* side by side in Emacs versions which support pixel-level window width/offsets could lead to unexpected bar artifacts, since the offset applies *per-buffer*, not per-window.  In v0.5, an alternate method for applying per-window stipple patterns was used to solve this.
 
 ### Character display
 
@@ -341,11 +344,11 @@ Note that in mixed gui/terminal sessions of the same Emacs process, you may need
 
 ## Speed
 
-`indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font lock for fast and efficient bar drawing — simply *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) the relevant face.
+`indent-bars` was in part motivated by the inefficiency of older indentation highlight modes, and is designed for speed.  It uses stipples (fixed bitmap patterns) and font-lock for fast and efficient bar drawing — simply *faces on spaces*.  Highlighting the current indentation level is essentially free, since it works by [filtered remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html) of the relevant face.
 
-The heaviest operations are **tree-sitter** support (especially scope highlighting), and **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with. Using with tab-based indentation is also slightly slower than with space-based.
+The heaviest operations are **tree-sitter** support (especially scope highlighting), and **blank-line highlighting**.  If you experience any speed issues, these are the first settings to experiment with. Using with tab-based indentation may also be slightly (but likely imperceptibly) slower than with space-based.
 
-Both indentation-depth highlighting and current-tree-sitter-scope highlighting are protected by timers to avoid unnecessary loads (e.g. when pixel-scrolling).  Note that indentation-depth highlighting is _very_ fast and can safely be set to 0 seconds (though bars will then flash rapidly as you scroll).  Tree-sitter scope requires querying the tree-sitter core, which can be somewhat slower, so be careful setting its timer too low.  And tree-sitter scope highlighting also results in invalidating and re-fontifying all the regions which have changed scope.
+Both indentation-depth highlighting and current-tree-sitter-scope highlighting are protected by timers to avoid unnecessary loads (e.g. when pixel-scrolling).  Note that indentation-depth highlighting is _very_ fast and can safely be set to 0 seconds (though bars will then flash rapidly as you scroll).  Tree-sitter scope requires querying the tree-sitter core, which can be somewhat slower, so be careful setting its timer too low.
 
 # Related Packages
 
