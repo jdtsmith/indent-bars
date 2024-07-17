@@ -270,8 +270,8 @@ Experiment with these to see what you prefer.
 #### Scope
 Simply configure `indent-bars-treesit-scope` with the languages and node types for which "local scope" highlighting nodes are of interest.  This must be done for each tree-sitter language you use.  This scope could be as granular as classes and functions, or include detailed block statements.  You can disable scoping for "short blocks" using `indent-bars-treesit-scope-min-lines`, so that, e.g., a quick `if` statement does not capture scope. I recommend starting with the minimal possible set of scope node types, adding as needed.
 
-> [TIP]
-> If you don't know the name treesitter uses for your language, evaluate `(treesit-language-at (point-min))` in a ts-enabled buffer.
+> [!TIP]
+> If you don't know the name treesitter uses for your language, try `M-: (treesit-language-at (point-min))` in a ts-enabled buffer.
 
 #### Wrap
 `indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that `indent-bars-no-descend-list`, which does not require tree-sitter and is on by default, may be sufficient for your uses.
