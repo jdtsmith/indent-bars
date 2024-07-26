@@ -405,7 +405,8 @@ inhibiting font-lock if it is not pending in the region.  The
 property is removed if found."
   (let (pending)
     (when (setq pending (text-property-any beg end 'indent-bars-font-lock-pending t))
-      (put-text-property pending end 'indent-bars-font-lock-pending nil))
+      (with-silent-modifications
+	(put-text-property pending end 'indent-bars-font-lock-pending nil)))
     (not pending)))
 
 (defvar indent-bars-ts--orig-fontify-buffer nil)
@@ -414,7 +415,8 @@ property is removed if found."
 `indent-bars-ts--orig-fontify-buffer' is called with arguments R."
   (save-restriction
     (widen)
-    (put-text-property (point-min) (point-max) 'indent-bars-font-lock-pending t)
+    (with-silent-modifications
+      (put-text-property (point-min) (point-max) 'indent-bars-font-lock-pending t))
     (apply indent-bars-ts--orig-fontify-buffer r)))
 
 
