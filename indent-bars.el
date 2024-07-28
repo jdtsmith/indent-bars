@@ -511,7 +511,7 @@ color of the matching, sorted faces will be returned, unless
 FACE-BG is non-nil, in which case the background color is
 returned."
   (mapcar (lambda (x) (funcall (if face-bg #'face-background #'face-foreground)
-			       (cdr x) nil t))
+			       (cdr x) nil 'default))
           (seq-sort-by #'car
 		       (lambda (a b) (cond
 				      ((not (numberp b)) t)
@@ -605,7 +605,7 @@ instead of the :blend factor in `indent-bars-color'."
   (cl-destructuring-bind (main &key face-bg blend) (indent-bars--style style "color")
     (let ((col (cond ((facep main)
 		      (funcall (if face-bg #'face-background #'face-foreground)
-			       main))
+			       main nil 'default))
 		     ((color-defined-p main) main)))
 	  (blend (or blend-override blend)))
       (if (and tint tint-blend (color-defined-p tint)) ;tint main color
@@ -648,7 +648,7 @@ See `indent-bars-highlight-current-depth' for configuration."
 	     (cond
 	      ((facep face)
 	       (funcall (if face-bg #'face-background #'face-foreground)
-			face))
+			face nil 'default))
 	      ((and color (color-defined-p color)) color))))
 	(cond
 	 ;; An explicit palette
