@@ -1509,6 +1509,14 @@ WIN defaults to the selected window.  To be set as a local
 Adapted from `highlight-indentation-mode'."
   (cond
    (indent-bars-spacing-override)
+   ((and (derived-mode-p 'ada-mode) (boundp 'ada-indent))
+    ada-indent)
+   ((and (derived-mode-p 'ada-ts-mode) (boundp 'ada-ts-mode-indent-offset))
+    ada-ts-mode-indent-offset)
+   ((and (derived-mode-p 'gpr-mode) (boundp 'gpr-indent))
+    gpr-indent)
+   ((and (derived-mode-p 'gpr-ts-mode) (boundp 'gpr-ts-mode-indent-offset))
+    gpr-ts-mode-indent-offset)
    ((and (derived-mode-p 'python-mode) (boundp 'py-indent-offset))
     py-indent-offset)
    ((and (derived-mode-p 'python-mode) (boundp 'python-indent-offset))
