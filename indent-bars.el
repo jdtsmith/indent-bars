@@ -934,8 +934,8 @@ Skips any fully blank lines."
 	(max (current-indentation) b)
       (goto-char p))))
 
-(defvar indent-bars--update-depth-function nil)
-(defvar indent-bars--ppss nil)
+(defvar-local indent-bars--update-depth-function nil)
+(defvar-local indent-bars--ppss nil)
 (defun indent-bars--current-indentation-depth (&optional on-bar)
   "Calculate current indentation depth.
 If ON-BAR is nil, return the depth of the last visible bar on the
