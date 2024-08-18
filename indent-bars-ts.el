@@ -22,18 +22,18 @@
 ;; scope node types for the language of interest.  For any given
 ;; location of point, there is a scope range (a pair of markers) which
 ;; helps determine how the bars get displayed.  Short nodes occupying
-;; too-few lines are (optionally) not considered.  A nil scope node
-;; indicates the entire file is the scope.  Note that even small
-;; movements can change the scope and hence bar styling signficantly.
+;; too-few lines are (optionally) not considered for scope.  A nil
+;; scope node indicates the entire file is the scope.  Note that even
+;; small movements can change the scope and hence the bar styling.
 
-;; The font-lock aspect does not differ much from normal (non-TS) bar
+;; The styling aspect does not differ much from normal (non-TS) bar
 ;; drawing, except there is now an alternate set of bar styles (in-
 ;; vs. out-of-scope), and bars on a single line can be either all one,
 ;; all the other, or a combination of the two styles.  The forms in
 ;; the configured font-lock keywords (FACE eval forms) consult the
 ;; current scope range to determine how to style bars on a line.
 
-;; But since bar fontification now depends not just on the text in the
+;; Since bar fontification now depends not just on the text in the
 ;; buffer, but on the position of point, this presents a few
 ;; challenges to maintain efficiency.  The adopted technique is as
 ;; follows:
@@ -41,19 +41,21 @@
 ;;  - A post-command hook sets up an idle-time callback (if none
 ;;    exists).
 ;;  - In idle time, we query treesitter for the innermost "scope" node
-;;    at point, based on user config (`indent-bars-treesit-scope').
+;;    at point, based on user config for the buffer's language
+;;    (`indent-bars-treesit-scope').
 ;;  - If the scope boundaries have changed from the last time they
 ;;    were saved (modulo simple marker movement), we invalidate the
 ;;    fontification over the union of the old and new scope regions.
 ;;  - jit-lock is modified to apply a special
-;;    `indent-bars-font-lock-pending' property to modified (or
-;;    contextually-refontified) text.
+;;    `indent-bars-font-lock-pending' property to modified text.  The
+;;    same happens for contextually-refontified text.
 ;;  - font-lock and jit-lock are configured to skip the core font-lock
-;;    region fontification function when it is not pending in the
-;;    region.  See `indent-bars--fontify'.
+;;    region fontification function when font-lock itself is not
+;;    pending in the region.  See `indent-bars--fontify'.
 ;;    
-;; Note the shorthand substitutions for style related prefixes (slot
-;; accessors and variables); see file-local-variables at the end:
+;; Note also the shorthand substitutions for style related prefixes
+;; (slot accessors and variables); see file-local-variables at the
+;; end:
 ;; 
 ;;    ibts/  => indent-bars-ts-scope- (slot accessors)
 ;;    ibtcs  => indent-bars-ts-current-scope (scope struct)
