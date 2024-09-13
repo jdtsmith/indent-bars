@@ -211,7 +211,7 @@ To customize the alternate bar appearance, you use the parallel set of custom va
 You can interchange the role of in-scope and out-of-scope using `indent-bars-ts-styling-scope`.  This is useful if you prefer to have the _default_ style (e.g. the bar style in non-tree-sitter-enabled buffers) match the out-of-scope style within tree-sitter buffers (i.e. if you want to _emphasize_ scope, not _de-emphasize_ out-of-scope).
 
 > [!NOTE]
-> _Scope focus_ highlighting is completely independent of _current depth highlighting_, and you can style them separately, or enable one or the other, both, or neither.  
+> _Scope focus_ highlighting is completely independent of _current depth highlighting_, and you can style them separately, and can enable one or the other, both, or neither.  
 
 The `ts` custom variables for configuring the alternate styling are:
 
@@ -224,10 +224,10 @@ The `ts` custom variables for configuring the alternate styling are:
 - [I] `indent-bars-ts-color-by-depth`
 - [I] `indent-bars-ts-highlight-current-depth`
 
-Each of these parallel variables has the same form as their equivalent non-`ts` version (the "parent" variable), with two difference:
+Each of these parallel variables has the same form as their equivalent non-`ts` version (the "parent" variable), with two additions:
 
-1. Some (marked with [I] above) can optionally use _inheritance_ from their parent.  Inheritance means any missing `:key` based elements are _inherited_ from the in-scope (parent) style.  To configure their inheritance, you can optionally set these variable values to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted and `value` is simply used as-is) means that any unspecified `:key` values are inherited from the parent variable.  The symbol `no-inherit` means to omit any missing key values for the alternate styling.
-2. For any non-`:key` type values, the specific symbol value `'unspecified` can be set to indicate using the parent's value for that slot.
+1. Some (marked with [I] above) can optionally use _inheritance_ from their parent.  Inheritance means any missing `:key` based elements are _inherited_ from the in-scope (parent) style.  To configure whether this inheritance occurs, you can optionally set these variable values to a cons cell of the form `([no-]inherit . value)`, where `value` has the normal format for the parent variable.  `inherit` (the default, if the cons cell is omitted and `value` is simply used as-is) means that any unspecified `:key` values are inherited from the parent variable.  The symbol `no-inherit` means to omit (rather than inherit) any missing key values for the alternate styling.  See below for an example.
+2. For any non-`:key` type values, the specific symbol value `'unspecified` can be set to indicate to use the parent's value for that slot.
 
 For example, a setting of:
 
@@ -247,7 +247,7 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 ## Indentation
 
-`indent-bars` works with either space- or tab-based indentation.  If possible, prefer space indentation, as it is faster.  Note that some modes explicitly enable or disable `indent-tabs-mode`.
+`indent-bars` works with either space- or tab-based indentation (see `indent-tabs-mode`).  If possible, prefer space indentation, as it is faster.  Note that some modes explicitly enable or disable `indent-tabs-mode`.
 
 ## Current Depth Highlight
 
