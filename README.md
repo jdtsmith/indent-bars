@@ -254,8 +254,8 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 `indent-bars` can highlight the bar at the current depth, and supports a few different ways to determine which bar gets selected for highlight (see `indent-bars-highlight-selection-method`):
 
 1. `nil`: The simplest version selects the depth of the last-visible bar on the current line for highlight.
-2. `on-bar`:  The old default, which selects the depth of the "unseen" bar that the first character of text on the current line covers up.
-3. `context`: The new default, a blend of these two.  It selects the last-visible bar _unless_ an adjacent non-blank line is indented deeper by at least one indent spacing, in which case the `on-bar` approach is used.
+2. `on-bar`:  The old default, which selects the depth of the last visible bar _or_ the "unseen" bar that the first non-blank character on the current line "covers up".
+3. `context`: The new default, a blend of these two methods.  It selects the last-visible bar _unless_ an adjacent non-blank line (above or below) is indented deeper by at least one indent spacing, in which case the `on-bar` approach is used.
 
 Experiment with these to see what you prefer.
 
