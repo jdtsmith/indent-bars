@@ -171,17 +171,17 @@ Configuration for highlighting the current indentation bar depth:
 
 Configuration variables for bar position and line locations (including on blank lines):
 
-- `indent-bars-starting-column`: column to use for the first bar.  Can be set in special modes which start at an unusual fixed offset, or set to 0 to get "column 0" bars.
-- `indent-bars-spacing-override`:  Normally the number of spaces for indentation is automatically discovered from the mode and other variables.  If that doesn't work for any reason, it can be explicitly set using this variable.
+- `indent-bars-starting-column`: column to use for the first bar (default: one indent spacing).  Can be set in special modes which start at an unusual fixed offset, or set to 0 to get "column 0" bars (which are possibly superfluous given the left buffer edge).
+- `indent-bars-spacing-override`:  Normally the number of spaces for indentation is automatically discovered from the mode and other variables.  If that doesn't work for any reason, it can be explicitly overridden using this variable.
 - `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines.
-- `indent-bars-no-descend-string`: Whether to inhibit increasing depth inside of strings. 
-- `indent-bars-no-descend-list`: Whether to inhibit increasing depth inside of lists. 
+- `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings. 
+- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists. 
 
 ## Character-based bars and terminal
 
 Custom variables affecting character-based bar display, e.g. in the terminal:
 
-- `indent-bars-prefer-character`: Use *characters* to display the vertical bar instead of stipples.  This occurs automatically on non-graphical displays (terminals), but this variable can be used to always prefer character-based display.
+- `indent-bars-prefer-character`: Use *characters* to display the vertical bar instead of stipples.  This occurs automatically on non-graphical displays (terminals), but this variable can be used to always prefer character-based display.  Useful if your version of GUI Emacs does not support `:stipple` patterns.
 - `indent-bars-no-stipple-char`: The character to use when stipples are unavailable or disabled. Defaults to the vertical box character `│`.  Other good options include `┃`, `┋`, and `║`.
 - `indent-bars-no-stipple-char-font-weight`: Optional font weight to use for the face displaying the no-stipple character.
 - `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when they are unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
