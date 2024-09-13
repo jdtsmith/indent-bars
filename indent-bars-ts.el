@@ -244,7 +244,7 @@ arguments)."
 			       node indent-bars-ts--wrap-query nil t)))
 		(1+ (indent-bars--depth
 		     (indent-bars--indent-at-node ctx)))))))
-      (min dnew d)
+      (if dnew (min dnew d) d)
     d))
 
 ;;;; Ignoring Certain Blank Lines
