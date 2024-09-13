@@ -1538,6 +1538,8 @@ Adapted from `highlight-indentation-mode'."
     js-indent-level)
    ((and (derived-mode-p 'js2-mode) (boundp 'js2-basic-offset))
     js2-basic-offset)
+   ((and (derived-mode-p 'typescript-ts-mode) (boundp 'typescript-ts-mode-indent-offset))
+    typescript-ts-mode-indent-offset)
    ((and (derived-mode-p 'sws-mode) (boundp 'sws-tab-width))
     sws-tab-width)
    ((and (derived-mode-p 'web-mode) (boundp 'web-mode-markup-indent-offset))
