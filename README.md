@@ -21,6 +21,7 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 
 ## What's New
 
+- **v0.7.1**: Added ADA, GPR, and `typescript-ts` support. Avoid issues when mixing TS and non-TS modes.  Ensure colors work with themes that do not specify background or foreground of specified bar faces.
 - **v0.7**: New optimized jit-lock approach for treesit scope.  Slightly streamlined default styling.
 - **v0.6.1**: Live feedback when updating settings in the Customize interface.
 - **v0.6.0**: 
