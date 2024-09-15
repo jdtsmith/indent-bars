@@ -3,11 +3,9 @@
 
 ;; Author: J.D. Smith
 ;; Homepage: https://github.com/jdtsmith/indent-bars
-;; Package-Requires: ((emacs "27.1") (compat "29.1.4.5"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1"))
 ;; Version: 0.7.1
 ;; Keywords: convenience
-;; Prefix: indent-bars
-;; Separator: -
 
 ;; indent-bars is free software: you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -34,7 +32,7 @@
 ;; uses vertical bar characters instead of stipple patterns.  Optional
 ;; treesitter support is also available; see indent-bars-ts.el.
 
-;; For Developers:
+;;;; For Developers:
 ;;
 ;; To efficiently accommodate simultaneous alternative bar styling, we
 ;; do two things:
@@ -434,7 +432,7 @@ specifies using character bars exclusively.  See
 
 (defcustom indent-bars-no-stipple-char ?\│
   "Character to display when stipple is unavailable (as in the terminal)."
-  :type 'char
+  :type 'character
   :set #'indent-bars--custom-set
   :group 'indent-bars)
 
@@ -518,26 +516,25 @@ returned."
 				      ((not (numberp b)) t)
 				      ((not (numberp a)) nil)
 				      (t (< a b))))
-                       (delq nil
-			     (seq-map
-			      (lambda (x)
-				(let ((n (symbol-name x)))
-				  (if (string-match regexp n)
-                                      (cons (string-to-number (match-string 1 n))
-					    x))))
-                              (face-list))))))
+		       (mapcan
+			(lambda (x)
+			  (let ((n (symbol-name x)))
+			    (if (string-match regexp n)
+                                (list (cons (string-to-number (match-string 1 n))
+					    x)))))
+			(face-list)))))
 
 (defun indent-bars--unpack-palette (palette)
   "Process a face or color-based PALETTE."
-  (delq nil
-	(cl-loop for el in palette
-		 collect (cond
-			  ((and (consp el) (facep (car el)))
-			   (face-background (car el)))
-			  ((facep el)
-			   (face-foreground el))
-			  ((color-defined-p el) el)
-			  (t nil)))))
+  (cl-loop for el in palette
+	   when (cond
+		 ((and (consp el) (facep (car el)))
+		  (face-background (car el)))
+		 ((facep el)
+		  (face-foreground el))
+		 ((color-defined-p el) el))
+	   collect it))
+
 ;;;; Style
 (defvar indent-bars-style nil
   "The `indent-bars-style' struct for the main style.")
@@ -679,9 +676,9 @@ See `indent-bars-highlight-current-depth' for configuration."
   "Return the color appropriate for indentation DEPTH in STYLE.
 If CURRENT-HIGHLIGHT is non-nil, return the appropriate highlight
 color, if setup (see `indent-bars-highlight-current-depth')."
-  (let* ((palette (or (and current-highlight
-			   (ibs/current-depth-palette style))
-		      (ibs/depth-palette style))))
+  (let ((palette (or (and current-highlight
+			  (ibs/current-depth-palette style))
+		     (ibs/depth-palette style))))
     (cond
      ((vectorp palette)
       (aref palette (mod (1- depth) (length palette))))
@@ -878,8 +875,8 @@ returned."
   "Reset all styles' colors and faces.
 Useful for calling after theme changes."
   (interactive)
-  (dolist (s indent-bars--styles)
-    (indent-bars--initialize-style s)))
+  (mapc #'indent-bars--initialize-style
+	indent-bars--styles))
 
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
@@ -924,16 +921,15 @@ Note that the first bar is expected at `indent-bars-starting-column'."
 (defun indent-bars--context-depth ()
   "Return the maximum `current-indentation' around current line.
 Skips any fully blank lines."
-  (let (b (p (point)))
-    (beginning-of-line)
-    (skip-chars-backward "[:space:]\n")
-    (setq b (current-indentation))
-    (goto-char p)
-    (forward-line 1)
-    (skip-chars-forward "[:space:]\n")
-    (prog1
-	(max (current-indentation) b)
-      (goto-char p))))
+  (let ((prior-indent
+	 (save-excursion
+	   (beginning-of-line)
+	   (skip-chars-backward "[:space:]\n")
+	   (current-indentation))))
+    (save-excursion
+      (forward-line 1)
+      (skip-chars-forward "[:space:]\n")
+      (max (current-indentation) prior-indent))))
 
 (defvar-local indent-bars--update-depth-function nil)
 (defvar-local indent-bars--ppss nil)
@@ -1045,10 +1041,10 @@ properties to existing non-tab whitespace), bars will be
 in this case) expected to be located at END, will have its
 display properties set to fill out the remaining bars, if any are
 needed."
-  (let* ((tabs (when (and indent-tabs-mode
-			  (save-excursion
-			    (goto-char start) (looking-at "^\t+")))
-		 (- (match-end 0) (match-beginning 0))))
+  (let* ((tabs (and indent-tabs-mode
+		    (save-excursion
+		      (goto-char start) (looking-at "^\t+"))
+		    (- (match-end 0) (match-beginning 0))))
 	 (vp indent-bars--offset)
 	 (style (or style indent-bars-style))
 	 (bar 1) prop fun tnum bars-drawn)
@@ -1077,21 +1073,21 @@ needed."
 				(prog1
 				    (if (> switch-after 0) style style2)
 				  (cl-decf switch-after)
-				  (if (<= switch-after 0)
-				      (setq switch-after t))))
+				  (when (<= switch-after 0)
+				    (setq switch-after t))))
 			       ((eq switch-after t) style2)
 			       (t style))
 			 bar))
 	  (cl-incf bar)
 	  (cl-incf pos indent-bars-spacing))
 	;; STILL bars to show: invent them (if requested)
-	(if (and invent (<= bar nbars))
-	    (put-text-property
-	     end (1+ end) 'indent-bars-display
-	     (concat (indent-bars--blank-string
-		      style (- pos end) (- nbars bar -1) bar nil
-		      switch-after style2)
-		     "\n")))))))
+	(when (and invent (<= bar nbars))
+	  (put-text-property
+	   end (1+ end) 'indent-bars-display
+	   (concat (indent-bars--blank-string
+		    style (- pos end) (- nbars bar -1) bar nil
+		    switch-after style2)
+		   "\n")))))))
 
 (defsubst indent-bars--context-bars (end)
   "Maximum number of bars at point and END.
@@ -1109,8 +1105,8 @@ passed, uses `indent-bars-style' for drawing."
   (let ((n (save-excursion
 	     (goto-char beg)
 	     (indent-bars--current-indentation-depth))))
-    (when (> n 0) (indent-bars--draw-line style n beg end nil
-					  switch-after style2))))
+    (and (> n 0) (indent-bars--draw-line style n beg end nil
+					 switch-after style2))))
 
 (defun indent-bars--display-blank-lines (beg end &optional style switch-after style2)
   "Display the appropriate bars over the blank-only lines from BEG..END.
@@ -1165,9 +1161,10 @@ the dynamic variables `jit-lock-start' and `jit-lock-end'."
   (cons start end))
 
 (defvar-local indent-bars--display-function
-    'indent-bars--display)
+    #'indent-bars--display)
 (defvar-local indent-bars--display-blank-lines-function
-    'indent-bars--display-blank-lines)
+    #'indent-bars--display-blank-lines)
+
 (defun indent-bars--draw-all-bars-between (start end)
   "Search for and draw all bars between START and END.
 The beginning of line at START is used to locate real and (if
@@ -1252,9 +1249,9 @@ greater than zero."
 
 (defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
   "Highlight bar at DEPTH in buffer BUF."
-  (if (buffer-live-p buf)
-      (with-current-buffer buf
-	(indent-bars--update-current-depth-highlight depth))))
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (indent-bars--update-current-depth-highlight depth))))
 
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
@@ -1696,8 +1693,8 @@ Adapted from `highlight-indentation-mode'."
     (indent-bars-teardown)))
 
 ;; Theme support
-(if (boundp 'enable-theme-functions)
-    (add-hook 'enable-theme-functions #'indent-bars-reset-styles))
+(when (boundp 'enable-theme-functions)
+  (add-hook 'enable-theme-functions #'indent-bars-reset-styles))
 
 (provide 'indent-bars)
 
