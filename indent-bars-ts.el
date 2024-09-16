@@ -1,5 +1,5 @@
 ;;; indent-bars-ts.el --- treesitter support for indent-bars -*- lexical-binding: t; -*-
-;; Copyright (C) 2023-2024  J.D. Smith
+;; Copyright (C) 2023-2024  Free Software Foundation, Inc.
 
 ;;; Commentary:
 
