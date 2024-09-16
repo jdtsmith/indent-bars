@@ -48,7 +48,7 @@
 ;;
 ;; Note the shorthand substitution for style related slots;
 ;; see file-local-variables at the end:
-;; 
+;;
 ;;    ibs/  => indent-bars-style-
 
 ;;; Code:
@@ -666,7 +666,7 @@ See `indent-bars-highlight-current-depth' for configuration."
 		;; Just blend into main color
 		(indent-bars--blend-colors color (ibs/main-color style) blend))
 	    color))
-	 
+
 	 ;; blend-only without a specified color: re-blend originals with BG
 	 (blend
 	  (or (indent-bars--depth-palette style blend)
@@ -852,10 +852,10 @@ returned."
   (cond
    ((and old (eq new 'unspecified))
     old) 	; fully inherited
-   
+
    ((and (atom old) (atom new))
     (if (eq new 'unspecified) old new))
-   
+
    ((and (consp old) (consp new))
     (let* ((old (copy-sequence old)) 	; avoid editing old
 	   (n new) (o old) last-o)
@@ -889,7 +889,7 @@ Useful for calling after theme changes."
 	(indent-bars--current-depth-palette style)
 	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
-  
+
   ;; Base stipple face
   (face-spec-set
    (ibs/stipple-face style)
@@ -897,7 +897,7 @@ Useful for calling after theme changes."
     (frame-char-width) (frame-char-height)
     (indent-bars--stipple-rot (selected-window) (frame-char-width))
     style))
-  
+
   ;; Current depth highlight faces/stipple
   (setf (ibs/current-bg-color style)
 	(indent-bars--current-bg-color style))
@@ -1315,28 +1315,28 @@ ROT should be less than W."
 ;; a fixed repeating bit pattern, with its lowest bits and earlier
 ;; bytes leftmost.  It is drawn with respect to the *entire frame*,
 ;; with its first bit aligned with the first (leftmost) frame pixel.
-;; 
+;;
 ;; Turning on :stipple for a character merely "opens a window" on that
 ;; frame-filling, repeating stipple pattern.  Since the pattern starts
 ;; outside the body (in literally the first frame pixel, typically
 ;; within the fringe), you must consider the shift between the first
 ;; pixel of a window character and the first pixel of the repeating
 ;; stipple block at that pixel position or above:
-;; 
+;;
 ;;     |<-frame edge |<---buffer/window edge
 ;;     |<--w-->|<--w-->|<--w-->|     w = pattern width
 ;;     | marg+fringe |<-chr->|     chr = character width = w
 ;;             |<-g->|               g = gutter offset of chr start, g<w
 ;;
 ;; Or, when the character width exceeds the margin/fringe offset:
-;; 
+;;
 ;;     |<-frame edge |<---buffer/window edge
 ;;     |<--------w-------->|<---------w-------->|
 ;;     | marg+fringe |<-------chr------->|
 ;;     |<-----g----->|
 ;;
 ;; So g = (mod marg+fringe w).
-;; 
+;;
 ;; When the block/zigzag/whatever stipple pattern is made, to align
 ;; with characters, it must get shifted up (= right) by g bits, with
 ;; carry over (wrap) around w=(window-font-width) bits (i.e the width
@@ -1568,6 +1568,8 @@ Adapted from `highlight-indentation-mode'."
     json-ts-mode-indent-offset)
    ((and (derived-mode-p 'json-mode) (boundp 'js-indent-level))
     js-indent-level)
+   ((and (derived-mode-p 'sh-base-mode) (boundp 'sh-basic-offset))
+    sh-basic-offset)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
@@ -1614,7 +1616,7 @@ Adapted from `highlight-indentation-mode'."
   ;; PPSS
   (setq indent-bars--ppss
 	(or indent-bars-no-descend-string indent-bars-no-descend-lists))
-  
+
   ;; Treesitter
   (if indent-bars-treesit-support (indent-bars-ts-mode 1)) ; autoloads
 
@@ -1630,7 +1632,7 @@ Adapted from `highlight-indentation-mode'."
 	      #'indent-bars--highlight-current-depth nil t)
     (setq indent-bars--current-depth 0)
     (indent-bars--highlight-current-depth))
-  
+
   ;;Jit/Font-lock
   (cl-pushnew 'indent-bars-display (alist-get 'display char-property-alias-alist))
   (indent-bars--setup-font-lock)
@@ -1651,15 +1653,15 @@ Adapted from `highlight-indentation-mode'."
 		 (indent-bars--remove-plist-remaps pl))
 	       indent-bars--stipple-remaps)
       (setq indent-bars--stipple-remaps nil)))
-  
+
   (when indent-bars--orig-fontify-region
     (setq font-lock-fontify-region-function indent-bars--orig-fontify-region))
   (with-silent-modifications
     (remove-text-properties (point-min) (point-max) '(indent-bars-display nil)))
-  
+
   (font-lock-flush)
   (font-lock-ensure)
-  
+
   (setq indent-bars--current-depth 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
   (remove-hook 'post-command-hook #'indent-bars--highlight-current-depth t)
