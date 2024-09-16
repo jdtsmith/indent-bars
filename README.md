@@ -21,6 +21,7 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 
 ## What's New
 
+- **v0.7.2**: Added to ELPA
 - **v0.7.1**: Added ADA, GPR, and `typescript-ts` support. Avoid issues when mixing TS and non-TS modes.  Ensure colors work with themes that do not specify background or foreground of specified bar faces.
 - **v0.7**: New optimized jit-lock approach for treesit scope.  Slightly streamlined default styling.
 - **v0.6.1**: Live feedback when updating settings in the Customize interface.
@@ -67,11 +68,10 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 
 # Install/config
 
-Not yet in a package database; simply clone and point `use-package` at the correct path.  You can also simply use the `vc-package-install` command newly released with Emacs 29.
+`indent-bars` is in ELPA; install with Emacs' package facilities.
 
 ```elisp
 (use-package indent-bars
-  :load-path "~/code/emacs/indent-bars"
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 ## Straight
@@ -88,7 +88,6 @@ To clone with `use-package` and `straight`:
 
 ```elisp
 (use-package indent-bars
-  :load-path "~/code/emacs/indent-bars"
   :config
   (require 'indent-bars-ts) 		; not needed with straight
   :custom
@@ -97,7 +96,7 @@ To clone with `use-package` and `straight`:
   ;; Add other languages as needed
   (indent-bars-treesit-scope '((python function_definition class_definition for_statement
 	  if_statement with_statement while_statement)))
-  ;; wrap may not be needed if no-descend-list is enough
+  ;; Note: wrap may not be needed if no-descend-list is enough
   ;;(indent-bars-treesit-wrap '((python argument_list parameters ; for python, as an example
   ;;				      list list_comprehension
   ;;				      dictionary dictionary_comprehension
