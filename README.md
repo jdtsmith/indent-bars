@@ -68,7 +68,7 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 
 # Install/config
 
-`indent-bars` is in ELPA; install with Emacs' package facilities.
+`indent-bars` is in ELPA; install with Emacs' package facilities, and configure by calling `indent-bars-mode` in your desired mode hooks.
 
 ```elisp
 (use-package indent-bars
