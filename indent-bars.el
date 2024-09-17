@@ -1,7 +1,7 @@
 ;;; indent-bars.el --- Highlight indentation with bars -*- lexical-binding: t; -*-
 ;; Copyright (C) 2023-2024  Free Software Foundation, Inc.
 
-;; Author: J.D. Smith
+;; Author: J.D. Smith <jdtsmith+elpa@gmail.com>
 ;; Homepage: https://github.com/jdtsmith/indent-bars
 ;; Package-Requires: ((emacs "27.1") (compat "29.1"))
 ;; Version: 0.7.2
