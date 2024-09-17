@@ -21,40 +21,15 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 
 ## What's New
 
-- **v0.7.3**: Added to ELPA (coming soon)
-- **v0.7.1**: Added ADA, GPR, and `typescript-ts` support. Avoid issues when mixing TS and non-TS modes.  Ensure colors work with themes that do not specify background or foreground of specified bar faces.
-- **v0.7**: New optimized jit-lock approach for treesit scope.  Slightly streamlined default styling.
-- **v0.6.1**: Live feedback when updating settings in the Customize interface.
-- **v0.6.0**: 
-  - Simplify tree-sitter scope drawing. 
-  - New option `indent-bars-ts-styling-scope` to swap the roles of in-scope and out-of-scope style.
-- **v0.5.2**: Ensure all old tree-sitter scopes regions are correctly invalidated when the scope is updated.
-- **v0.5.1**: Correctly handle tree-sitter scope highlight when multiple windows show the same buffer.
-- **v0.5**: A major new release with many added features and improvements.
-  - Stipple-based bars are now free from artifacts when the same buffer appears in multiple windows.
-  - Position-aware tree-sitter _scope focus_ with fully configurable in-scope/out-of-scope styling.
-  - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
-  - Two new highlight selection "methods" including a new default ("context").
-  - Inhibit string and list bar descent without tree-sitter, using Emacs' syntax capabilities.
-- **v0.2.2**:
-  - Rate-limit updates of the current highlight depth; see `indent-bars-depth-update-delay`. 
-- **v0.2**: 
-   - ability to configure the starting column (including col 0)
-   - Support for tab-based indent modes
-   - optional character-based indent bars (automatic in terminal)
-   - tree-sitter context-aware bar depth
-   - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
-   - other minor improvements
-- **v0.1**: Initial stipple-based indentation.
-
+See the CHANGELOG.
 
 # FAQ's
 
 - **I don't see anything/bars are garbled!** <br>While most do, not all Emacsen support stipples; see [Compatibility](#compatibility).
 - **How can I find out if my Emacs supports stipples?!** <br>See [Testing Stipples](#testing-stipples).
-- **These bars are too instrusive!** <br>Reduce the `:blend` value in `indent-bars-color` closer to zero. Consider disabling `indent-bars-color-by-depth`.
+- **These bars are too intrusive!** <br>Reduce the `:blend` value in `indent-bars-color` closer to zero. Consider disabling `indent-bars-color-by-depth`.
 - **I can barely see the bars!** <br>Increase the `:blend` value in `indent-bars-color` closer to one.
-- **I want completely unique indent guidebars so as to flex on my colleagues!** <br>Check the [Examples](examples.md) for some ideas.  The sky is the limit (submit your examples).
+- **I want completely unique indent guide-bars so as to flex on my colleagues!** <br>Check the [Examples](examples.md) for some ideas.  The sky is the limit (submit your examples).
 - **I use Emacs on the terminal, you insensitive clod!** <br>`indent-bars` will just work for you (though you don't get any fancy bar patterns).
 - **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.** <br>Maybe [this](examples.md#minimal) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with [`indent-bars-prefer-character`](#character-display).
 - **I get too many bars inside function definitions and calls** <br>You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter-details).

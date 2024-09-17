@@ -1,0 +1,60 @@
+#+title: indent-bars - Changelog
+#+author: J.D. Smith
+#+language: en
+
+
+* *v0.7.3* (2024-09-17)
+
+- Released on ELPA
+
+* *v0.7.1* (2024-09-14)
+
+- Added ADA, GPR, and ~typescript-ts~ support.
+- Avoid issues when mixing TS and non-TS modes.
+- Ensure colors work with themes that do not specify background or foreground of specified bar faces.
+
+* *v0.7* (2024-07-24)
+
+- New optimized jit-lock approach for treesit scope.
+- Slightly streamlined default styling.
+
+* *v0.6.1*  (2024-05-30)
+
+- Live feedback when updating settings in the Customize interface.
+- Simplify tree-sitter scope drawing. 
+- New option ~indent-bars-ts-styling-scope~ to swap the roles of in-scope and out-of-scope style.
+
+* v0.5.2 (2024-04-21)
+
+- Ensure all old tree-sitter scopes regions are correctly invalidated when the scope is updated.
+
+* v0.5.1 (2024-04-16)
+
+- Correctly handle tree-sitter scope highlight when multiple windows show the same buffer.
+
+* *v0.5* (2024-04-08)
+
+A major new release with many added features and improvements.
+
+  - Stipple-based bars are now free from artifacts when the same buffer appears in multiple windows.
+  - Position-aware tree-sitter /scope focus/ with fully configurable in-scope/out-of-scope styling.
+  - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
+  - Two new highlight selection "methods" including a new default ("context").
+  - Inhibit string and list bar descent without tree-sitter, using Emacs' syntax capabilities.
+
+* *v0.2.2* (2024-01-02)
+
+  - Rate-limit updates of the current highlight depth; see ~indent-bars-depth-update-delay~. 
+
+* v0.2 (2023-09-08)
+
+   - ability to configure the starting column (including col 0)
+   - Support for tab-based indent modes
+   - optional character-based indent bars (automatic in terminal)
+   - tree-sitter context-aware bar depth
+   - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
+   - other minor improvements
+
+* v0.1
+
+- Initial stipple-based indentation.
