@@ -501,14 +501,7 @@ due to edits or contextual fontification."
 (defun indent-bars-ts--teardown ()
   "Teardown indent-bars-ts in the buffer.
 To be set in `indent-bars--teardown-functions'."
-  (when indent-bars-ts--scope-timer
-    (cancel-timer indent-bars-ts--scope-timer)
-    (setq indent-bars-ts--scope-timer nil))
-  (setq font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer)
-  (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
-  (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown t)
-  (remove-hook 'jit-lock-after-change-extend-region-functions
-	       #'indent-bars-ts--mark-change t))
+  (indent-bars--ts-mode -1))
 
 ;;;###autoload
 (define-minor-mode indent-bars--ts-mode
