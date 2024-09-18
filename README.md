@@ -1,11 +1,10 @@
 # indent-bars: fast, configurable indentation guide-bars for Emacs
 <p align="center">
-<a href="https://elpa.gnu.org/packages/indent-bars.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/indent-bars.svg"/></a> 
 <a href="#faqs"><b>FAQ</b></a> ⏐
 <a href="#installconfig"><b>INSTALL</b></a> ⏐
 <a href="#customization"><b>CUSTOMIZE</b></a> ⏐
 <a href="#details-and-caveats"><b>MORE DETAILS</b></a>
-</p>
+</p> <a href="https://elpa.gnu.org/packages/indent-bars.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/indent-bars.svg"/></a> 
 <img align="right" width="500" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c"/><img align="right" width="10" height="476" src="https://github.com/jdtsmith/indent-bars/assets/93749/c4df4fbe-7aab-4b4e-bb89-7c6a70755e9d"/>
 
 This package provides indentation _guide bars_ in Emacs, with optional tree-sitter enhancement:
