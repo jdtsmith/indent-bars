@@ -43,7 +43,11 @@ See the release [NEWS](NEWS.ORG).
 
 # Install/config
 
-`indent-bars` is soon to be on ELPA; install with Emacs' package facilities, and configure by calling `indent-bars-mode` in your desired mode hooks.
+`indent-bars` is on ELPA; simply install with Emacs' package facilities, and configure by calling `indent-bars-mode` in your desired mode hooks.
+
+## use-package
+
+Simple default config.
 
 ```elisp
 (use-package indent-bars
@@ -59,7 +63,9 @@ To clone with `use-package` and `straight`:
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 
-## With tree-sitter support
+## use-pacakge with tree-sitter support
+
+Configure `tree-sitter` and `ignore-blank-line` support for an example language.
 
 ```elisp
 (use-package indent-bars
