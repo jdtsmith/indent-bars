@@ -455,6 +455,10 @@ due to edits or contextual fontification."
     (advice-add #'jit-lock-context-fontify :around #'indent-bars-ts--context-fontify))
   (indent-bars-ts--fontify-buffer))
 
+(defun indent-bars-ts--disable ()
+  "Disable `indent-bars--ts-mode'."
+  (indent-bars--ts-mode -1))
+
 (defun indent-bars-ts--setup (lang)
   "Setup indent-bars treesitter support in this buffer for language LANG."
   (setq indent-bars-ts--parser
@@ -494,7 +498,7 @@ due to edits or contextual fontification."
     (setf (ibts/query ibtcs)
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
-    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown nil t))
+    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--disable nil t))
   
   (indent-bars-ts--finalize-jit-lock))
 
