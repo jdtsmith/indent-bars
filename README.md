@@ -12,8 +12,8 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 - Optimized for speed.
 - Optional tree-sitter support, including _scope focus_, among [other features](#tree-sitter-details).
 - Supports either space or tab-based indentation.
-- Bar appearance is _highly_ [configurable](https://github.com/jdtsmith/indent-bars/edit/main/README.md#customization): color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
-- Bars can have optional depth-based coloring, with a cyclical color palette you can [customize](https://github.com/jdtsmith/indent-bars/edit/main/README.md#customization).
+- Bar appearance is _highly_ [configurable](#customization): color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
+- Bars can have optional depth-based coloring, with a cyclical color palette you can [customize](#customization).
 - Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
 - Bars can appear on blank lines.
 - Bar depth can be held constant inside multi-line strings and lists.
