@@ -1592,7 +1592,7 @@ Adapted from `highlight-indentation-mode'."
 		       ,@(if indent-bars-display-on-blank-lines
 			     '((group (* (or ?\s ?\t ?\n)) ?\n))))))))
 
-(declare-function indent-bars-ts-mode "indent-bars-ts")
+(declare-function indent-bars--ts-mode "indent-bars-ts")
 (defun indent-bars-setup ()
   "Setup all face, color, bar size, and indentation info for the current buffer."
   ;; Spacing
@@ -1618,7 +1618,7 @@ Adapted from `highlight-indentation-mode'."
 	(or indent-bars-no-descend-string indent-bars-no-descend-lists))
 
   ;; Treesitter
-  (if indent-bars-treesit-support (indent-bars-ts-mode 1)) ; autoloads
+  (if indent-bars-treesit-support (indent-bars--ts-mode 1)) ; autoloads
 
   ;; Remap/Resize
   (unless indent-bars--no-stipple

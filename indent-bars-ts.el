@@ -379,7 +379,7 @@ separate track of regions where bars are pending, and where
 font-lock is pending."
   (put-text-property jit-lock-start jit-lock-end 'indent-bars-font-lock-pending t))
 
-(defvar indent-bars-ts-mode)
+(defvar indent-bars--ts-mode)
 (defun indent-bars-ts--context-fontify (fun)
   "Wrap FUN to keep track of context fontification.
 Added as `:around' advice to `jit-lock-context-unfontify-pos'.
@@ -388,16 +388,17 @@ invalidated text."
   (let (orig)
     (dolist (buffer (buffer-list))
       (with-current-buffer buffer
-	(when (and indent-bars-ts-mode jit-lock-context-unfontify-pos)
+	(when (and indent-bars--ts-mode jit-lock-context-unfontify-pos)
 	  (setf (alist-get buffer orig) jit-lock-context-unfontify-pos))))
     (funcall fun)
     (dolist (buffer (buffer-list))
       (with-current-buffer buffer
-	(when (and indent-bars-ts-mode jit-lock-context-unfontify-pos
+	(when (and indent-bars--ts-mode jit-lock-context-unfontify-pos
 		   (assq buffer orig)
 		   (> jit-lock-context-unfontify-pos (alist-get buffer orig)))
 	  (with-silent-modifications
-	    (put-text-property (alist-get buffer orig) jit-lock-context-unfontify-pos
+	    (put-text-property (alist-get buffer orig)
+			       jit-lock-context-unfontify-pos
 			       'indent-bars-font-lock-pending t)))))))
 
 (defun indent-bars-ts--font-lock-inhibit (beg end)
@@ -510,20 +511,20 @@ To be set in `indent-bars--teardown-functions'."
 	       #'indent-bars-ts--mark-change t))
 
 ;;;###autoload
-(define-minor-mode indent-bars-ts-mode
+(define-minor-mode indent-bars--ts-mode
   "Minor mode for indent-bars using treesitter."
   :group 'indent-bars-ts
-  (if indent-bars-ts-mode
+  (if indent-bars--ts-mode
       (if-let (((fboundp #'treesit-available-p))
 	       ((treesit-available-p))
 	       (lang (treesit-language-at (point-min))))
 	  (indent-bars-ts--setup lang)
-	(setq indent-bars-ts-mode nil))
+	(setq indent-bars--ts-mode nil))
     (indent-bars-ts--teardown)))
 
 (defun indent-bars-ts--custom-update-scope ()
   "Update the TS scope for custom setting."
-  (when indent-bars-ts-mode
+  (when indent-bars--ts-mode
     (indent-bars-ts--update-scope1 (current-buffer))))
 (add-hook 'indent-bars-custom-set #'indent-bars-ts--custom-update-scope)
 
