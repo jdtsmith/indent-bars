@@ -21,7 +21,7 @@ This package provides indentation _guide bars_ in Emacs, with optional tree-sitt
 
 ## What's New
 
-See the release [NEWS](NEWS.ORG).
+See the release [NEWS](NEWS.org).
 
 # FAQ's
 
