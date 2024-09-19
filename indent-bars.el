@@ -1370,7 +1370,7 @@ appropriate for that style."
     (let* ((rowbytes (/ (+ w 7) 8))
 	   (pattern (or pattern (indent-bars--style style "pattern")))
 	   (pat (if (< h (length pattern)) (substring pattern 0 h) pattern))
-	   (plen (length pat))
+	   (plen (max (length pat) 1))
 	   (chunk (/ (float h) plen))
 	   (small (floor chunk))
 	   (large (ceiling chunk))
