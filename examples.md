@@ -122,6 +122,7 @@ Showcasing `:blend`-only current coloring.
 Note: `indent-bars-prefer-character` need not be set unless you prefer to use character display in GUI as well.
 
 ## Quiet/Loud (with treesitter)
+<img width="598" alt="image" src="https://github.com/user-attachments/assets/dda0926b-16d6-4028-a8e9-5ee57d0677db">
 
 ```emacs-lisp
 	(setopt
