@@ -13,6 +13,7 @@
 
 ## Minimal:
 <img width="514" alt="ib_minimal" src="https://github.com/jdtsmith/indent-bars/assets/93749/e21da2d6-f6a4-4587-9640-d6a493111473">
+
 Narrow bars without much adornment.
 ``` emacs-lisp
    (setq
@@ -28,6 +29,7 @@ Narrow bars without much adornment.
 
 ## Zebra:
 <img width="514" alt="ib_zebra" src="https://github.com/jdtsmith/indent-bars/assets/93749/8cd209d2-c2ce-46e3-98a6-2e286f8ab8c5">
+
 Note alternating space and `.` in the pattern string.
 ```emacs-lisp
   (setq
@@ -42,6 +44,7 @@ Note alternating space and `.` in the pattern string.
 
 ## Simple:
 <img width="514" alt="ib_simple" src="https://github.com/jdtsmith/indent-bars/assets/93749/94094b4c-a088-4672-b57e-d88dbadb28cc">
+
 We keep all the defaults but turn off depth-based coloring and change the bar size a bit.  Current depth highlighting is achieved with a higher than default blend (making the bar "brighter"). 
 ```emacs-lisp
    (setq
@@ -54,7 +57,8 @@ We keep all the defaults but turn off depth-based coloring and change the bar si
 
 ## Zig-zag:
 <img width="514" alt="ib_zz" src="https://github.com/jdtsmith/indent-bars/assets/93749/841dc464-8cb3-4b29-bb3c-1f7d31101800">
-The zig-zag option move the bitmap pattern left and right for blocks of contiguous matching characters in the pattern string.  Note that you must leave room given pad-frac and width to see the entire pattern (but it's also fine not to for "interesting" zig-zags).
+
+The zig-zag option moves the bitmap pattern alternately left and right for blocks of contiguous matching characters in the pattern string.  Note that you must leave room given pad-frac and width to see the entire pattern (but it's also fine not to for "interesting" zig-zags).
 
 ```emacs-lisp
   (setq
@@ -67,6 +71,7 @@ The zig-zag option move the bitmap pattern left and right for blocks of contiguo
 ```
 ## Zig-zag Smooth:
 <img width="514" alt="zz_smooth" src="https://github.com/jdtsmith/indent-bars/assets/93749/645cb211-63cf-44c0-9e72-ff58f1ad5039">
+
 The length of the pattern string (and height of a character) determines how "thick" the pattern appears.
 ```emacs-lisp
 (setq
@@ -80,6 +85,7 @@ The length of the pattern string (and height of a character) determines how "thi
 
 ## Background zig-zag:
 <img width="514" alt="ib_bgzz" src="https://github.com/jdtsmith/indent-bars/assets/93749/01cb0624-5185-425c-96a1-19f1d632c07d">
+
 Current depth highlight is fully flexible and all style options are available.
 
 ```emacs-lisp
@@ -94,10 +100,9 @@ Current depth highlight is fully flexible and all style options are available.
 ```
 
 ## Minimal colorpop:
-Showcasing `:blend`-only current-depth coloring (no change in color, just make it more saturated).
-
 <img width="602" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/ef02e099-798c-4eb7-947a-6fe144a9104d">
 
+Showcasing `:blend`-only current-depth coloring (no change in color, just make it more saturated).
 ```emacs-lisp
 (setq
     indent-bars-color '(highlight :face-bg t :blend 0.15)
@@ -112,8 +117,8 @@ Showcasing `:blend`-only current-depth coloring (no change in color, just make i
 
 ## In terminal:
 <img width="505" alt="ib_term" src="https://github.com/jdtsmith/indent-bars/assets/93749/d2f51fa7-5993-4c34-93b2-effef32a469d">
-Note that terminal use implicitly implies `indent-bars-prefer-character`. 
 
+Note that terminal use implicitly implies `indent-bars-prefer-character`. 
 ```emacs-lisp
   (setq
    indent-bars-color '(highlight :face-bg t :blend 0.75)
@@ -126,8 +131,8 @@ Note: `indent-bars-prefer-character` need not be set unless you prefer to use ch
 
 ## Quiet/Loud (with treesitter)
 <img width="598" alt="image" src="https://github.com/user-attachments/assets/dda0926b-16d6-4028-a8e9-5ee57d0677db">
-Here we dial down the out-of-scope treesitter bars to be very muted, and then amp-up the default in-scope bars with a zig-zag pattern and saturated colors.
 
+Here we dial down the out-of-scope treesitter bars to be very muted, and then amp-up the default in-scope bars with a zig-zag pattern and saturated colors.
 ```emacs-lisp
 	(setopt
 		indent-bars-color '(highlight :face-bg t :blend 0.8)
