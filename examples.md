@@ -129,7 +129,7 @@ Note that terminal use implicitly implies `indent-bars-prefer-character`.
 
 Note: `indent-bars-prefer-character` need not be set unless you prefer to use character display in GUI as well.
 
-## Quiet/Loud (with treesitter)
+## Quiet/Loud (with treesitter scope-focus)
 <img width="598" alt="image" src="https://github.com/user-attachments/assets/dda0926b-16d6-4028-a8e9-5ee57d0677db">
 
 Here we dial down the out-of-scope treesitter bars to be very muted, and then amp-up the default in-scope bars with a zig-zag pattern and saturated colors.
