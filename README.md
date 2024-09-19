@@ -63,7 +63,7 @@ To clone with `use-package` and `straight`:
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
 
-## use-pacakge with tree-sitter support
+## use-package with tree-sitter support
 
 Configure `tree-sitter` and `ignore-blank-line` support for an example language.
 
