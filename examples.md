@@ -1,4 +1,5 @@
 # Example `indent-bars` color/layout possibilities
+
 ## Old Default:
 <img width="514" alt="ib_default" src="https://github.com/jdtsmith/indent-bars/assets/93749/4f652554-bede-4aa6-bdbc-233ec843d782">
 
@@ -119,3 +120,18 @@ Showcasing `:blend`-only current coloring.
 ```
 
 Note: `indent-bars-prefer-character` need not be set unless you prefer to use character display in GUI as well.
+
+## Quiet/Loud (with treesitter)
+
+```emacs-lisp
+	(setopt
+		indent-bars-color '(highlight :face-bg t :blend 0.8)
+		indent-bars-pattern "."
+		indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 0.5)
+		indent-bars-highlight-current-depth '(:blend 1.0 :width 0.4 :pad 0.1 :pattern "!.!.!." :zigzag 0.1)
+		indent-bars-pad-frac 0.3
+		indent-bars-ts-highlight-current-depth '(no-inherit) ; equivalent to nil
+		indent-bars-ts-color-by-depth '(no-inherit)
+		indent-bars-ts-color '(inherit fringe :face-bg t :blend 0.2))
+```
+
