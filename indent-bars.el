@@ -875,8 +875,9 @@ returned."
   "Reset all styles' colors and faces.
 Useful for calling after theme changes."
   (interactive)
-  (mapc #'indent-bars--initialize-style
-	indent-bars--styles))
+  (unless (equal (terminal-name) "initial_terminal")
+    (mapc #'indent-bars--initialize-style
+	  indent-bars--styles)))
 
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
