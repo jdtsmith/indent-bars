@@ -1646,6 +1646,9 @@ Adapted from `highlight-indentation-mode'."
   (dolist (s indent-bars--styles)
     (face-remap-remove-relative
      (alist-get (ibs/tag s) indent-bars--remaps)))
+  (when indent-bars--highlight-timer
+    (cancel-timer indent-bars--highlight-timer)
+    (setq indent-bars--highlight-timer nil))
 
   ;; Remove stipple remaps and window parameters
   (unless indent-bars--no-stipple
