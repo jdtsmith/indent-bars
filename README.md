@@ -65,7 +65,7 @@ To clone with `use-package` and `straight`:
 
 ## use-package with tree-sitter support
 
-Configure `tree-sitter` and `ignore-blank-line` support for an example language.
+Configures `tree-sitter` and `ignore-blank-line` support for an example language.
 
 ```elisp
 (use-package indent-bars
@@ -154,7 +154,7 @@ Configuration variables for bar position and line locations (including on blank 
 
 - `indent-bars-starting-column`: column to use for the first bar (default: one indent spacing).  Can be set in special modes which start at an unusual fixed offset, or set to 0 to get "column 0" bars (which are possibly superfluous given the left buffer edge).
 - `indent-bars-spacing-override`:  Normally the number of spaces for indentation is automatically discovered from the mode and other variables.  If that doesn't work for any reason, it can be explicitly overridden using this variable.
-- `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines.
+- `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines contiguous with lines already showing bars.
 - `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings. 
 - `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists. 
 

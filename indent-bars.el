@@ -398,7 +398,9 @@ non-nil.  Set to 0 for instant depth updates."
 
 ;;;;; Other
 (defcustom indent-bars-display-on-blank-lines t
-  "Whether to display bars on blank lines."
+  "Whether to display bars on blank lines.
+Bars are shown only on blank lines contiguously adjacent to lines
+already showing bars."
   :type 'boolean
   :set #'indent-bars--custom-set
   :group 'indent-bars)
