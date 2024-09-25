@@ -417,9 +417,16 @@ than the indent level of the string's starting line."
 (defcustom indent-bars-no-descend-lists t
   "Configure bar behavior inside lists.
 If non-nil, displayed bars will go no deeper than the indent
-level at the starting line of the innermost containing list."
+level at the starting line of the innermost containing list.  If
+t, any list recognized by the active syntax table will be used to
+identify enclosing list contexts.  If set to a list of
+characters, only opening characters on this list will activate
+bar suppression."
   :local t
-  :type 'boolean
+  :type '(choice
+	  (const :tag "Disabled" nil)
+	  (const :tag "Any list element" t)
+	  (repeat :tag "List of open paren chars" character))
   :set #'indent-bars--custom-set
   :group 'indent-bars)
 
@@ -962,7 +969,11 @@ and can return an updated depth."
       (let* ((p (prog1 (point) (forward-line 0)))
 	     (ppss (syntax-ppss)) 	; moves point!
 	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
-	     (sl (and indent-bars-no-descend-lists (nth 1 ppss))))
+	     (sl (when-let
+		     ((ndl indent-bars-no-descend-lists)
+		      (open (nth 1 ppss))
+		      ((or (not (consp ndl)) (memq (char-after open) ndl))))
+		   open)))
 	(when (setq ppss-ind (if (and ss sl) (max ss sl) (or ss sl)))
 	  (goto-char ppss-ind)
 	  (let* ((cnew (current-indentation))
