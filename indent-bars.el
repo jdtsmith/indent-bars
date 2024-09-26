@@ -714,14 +714,12 @@ DEPTH starts at 1."
   `((t . ( :inherit ,(ibs/stipple-face style)
 	   :foreground ,(indent-bars--get-color style depth)))))
 
-(defun indent-bars--create-faces (style num &optional redefine)
-  "Create bar faces up to depth NUM for STYLE.
-Redefine them if REDEFINE is non-nil."
+(defun indent-bars--create-faces (style num)
+  "Create bar faces up to depth NUM for STYLE."
   (vconcat
    (cl-loop
     for i from 1 to num
     for face = (indent-bars--tag "indent-bars%s-%d" style i) do
-    (if (and redefine (facep face)) (face-spec-reset-face face))
     (face-spec-set face (indent-bars--calculate-face-spec style i))
     collect face)))
 
@@ -885,8 +883,7 @@ returned."
 Useful for calling after theme changes."
   (interactive)
   (unless (equal (terminal-name) "initial_terminal")
-    (mapc #'indent-bars--initialize-style
-	  indent-bars--styles)))
+    (mapc #'indent-bars--initialize-style indent-bars--styles)))
 
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
@@ -897,7 +894,7 @@ Useful for calling after theme changes."
 	(indent-bars--depth-palette style)
 	(ibs/current-depth-palette style)
 	(indent-bars--current-depth-palette style)
-	(ibs/faces style) (indent-bars--create-faces style 7 'reset)
+	(ibs/faces style) (indent-bars--create-faces style 7)
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
 
   ;; Base stipple face
