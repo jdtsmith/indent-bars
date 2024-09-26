@@ -518,20 +518,20 @@ and used to sort the list numerically.  A list of the foreground
 color of the matching, sorted faces will be returned, unless
 FACE-BG is non-nil, in which case the background color is
 returned."
-  (mapcar (lambda (x) (funcall (if face-bg #'face-background #'face-foreground)
-			       (cdr x) nil 'default))
+  (mapcar (lambda (x)
+	    (funcall (if face-bg #'face-background #'face-foreground)
+		     (cdr x) nil 'default))
           (seq-sort-by #'car
-		       (lambda (a b) (cond
-				      ((not (numberp b)) t)
-				      ((not (numberp a)) nil)
-				      (t (< a b))))
-		       (mapcan
-			(lambda (x)
-			  (let ((n (symbol-name x)))
-			    (if (string-match regexp n)
-                                (list (cons (string-to-number (match-string 1 n))
-					    x)))))
-			(face-list)))))
+	   (lambda (a b) (cond
+			  ((not (numberp b)) t)
+			  ((not (numberp a)) nil)
+			  (t (< a b))))
+	   (mapcan
+	    (lambda (x)
+	      (let ((n (symbol-name x)))
+		(when (and (string-match regexp n) (match-string 1))
+                  (list (cons (string-to-number (match-string 1 n)) x)))))
+	    (face-list)))))
 
 (defun indent-bars--unpack-palette (palette)
   "Process a face or color-based PALETTE."
