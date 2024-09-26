@@ -4,6 +4,7 @@
 
 * Development
 
+- Allow configuring `indent-bars-no-descend-lists` with a list of list-open chars to consider (e.g. in c-modes, where {})
 - Ensure ~indent-bars--ts-mode~ is fully removed when indent-bars is disabled.
 - Protect against frame unavailability in daemon server mode.
 - Handle empty stipple ~:pattern~ strings.

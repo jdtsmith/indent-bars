@@ -420,8 +420,8 @@ If non-nil, displayed bars will go no deeper than the indent
 level at the starting line of the innermost containing list.  If
 t, any list recognized by the active syntax table will be used to
 identify enclosing list contexts.  If set to a list of
-characters, only opening characters on this list will activate
-bar suppression."
+characters, only list-opening characters on this list will
+activate bar suppression."
   :local t
   :type '(choice
 	  (const :tag "Disabled" nil)

@@ -122,7 +122,7 @@ Please [open an issue](../../issues) with any updates/corrections to this list. 
 
 See some [examples](examples.md) with relevant settings.
 
-The main customization variables are categorized below.  See the documentation of each variable for more details.
+The main customization variables are categorized below.  See the documentation of each variable for more details on the valid values.
 
 ## Bar colors
 
@@ -155,8 +155,8 @@ Configuration variables for bar position and line locations (including on blank 
 - `indent-bars-starting-column`: column to use for the first bar (default: one indent spacing).  Can be set in special modes which start at an unusual fixed offset, or set to 0 to get "column 0" bars (which are possibly superfluous given the left buffer edge).
 - `indent-bars-spacing-override`:  Normally the number of spaces for indentation is automatically discovered from the mode and other variables.  If that doesn't work for any reason, it can be explicitly overridden using this variable.
 - `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines contiguous with lines already showing bars.
-- `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings. 
-- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists. 
+- `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings.
+- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists.  Note that this can optionally be configured with a list of list-opening chars (e.g. `'(?\( ?\[)`?) to select only certain list context (useful for c-based modes, where `{}` braces are a list syntax).
 
 ## Character-based bars and terminal
 
