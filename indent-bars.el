@@ -61,6 +61,7 @@
 (require 'timer)
 (require 'outline)
 (require 'font-lock)
+(require 'jit-lock)
 (require 'face-remap)
 (require 'cus-edit)
 (require 'compat)
@@ -1673,8 +1674,9 @@ Adapted from `highlight-indentation-mode'."
   (with-silent-modifications
     (remove-text-properties (point-min) (point-max) '(indent-bars-display nil)))
 
-  (font-lock-flush)
-  (font-lock-ensure)
+  (jit-lock-refontify)
+  ;; (font-lock-flush)
+  ;; (font-lock-ensure)
 
   (setq indent-bars--current-depth 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
