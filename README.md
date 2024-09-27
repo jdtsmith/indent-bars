@@ -45,28 +45,19 @@ See the release [NEWS](NEWS.org).
 
 `indent-bars` is on ELPA; simply install with Emacs' package facilities, and configure by calling `indent-bars-mode` in your desired mode hooks.
 
-## use-package
+## Simple config
 
-Simple default config.
+Simple default config using `use-package`:
 
 ```elisp
 (use-package indent-bars
   :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
 ```
-## Straight
 
-To clone with `use-package` and `straight`:
-
-```elisp
-(use-package indent-bars
-  :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
-  :hook ((python-mode yaml-mode) . indent-bars-mode)) ; or whichever modes you prefer
-```
-
-## use-package with tree-sitter support
+## tree-sitter support
 
 > [!IMPORTANT]  
-> `treesitter` users: `indent-bars` needs your help!  If you have some good settings for treesitter "wrap" and "scope" for your favorite languages, please add them to the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config)!  If we get a large enough collection they may be included by default.
+> `treesitter` users: `indent-bars` needs your help!  If you have come up with good settings for treesitter "wrap" and "scope" for your favorite languages, please add them to the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config)!  If we get a large enough collection they may be included as defaults.
 
 Configures `tree-sitter` and `ignore-blank-line` support for an example language.
 
