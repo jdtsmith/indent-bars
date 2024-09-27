@@ -65,6 +65,9 @@ To clone with `use-package` and `straight`:
 
 ## use-package with tree-sitter support
 
+> [!IMPORTANT]  
+> `treesitter` users: `indent-bars` needs your help!  If you have some good settings for treesitter "wrap" and "scope" for your favorite languages, please add them to the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config)!  If we get a large enough collection they may be included by default.
+
 Configures `tree-sitter` and `ignore-blank-line` support for an example language.
 
 ```elisp
