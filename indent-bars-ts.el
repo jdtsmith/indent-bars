@@ -451,7 +451,7 @@ This sets up jit-lock and font-lock to record our special
 due to edits or contextual fontification."
   (unless (eq font-lock-fontify-buffer-function 'indent-bars-ts--fontify-buffer)
     (setq-local indent-bars-ts--orig-fontify-buffer font-lock-fontify-buffer-function))
-  (setq-local indent-bars--inhibit-font-lock #'indent-bars-ts--font-lock-inhibit
+  (setq-local indent-bars--font-lock-inhibit #'indent-bars-ts--font-lock-inhibit
 	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer)
   ;; We must mark the fontified=nil from after-change and contextual
   (add-hook 'jit-lock-after-change-extend-region-functions
