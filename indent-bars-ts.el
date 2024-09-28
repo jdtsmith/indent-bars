@@ -502,9 +502,7 @@ due to edits or contextual fontification."
      indent-bars--display-blank-lines-function #'indent-bars-ts--display-blank-lines)
     (setf (ibts/query ibtcs)
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
-    (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t)
-    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--disable nil t))
-  
+    (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t))
   (indent-bars-ts--finalize-jit-lock))
 
 (defun indent-bars-ts--teardown ()
@@ -513,8 +511,8 @@ To be set in `indent-bars--teardown-functions'."
   (when indent-bars-ts--scope-timer
     (cancel-timer indent-bars-ts--scope-timer)
     (setq indent-bars-ts--scope-timer nil))
-  (setq font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer
-	indent-bars--ts-mode nil)
+  (when indent-bars-ts--orig-fontify-buffer
+    (setq font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer))
   (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
   (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown t)
   (remove-hook 'jit-lock-after-change-extend-region-functions
@@ -524,13 +522,15 @@ To be set in `indent-bars--teardown-functions'."
 (define-minor-mode indent-bars--ts-mode
   "Minor mode for indent-bars using treesitter."
   :group 'indent-bars-ts
-  (if indent-bars--ts-mode
-      (if-let (((fboundp #'treesit-available-p))
-	       ((treesit-available-p))
-	       (lang (treesit-language-at (point-min))))
-	  (indent-bars-ts--setup lang)
-	(setq indent-bars--ts-mode nil))
-    (indent-bars-ts--teardown)))
+  (cond
+   (indent-bars--ts-mode
+    (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--disable nil t)
+    (if-let (((fboundp #'treesit-available-p))
+	     ((treesit-available-p))
+	     (lang (treesit-language-at (point-min))))
+	(indent-bars-ts--setup lang)
+      (setq indent-bars--ts-mode nil)))
+   (t (indent-bars-ts--teardown))))
 
 (defun indent-bars-ts--custom-update-scope ()
   "Update the TS scope for custom setting."
