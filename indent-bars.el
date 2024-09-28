@@ -530,7 +530,7 @@ returned."
 	   (mapcan
 	    (lambda (x)
 	      (let ((n (symbol-name x)))
-		(when (and (string-match regexp n) (match-string 1))
+		(when (and (string-match regexp n) (match-string 1 n))
                   (list (cons (string-to-number (match-string 1 n)) x)))))
 	    (face-list)))))
 
