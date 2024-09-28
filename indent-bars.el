@@ -1149,7 +1149,7 @@ not indicated, even if they otherwise would be."
     nil))
 
 ;;;; jit-lock support
-(defvar indent-bars--orig-fontify-region nil)
+(defvar-local indent-bars--orig-fontify-region nil)
 (defun indent-bars--extend-region (start end)
   "Extend the region START..END.
 If `indent-bars-display-on-blank-lines' is non-nil, this extends
