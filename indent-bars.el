@@ -1669,7 +1669,8 @@ Adapted from `highlight-indentation-mode'."
 	       indent-bars--stipple-remaps)
       (setq indent-bars--stipple-remaps nil)))
 
-  (when indent-bars--orig-fontify-region
+  (when (and indent-bars--orig-fontify-region
+	     (eq font-lock-fontify-region-function #'indent-bars--fontify))
     (setq font-lock-fontify-region-function indent-bars--orig-fontify-region))
   (with-silent-modifications
     (remove-text-properties (point-min) (point-max) '(indent-bars-display nil)))
