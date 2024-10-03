@@ -1245,7 +1245,10 @@ all styles in the `indent-bars--styles' list.  DEPTH should be
 greater than zero."
   (setq indent-bars--highlight-timer nil)
   (dolist (s indent-bars--styles)
-    (let* ((face (indent-bars--face s depth))
+    (if (zerop depth)
+       (when-let ((c (alist-get (ibs/tag s) indent-bars--remaps)))
+         (face-remap-remove-relative c))
+      (let* ((face (indent-bars--face s depth))
 	   (hl-col (and (ibs/current-depth-palette s)
 			(indent-bars--get-color s depth 'highlight)))
 	   (hl-bg (ibs/current-bg-color s)))
@@ -1257,7 +1260,7 @@ greater than zero."
 	       face
 	       `(,@(when hl-col `(:foreground ,hl-col))
 		 ,@(when hl-bg `(:background ,hl-bg)))
-	       (ibs/current-stipple-face s)))))))
+	       (ibs/current-stipple-face s))))))))
 
 (defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
   "Highlight bar at DEPTH in buffer BUF."
@@ -1273,7 +1276,7 @@ non-nil, update depth even if it has not changed."
     (let* ((depth (indent-bars--current-indentation-depth
 		   indent-bars-highlight-selection-method)))
       (when (and depth (or force (not (= depth indent-bars--current-depth)))
-		 (> depth 0))
+		 (>= depth 0))
 	(setq indent-bars--current-depth depth)
 	(if (zerop indent-bars-depth-update-delay)
 	    (indent-bars--update-current-depth-highlight depth)
