@@ -1529,7 +1529,7 @@ Adapted from `highlight-indentation-mode'."
     gpr-ts-mode-indent-offset)
    ((and (derived-mode-p 'python-mode) (boundp 'py-indent-offset))
     py-indent-offset)
-   ((and (derived-mode-p 'python-mode) (boundp 'python-indent-offset))
+   ((and (derived-mode-p 'python-mode 'python-base-mode) (boundp 'python-indent-offset))
     python-indent-offset)
    ((and (derived-mode-p 'ruby-mode) (boundp 'ruby-indent-level))
     ruby-indent-level)
