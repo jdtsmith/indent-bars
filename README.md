@@ -39,7 +39,7 @@ See the release [NEWS](NEWS.org).
 - **How can I change the style of the out-of-scope bars?** <br>Using an [alternate set](#tree-sitter-alternate-styling-variables) of `ts-` customizations.
 - **What if I want out-of-scope text to have the default style, and in-scope text to be special?** <br>You want to set `indent-bars-ts-styling-scope` to `'in-scope`. 
 - **My treesitter scope makes no sense!** <br>A common mistake is adding too many node types for your language to the `indent-bars-treesit-scope` variable.  Start small, with thing you _know_ you want (function, method, class, etc.).
-
+- **indent-bars seems to be conflicting with another package I use.** <br>See [these workarounds](#compatibility-with-other-packages).
 
 # Install/config
 
@@ -263,6 +263,28 @@ You can assign a single (usually top-level) node type to ignore when drawing bar
 The easiest way to discover node types of interest (in a buffer with working treesit support) is to `M-x treesit-explore-mode`. Then simply highlight the beginning of a line of interest, and look in the `treesitter explorer` buffer which pops up for the names of obvious nodes in the tree.  Add these types to `indent-bars-treesit-scope/wrap` for the language of interest, then `M-x indent-bars-reset` and see how you did (this will happen automatically if you make the change in the Customize interface).
 
 Please document good tree-sitter settings for other languages in the [Wiki](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
+
+## Compatibility with other Packages
+
+`indent-bars` in general has good compatibility with other packages.  But sometimes conflicts do occur.
+
+### Unwanted `:stipple` appearance on popups/overlays/etc.
+
+`indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. #67, #73).
+
+If you encounter unwanted bar patterns on text added to your buffer by other packages, like [this](https://private-user-images.githubusercontent.com/3067229/371619796-898f9c20-64ef-451b-b008-2ccf3ffb804b.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Mjc5NTk3MTEsIm5iZiI6MTcyNzk1OTQxMSwicGF0aCI6Ii8zMDY3MjI5LzM3MTYxOTc5Ni04OThmOWMyMC02NGVmLTQ1MWItYjAwOC0yY2NmM2ZmYjgwNGIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MTAwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDEwMDNUMTI0MzMxWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9Yzg4NDVhODUwZWZkMjVmNDJjOGM3NzUxMGZlNzY1NDIwNDVlZGIwZjAwODIzYmY2NGI0MWQ2NjgxNDEzMWI2MCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.CJFevM2OlZtyl7cQx0gUPTMkdCODkR7czC-FGpTtpmk), contact the package maintainer to let them know they should also clear the `:stipple` face attribute. 
+
+Sometimes this can be worked around yourself by explicitly setting stipple to nil in appropriate faces, like:
+
+```elisp
+(set-face-attribute face nil :stipple nil)
+```
+
+for some relevant `face` (e.g. one from which the package's faces inherit).  This should be done both when loading `indent-bars-mode` and in the `after-enable-theme-hook`. 
+
+### `font-lock` contention
+
+`indent-bars` overrides and wraps the `font-lock-fontify-region-function` (and, when using treesitter, `font-lock-fontify-buffer-function`).  Other packages which advise or wrap the functions pointed to by these variables may lead to odd behavior on disabling/re-enabling `indent-bars` and/or their associated modes.  There is no generic solution to this issue, but the strong recommendation is to enable `indent-bars` _last_, after any other package which overrides `font-lock` in this way have been loaded.
 
 ## Moving by columns
 
