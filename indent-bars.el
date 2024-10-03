@@ -1671,7 +1671,8 @@ Adapted from `highlight-indentation-mode'."
 
   (when (and indent-bars--orig-fontify-region
 	     (eq font-lock-fontify-region-function #'indent-bars--fontify))
-    (setq font-lock-fontify-region-function indent-bars--orig-fontify-region))
+    (setq font-lock-fontify-region-function indent-bars--orig-fontify-region
+	  indent-bars--orig-fontify-region nil))
   (with-silent-modifications
     (remove-text-properties (point-min) (point-max) '(indent-bars-display nil)))
 
