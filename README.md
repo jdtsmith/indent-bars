@@ -270,11 +270,9 @@ Please document good tree-sitter settings for other languages in the [Wiki](http
 
 ### Unwanted `:stipple` appearance on popups/overlays/etc.
 
-`indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. #67, #73).
+`indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. [this](../../issues/67), or [this](../../issues/73)).  If you encounter unwanted bar patterns on text added to your buffer by other packages as seen in these issues, contact the other package maintainer to let them know they should also clear the `:stipple` face attribute. 
 
-If you encounter unwanted bar patterns on text added to your buffer by other packages, like [this](https://private-user-images.githubusercontent.com/3067229/371619796-898f9c20-64ef-451b-b008-2ccf3ffb804b.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Mjc5NTk3MTEsIm5iZiI6MTcyNzk1OTQxMSwicGF0aCI6Ii8zMDY3MjI5LzM3MTYxOTc5Ni04OThmOWMyMC02NGVmLTQ1MWItYjAwOC0yY2NmM2ZmYjgwNGIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MTAwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDEwMDNUMTI0MzMxWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9Yzg4NDVhODUwZWZkMjVmNDJjOGM3NzUxMGZlNzY1NDIwNDVlZGIwZjAwODIzYmY2NGI0MWQ2NjgxNDEzMWI2MCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.CJFevM2OlZtyl7cQx0gUPTMkdCODkR7czC-FGpTtpmk), contact the package maintainer to let them know they should also clear the `:stipple` face attribute. 
-
-Sometimes this can be worked around yourself by explicitly setting stipple to nil in appropriate faces, like:
+Sometimes this can be worked around yourself by explicitly setting stipple to `nil` in appropriate faces, like:
 
 ```elisp
 (set-face-attribute face nil :stipple nil)
