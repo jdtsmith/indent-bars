@@ -534,7 +534,7 @@ To be set in `indent-bars--teardown-functions'."
 
 (defun indent-bars-ts--custom-update-scope ()
   "Update the TS scope for custom setting."
-  (when indent-bars--ts-mode
+  (when (and indent-bars--ts-mode ibtcs)
     (indent-bars-ts--update-scope1 (current-buffer))))
 (add-hook 'indent-bars-custom-set #'indent-bars-ts--custom-update-scope)
 
