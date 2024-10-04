@@ -969,24 +969,24 @@ and can return an updated depth."
 	 (d (indent-bars--depth c)) 	;last visible bar
 	 ppss-ind)
     (when indent-bars--ppss
-      (let* ((p (prog1 (point) (forward-line 0)))
-	     (ppss (syntax-ppss)) 	; moves point!
-	     (string-start (and indent-bars-no-descend-string (nth 8 ppss)))
-	     (list-start (when-let
-			     ((ndl indent-bars-no-descend-lists)
-			      (open (nth 1 ppss))
-			      ((or (not (consp ndl)) (memq (char-after open) ndl))))
-			   open)))
-	(if (and string-start (eq indent-bars-no-descend-string 'all))
-	    (setq d 0 c 0) 		; always inhibit inside multiline strings
-	  (when (setq ppss-ind (if (and string-start list-start)
-				   (max string-start list-start)
-				 (or string-start list-start)))
-	    (goto-char ppss-ind)
-	    (let* ((cnew (current-indentation))
-		   (dnew (1+ (indent-bars--depth cnew))))
-	      (when (< dnew d) (setq d dnew c cnew)))
-	    (goto-char p)))))
+      (save-excursion
+	(forward-line 0)
+	(let* ((ppss (syntax-ppss))	; moves point!
+	       (string-start (and indent-bars-no-descend-string (nth 8 ppss)))
+	       (list-start (when-let
+			       ((ndl indent-bars-no-descend-lists)
+				(open (nth 1 ppss))
+				((or (not (consp ndl)) (memq (char-after open) ndl))))
+			     open)))
+	  (if (and string-start (eq indent-bars-no-descend-string 'all))
+	      (setq d 0 c 0) ; always inhibit inside multiline strings
+	    (when (setq ppss-ind (if (and string-start list-start)
+				     (max string-start list-start)
+				   (or string-start list-start)))
+	      (goto-char ppss-ind)
+	      (let* ((cnew (current-indentation))
+		     (dnew (1+ (indent-bars--depth cnew))))
+		(when (< dnew d) (setq d dnew c cnew))))))))
     (when (and indent-bars--update-depth-function (not ppss-ind))
       (setq d (funcall indent-bars--update-depth-function d)))
     (when (and (eq on-bar 'context)
