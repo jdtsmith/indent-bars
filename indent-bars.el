@@ -409,9 +409,13 @@ already showing bars."
 (defcustom indent-bars-no-descend-string t
   "Configure bar behavior inside strings.
 If non-nil, displayed bars inside the string will go no deeper
-than the indent level of the string's starting line."
+than the one more than the indent level of the string's starting
+line.  If the symbol `all', no bars will be included inside
+multiline strings at all."
   :local t
-  :type 'boolean
+  :type '(choice (const :tag "All normal bars appear inside strings" nil)
+		 (const :tag "Only one bar deeper than string start appears" t)
+		 (const :tag "No bars in multi-line strings" all))
   :set #'indent-bars--custom-set
   :group 'indent-bars)
 
@@ -954,8 +958,9 @@ that line instead.
 
 If `indent-bars-no-descend-string' is non-nil and point at line
 beginning is inside a string, do not add bars deeper than one
-more than the string's start.  If `indent-bars-no-descend-lists'
-is non-nil, perform the same check for lists.
+more than the string's start.  If it is `all', do not add any
+bars at all.  If `indent-bars-no-descend-lists' is non-nil,
+perform the same check for lists.
 
 If `indent-bars--update-depth-function' is non-nil, it will be
 called with the indentation depth (prior to the ON-BAR check),
@@ -966,18 +971,22 @@ and can return an updated depth."
     (when indent-bars--ppss
       (let* ((p (prog1 (point) (forward-line 0)))
 	     (ppss (syntax-ppss)) 	; moves point!
-	     (ss (and indent-bars-no-descend-string (nth 8 ppss)))
-	     (sl (when-let
-		     ((ndl indent-bars-no-descend-lists)
-		      (open (nth 1 ppss))
-		      ((or (not (consp ndl)) (memq (char-after open) ndl))))
-		   open)))
-	(when (setq ppss-ind (if (and ss sl) (max ss sl) (or ss sl)))
-	  (goto-char ppss-ind)
-	  (let* ((cnew (current-indentation))
-		 (dnew (1+ (indent-bars--depth cnew))))
-	    (when (< dnew d) (setq d dnew c cnew))))
-	(goto-char p)))
+	     (string-start (and indent-bars-no-descend-string (nth 8 ppss)))
+	     (list-start (when-let
+			     ((ndl indent-bars-no-descend-lists)
+			      (open (nth 1 ppss))
+			      ((or (not (consp ndl)) (memq (char-after open) ndl))))
+			   open)))
+	(if (and string-start (eq indent-bars-no-descend-string 'all))
+	    (setq d 0 c 0) 		; always inhibit inside multiline strings
+	  (when (setq ppss-ind (if (and string-start list-start)
+				   (max string-start list-start)
+				 (or string-start list-start)))
+	    (goto-char ppss-ind)
+	    (let* ((cnew (current-indentation))
+		   (dnew (1+ (indent-bars--depth cnew))))
+	      (when (< dnew d) (setq d dnew c cnew)))
+	    (goto-char p)))))
     (when (and indent-bars--update-depth-function (not ppss-ind))
       (setq d (funcall indent-bars--update-depth-function d)))
     (when (and (eq on-bar 'context)
