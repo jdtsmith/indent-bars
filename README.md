@@ -268,17 +268,19 @@ Please document good tree-sitter settings for other languages in the [Wiki](http
 
 `indent-bars` in general has good compatibility with other packages.  But sometimes conflicts do occur.
 
-### Unwanted `:stipple` appearance on popups/overlays/etc.
+### Unwanted `:stipple` inheritance on popups/overlays/etc.
 
-`indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. [this](../../issues/67), or [this](../../issues/73)).  If you encounter unwanted bar patterns on text added to your buffer by other packages as seen in these issues, contact the other package maintainer to let them know they should also clear the `:stipple` face attribute. 
+`indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. [this](../../issues/67), or [this](../../issues/73)).  This becomes more likely if you set `indent-bars-starting-column=0` (since often overlays are placed at the line beginning).
 
-Sometimes this can be worked around yourself by explicitly setting stipple to `nil` in appropriate faces, like:
+If you encounter unwanted bar patterns on text added to your buffer by other packages as seen in these issues, contact the package's maintainer to let them know they should also clear the `:stipple` face attribute.  You can also try restoring ``indent-bars-starting-column` to the default, if you've changed it.
+
+Sometimes unwanted stipples can be worked around yourself by explicitly setting `:stipple` to `nil` in appropriate faces, like:
 
 ```elisp
 (set-face-attribute face nil :stipple nil)
 ```
 
-for some relevant `face` (e.g. one from which the package's faces inherit).  This should be done both when loading `indent-bars-mode` and in the `after-enable-theme-hook`. 
+for some relevant `face` (e.g. one from which the package's faces used for overlay/popup inherit).  This should be done both when loading `indent-bars-mode` and in the `after-enable-theme-hook`. 
 
 ### `font-lock` contention
 
