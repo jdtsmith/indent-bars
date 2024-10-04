@@ -419,7 +419,7 @@ multiline strings at all."
   :set #'indent-bars--custom-set
   :group 'indent-bars)
 
-(defcustom indent-bars-no-descend-lists t
+(defcustom indent-bars-no-descend-lists nil
   "Configure bar behavior inside lists.
 If non-nil, displayed bars will go no deeper than the indent
 level at the starting line of the innermost containing list.  If

@@ -4,6 +4,7 @@
 
 * Development
 
+- Make ~indent-bars-no-descend-lists=nil~ by default (to avoid confusion in C-like languages).
 - Allow ~indent-bars-no-descend-string=all~ to inhibit all bars inside multi-line strings.
 - [BUGFIX] Use correct offset guess when derived from ~python-base-mode~.
 - Be more careful when replacing/restoring ~font-lock-fontify-region-function~. 
