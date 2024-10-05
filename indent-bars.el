@@ -105,7 +105,8 @@ Applies to stipple-based bars only."
 		:match (lambda (_ val) (and val (<= val 1) (>= val 0)))
 		:type-error "Fraction must be between 0 and 1")
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 (defcustom indent-bars-pad-frac 0.1
   "The offset of the bar from the left edge of the character.
@@ -115,7 +116,8 @@ A float, the fraction of the character width.  Applies to
 		:match (lambda (_ val) (and val (<= val 1) (>= val 0)))
 		:type-error "Fraction must be between 0 and 1")
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 (defcustom indent-bars-pattern " . . ."
   "A pattern specifying the vertical structure of indent bars.
@@ -128,7 +130,8 @@ the same (e.g., see `indent-bars-zigzag').  Applies to
 stipple-based bars only."
   :type '(string :tag "Fill Pattern")
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 (defcustom indent-bars-zigzag nil
   "The zigzag to apply to the bar pattern.
@@ -165,7 +168,8 @@ side of the bar; see `indent-bars-pad-frac' and
 			:match (lambda (_ val) (and val (<= val 1) (>= val -1)))
 			:type-error "Fraction must be between -1 and 1"))
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 ;;;;; Bar Colors
 (defcustom indent-bars-color
@@ -216,7 +220,8 @@ where:
 			  :match (lambda (_ val) (and val (<= val 1) (>= val 0)))
 			  :type-error "Factor must be between 0 and 1")))))
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 (defcustom indent-bars-color-by-depth
   '(:regexp "outline-\\([0-9]+\\)" :blend 1)
@@ -294,7 +299,8 @@ indentation level, if configured; see
 				 :type-error
 				 "Factor must be between 0 and 1")))))
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 ;;;;; Depth Highlighting
 (defcustom indent-bars-highlight-current-depth
@@ -374,7 +380,8 @@ non-nil, any stipple appearance parameters will be ignored."
 		  (:pattern (string :tag "Fill Pattern"))
 		  (:zigzag (float :tag "Zig-Zag")))))
   :group 'indent-bars-style
-  :set #'indent-bars--custom-set)
+  :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default)
 
 (defcustom indent-bars-highlight-selection-method 'context
   "Method for selecting bar depth for current indentation highlight.
@@ -404,6 +411,7 @@ Bars are shown only on blank lines contiguously adjacent to lines
 already showing bars."
   :type 'boolean
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-no-descend-string t
@@ -417,6 +425,7 @@ multiline strings at all."
 		 (const :tag "Only one bar deeper than string start appears" t)
 		 (const :tag "No bars in multi-line strings" all))
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-no-descend-lists nil
@@ -433,6 +442,7 @@ activate bar suppression."
 	  (const :tag "Any list element" t)
 	  (repeat :tag "List of open paren chars" character))
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-prefer-character nil
@@ -442,12 +452,14 @@ specifies using character bars exclusively.  See
 `indent-bars-no-stipple-char'."
   :type 'boolean
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-no-stipple-char ?\│
   "Character to display when stipple is unavailable (as in the terminal)."
   :type 'character
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-no-stipple-char-font-weight nil
@@ -458,6 +470,7 @@ If non-nil, set the no-stipple character font weight accordingly."
           ,@(mapcar (lambda (item) (list 'const (aref item 1)))
                     font-weight-table))
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-unspecified-bg-color "black"
@@ -467,12 +480,14 @@ background color specified.  This setting controls the background
 color to use for color blending in that case."
   :type 'color
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-unspecified-fg-color "white"
   "Color to use as the default foreground color if unspecified."
   :type 'color
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-starting-column nil
@@ -482,6 +497,7 @@ indent level) or an integer value for some other column."
   :type '(choice (const :tag "Default: 1st indent position" nil)
 		 (integer :tag "Specified column"))
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-spacing-override nil
@@ -491,12 +507,14 @@ buffer-local automatically."
   :local t
   :type '(choice integer (const :tag "Discover automatically" :value nil))
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 (defcustom indent-bars-treesit-support nil
   "Whether to enable tree-sitter support (if available)."
   :type 'boolean
   :set #'indent-bars--custom-set
+  :initialize #'custom-initialize-default
   :group 'indent-bars)
 
 ;;;;; Color Utilities
@@ -815,6 +833,7 @@ Additional `defcustom` keyword arguments can be given as R."
        :type ',type
        :link '(variable-link ,sym)
        :set #'indent-bars--custom-set
+       :initialize #'custom-initialize-default
        :group ',group
        ,@r)))
 
