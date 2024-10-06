@@ -408,8 +408,12 @@ non-nil.  Set to 0 for instant depth updates."
 (defcustom indent-bars-display-on-blank-lines t
   "Whether to display bars on blank lines.
 Bars are shown only on blank lines contiguously adjacent to lines
-already showing bars."
-  :type 'boolean
+already showing bars, by default the deepest adjacent non-blank
+line, or, if set to `least' the least deep such line."
+  :type '(choice
+	  (const :tag "Disabled" nil)
+	  (const :tag "Deepest adjacent" t)
+	  (const :tag "Least deep adjacent" least))
   :set #'indent-bars--custom-set
   :initialize #'custom-initialize-default
   :group 'indent-bars)
@@ -1129,13 +1133,15 @@ needed."
 		    switch-after style2)
 		   "\n")))))))
 
-(defsubst indent-bars--context-bars (end)
+(defsubst indent-bars--context-bars (end &optional min)
   "Maximum number of bars at point and END.
+If MIN is non-nil, return the minimum number of bars instead.
 Moves point."
-  (max (indent-bars--current-indentation-depth)
-       (progn
-	 (goto-char (1+ end))		; end is always eol
-	 (indent-bars--current-indentation-depth))))
+  (funcall (if min #'min #'max)
+	   (indent-bars--current-indentation-depth)
+	   (progn
+	     (goto-char (1+ end))	; end is always eol
+	     (indent-bars--current-indentation-depth))))
 
 (defun indent-bars--display (beg end &optional style switch-after style2)
   "Draw indentation bars from BEG..END, based on line contents.
@@ -1153,19 +1159,24 @@ passed, uses `indent-bars-style' for drawing."
 Only called if `indent-bars-display-on-blank-lines' is non-nil.
 To be called on complete multi-line blank line regions.
 
-It is ambigious how many bars to draw on each line in a stretch
-of blank lines, so this uses the maximum depth of the surrounding
-line indentation, above and below.  Drawing using
-`indent-bars--draw-line'.  STYLE, SWITCH-AFTER and STYLE2 are as
-in `indent-bars--draw-line'.
+It is ambigious how many bars to draw on blank lines, so this
+uses the maximum depth of the surrounding line indentation, above
+and below, unless `indent-bars-display-on-blank-lines' is set to
+`least', in which case the minimum bar depth of such lines is
+used instead.
+
+Drawing uses `indent-bars--draw-line'.  STYLE, SWITCH-AFTER and
+STYLE2 are as in `indent-bars--draw-line'.
 
 Note: blank lines at the very beginning or end of the buffer are
 not indicated, even if they otherwise would be."
-  (let ((pm (point-max)) ctxbars)
+  (let ((pm (point-max))
+	(lst (eq indent-bars-display-on-blank-lines 'least))
+	ctxbars)
     (save-excursion
       (goto-char (1- beg))
       (beginning-of-line 1)
-      (when (> (setq ctxbars (indent-bars--context-bars end)) 0)
+      (when (> (setq ctxbars (indent-bars--context-bars end lst)) 0)
 	(goto-char beg)
 	(while (< (point) end) ;note: end extends 1 char beyond blank line range
 	  (let* ((bp (line-beginning-position))
