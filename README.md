@@ -41,6 +41,7 @@ See the release [NEWS](NEWS.org).
 - **My treesitter scope makes no sense!** <br>A common mistake is adding too many node types for your language to the `indent-bars-treesit-scope` variable.  Start small, with thing you _know_ you want (function, method, class, etc.).
 - **indent-bars seems to be conflicting with another package I use.** <br>See [these workarounds](#compatibility-with-other-packages).
 - **In my brace language (C, JS, etc.) I sometimes get fewer bars than I expected!** <br>Your mode syntax likely interprets `{`/`}` as list context, and you have `indent-bars-no-descend-lists=t`.  Either disable this feature, or see [this config](#bar-setup-and-location) for another option.
+- **In my paren language (Elisp, Scheme, etc.) the bars disappear on some lines!** You probably need to disable `indent-bars-no-descend-lists` there: most lines of these languages are inside "continuing lists", so it makes little sense to inhibit bars there.  
 
 # Install/config
 
