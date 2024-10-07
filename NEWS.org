@@ -4,9 +4,10 @@
 
 * Development
 
+- [BUGFIX] Guard against custom-set errors when treesitter is enabled, but no scope stanza is present for the buffer's language.
 - Allow ~indent-bars-display-on-blank-lines=least~ to use the minimum bar depth of adjacent non-blank lines for blank line display.
-- Make ~indent-bars-no-descend-lists=nil~ by default (to avoid confusion in C-like languages).
-- Allow ~indent-bars-no-descend-string=all~ to inhibit all bars inside multi-line strings.
+- Make ~indent-bars-no-descend-lists=nil~ by default (to avoid confusion in brace and paren languages).
+- Allow ~indent-bars-no-descend-string=all~ to inhibit /all/ bars inside multi-line strings.
 - [BUGFIX] Use correct offset guess when derived from ~python-base-mode~.
 - Be more careful when replacing/restoring ~font-lock-fontify-region-function~. 
 - Ensure ~indent-bars--ts-mode~ is fully disabled when ~indent-bars~ is disabled.
