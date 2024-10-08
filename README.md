@@ -236,6 +236,19 @@ means to configure the color of alternate style bars as follows:
 
 The easiest way to configure inheritance and unspecified values in the `ts` variables is via the customize interface; see the customize group `indent-bars-ts-style`. 
 
+## Per-mode customization
+
+Sometimes different `indent-bars` settings are appropriate for different modes.  In that case, you can use `setq-local` to set the appropriate variables in the mode's hook, prior to enabling `indent-bars`:
+
+```elisp
+(add-hook 'emacs-lisp-mode-hook
+	  (lambda ()
+	    (setq-local 
+			indent-tabs-mode t ; make sure tabs-based indenting is on
+			indent-bars-no-descend-lists nil) ; elisp is mostly continued lists!
+	    (indent-bars-mode 1)))
+```
+
 # Details and Caveats
 
 ## Indentation
