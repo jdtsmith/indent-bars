@@ -4,8 +4,8 @@
 
 * Development
 
-- [BUGFIX] Guard against custom-set errors when treesitter is enabled, but no scope stanza is present for the buffer's language.
-- Allow ~indent-bars-display-on-blank-lines=least~ to use the minimum bar depth of adjacent non-blank lines for blank line display.
+- New configuration setting ~indent-bars-display-on-blank-lines=least~ which specifies using the /minimum/ bar depth of adjacent non-blank lines for blank line bar display (by default, when enabled, the /maximum/ is used).
+- [BUGFIX] Guard against custom-set errors when tree-sitter is enabled, but no scope stanza is present for the buffer's language.
 - Make ~indent-bars-no-descend-lists=nil~ by default (to avoid confusion in brace and paren languages).
 - Allow ~indent-bars-no-descend-string=all~ to inhibit /all/ bars inside multi-line strings.
 - [BUGFIX] Use correct offset guess when derived from ~python-base-mode~.
