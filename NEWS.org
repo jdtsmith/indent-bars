@@ -2,7 +2,7 @@
 #+author: J.D. Smith
 #+language: en
 
-* Development
+* v0.8 (2024-10-09)
 
 - New configuration setting ~indent-bars-display-on-blank-lines=least~ which specifies using the /minimum/ bar depth of adjacent non-blank lines for blank line bar display (by default, when enabled, the /maximum/ is used).
 - [BUGFIX] Guard against custom-set errors when tree-sitter is enabled, but no scope stanza is present for the buffer's language.
