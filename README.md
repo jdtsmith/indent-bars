@@ -238,16 +238,18 @@ The easiest way to configure inheritance and unspecified values in the `ts` vari
 
 ## Per-mode customization
 
-Sometimes different `indent-bars` settings are appropriate for different modes.  In that case, you can use `setq-local` to set the appropriate variables in the mode's hook, prior to enabling `indent-bars`:
+Sometimes different `indent-bars` settings are appropriate for different modes.  In that case, you can use `setq-local` to set the appropriate cutomize variables locally, directly in the mode's hook, prior to enabling `indent-bars`:
 
 ```elisp
 (add-hook 'emacs-lisp-mode-hook
 	  (lambda ()
 	    (setq-local 
-			indent-tabs-mode t ; make sure tabs-based indenting is on
-			indent-bars-no-descend-lists nil) ; elisp is mostly continued lists!
+			indent-tabs-mode t ; make sure tabs-based indenting is on, even if we disable globally
+			indent-bars-no-descend-lists nil) ; elisp is mostly continued lists!  allow bars to descend inside
 	    (indent-bars-mode 1)))
 ```
+
+Note that tree-sitter scope and wrap config are keyed to the parser _language_, which may be sufficient for tailoring these.
 
 # Details and Caveats
 
