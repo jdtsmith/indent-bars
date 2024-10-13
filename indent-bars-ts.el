@@ -422,7 +422,8 @@ property is removed if found."
 	(put-text-property pending end 'indent-bars-font-lock-pending nil)))
     (not pending)))
 
-(defvar indent-bars-ts--orig-fontify-buffer nil)
+(defvar-local indent-bars-ts--orig-fontify-buffer nil)
+(defvar-local indent-bars-ts--orig-font-lock-flush nil)
 (defun indent-bars-ts--fontify-buffer (&rest r)
   "Fontify the buffer after setting the pending property.
 `indent-bars-ts--orig-fontify-buffer' is called with arguments R."
@@ -432,6 +433,13 @@ property is removed if found."
       (put-text-property (point-min) (point-max) 'indent-bars-font-lock-pending t))
     (apply indent-bars-ts--orig-fontify-buffer r)))
 
+(defun indent-bars-ts--flush (beg end &rest r)
+  "Flush font lock and set pending property between BEG and END.
+To be used as a `font-lock-flush-function'.  R are any extra
+arguments."
+  (with-silent-modifications
+    (put-text-property beg end 'indent-bars-font-lock-pending t))
+  (apply indent-bars-ts--orig-font-lock-flush beg end r))
 
 ;;;; Setup
 (defun indent-bars-ts--init-scope (&optional force)
@@ -455,9 +463,11 @@ This sets up jit-lock and font-lock to record our special
 `indent-bars-font-lock-pending' property on text it is updating
 due to edits or contextual fontification."
   (unless (eq font-lock-fontify-buffer-function 'indent-bars-ts--fontify-buffer)
-    (setq-local indent-bars-ts--orig-fontify-buffer font-lock-fontify-buffer-function))
+    (setq-local indent-bars-ts--orig-fontify-buffer font-lock-fontify-buffer-function
+		indent-bars-ts--orig-font-lock-flush font-lock-flush-function))
   (setq-local indent-bars--font-lock-inhibit #'indent-bars-ts--font-lock-inhibit
-	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer)
+	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer
+	      font-lock-flush-function #'indent-bars-ts--flush)
   ;; We must mark the fontified=nil from after-change and contextual
   (add-hook 'jit-lock-after-change-extend-region-functions
 	    #'indent-bars-ts--mark-change 96 t)
@@ -519,8 +529,8 @@ To be set in `indent-bars--teardown-functions'."
   (when (and indent-bars-ts--orig-fontify-buffer
 	     (not (eq indent-bars-ts--orig-fontify-buffer
 		      #'indent-bars-ts--fontify-buffer)))
-    (setq-local font-lock-fontify-buffer-function
-		indent-bars-ts--orig-fontify-buffer))
+    (setq-local font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer
+		font-lock-flush-function indent-bars-ts--orig-font-lock-flush))
   (setq-local indent-bars--font-lock-inhibit nil)
   (kill-local-variable 'indent-bars--display-function)
   (kill-local-variable 'indent-bars--display-blank-lines-function)
