@@ -519,7 +519,7 @@ To be set in `indent-bars--teardown-functions'."
   (when indent-bars-ts--orig-fontify-buffer
     (setq font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer))
   (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
-  (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--teardown t)
+  (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--disable t)
   (remove-hook 'jit-lock-after-change-extend-region-functions
 	       #'indent-bars-ts--mark-change t))
 
