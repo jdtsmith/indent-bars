@@ -395,21 +395,21 @@ font-lock is pending."
 Added as `:around' advice to `jit-lock-context-unfontify-pos'.
 Applies `indent-bars-font-lock-pending' property to the newly
 invalidated text."
-  (let (orig)
-    (dolist (buffer (buffer-list))
-      (with-current-buffer buffer
-	(when (and indent-bars--ts-mode jit-lock-context-unfontify-pos)
-	  (setf (alist-get buffer orig) jit-lock-context-unfontify-pos))))
-    (funcall fun)
-    (dolist (buffer (buffer-list))
-      (with-current-buffer buffer
-	(when (and indent-bars--ts-mode jit-lock-context-unfontify-pos
-		   (assq buffer orig)
-		   (> jit-lock-context-unfontify-pos (alist-get buffer orig)))
-	  (with-silent-modifications
-	    (put-text-property (alist-get buffer orig)
-			       jit-lock-context-unfontify-pos
-			       'indent-bars-font-lock-pending t)))))))
+   (let (orig)
+     (dolist (buffer (buffer-list))
+       (with-current-buffer buffer
+	 (when (and indent-bars--ts-mode jit-lock-context-unfontify-pos)
+	   (setf (alist-get buffer orig) jit-lock-context-unfontify-pos))))
+     (funcall fun)
+     (dolist (buffer (buffer-list))
+       (with-current-buffer buffer
+	 (when (and indent-bars--ts-mode jit-lock-context-unfontify-pos
+		    (assq buffer orig)
+		    (> jit-lock-context-unfontify-pos (alist-get buffer orig)))
+	   (with-silent-modifications
+	     (put-text-property (alist-get buffer orig)
+				jit-lock-context-unfontify-pos
+				'indent-bars-font-lock-pending t)))))))
 
 (defun indent-bars-ts--font-lock-inhibit (beg end)
   "Check if font-lock is needed on the region between BEG and END.
@@ -516,8 +516,14 @@ To be set in `indent-bars--teardown-functions'."
   (when indent-bars-ts--scope-timer
     (cancel-timer indent-bars-ts--scope-timer)
     (setq indent-bars-ts--scope-timer nil))
-  (when indent-bars-ts--orig-fontify-buffer
-    (setq font-lock-fontify-buffer-function indent-bars-ts--orig-fontify-buffer))
+  (when (and indent-bars-ts--orig-fontify-buffer
+	     (not (eq indent-bars-ts--orig-fontify-buffer
+		      #'indent-bars-ts--fontify-buffer)))
+    (setq-local font-lock-fontify-buffer-function
+		indent-bars-ts--orig-fontify-buffer))
+  (setq-local indent-bars--font-lock-inhibit nil)
+  (kill-local-variable 'indent-bars--display-function)
+  (kill-local-variable 'indent-bars--display-blank-lines-function)
   (remove-hook 'post-command-hook #'indent-bars-ts--update-scope t)
   (remove-hook 'indent-bars--teardown-functions 'indent-bars-ts--disable t)
   (remove-hook 'jit-lock-after-change-extend-region-functions
