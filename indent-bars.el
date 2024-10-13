@@ -1687,7 +1687,7 @@ Adapted from `highlight-indentation-mode'."
   ;;Jit/Font-lock
   (cl-pushnew 'indent-bars-display (alist-get 'display char-property-alias-alist))
   (indent-bars--setup-font-lock)
-  (font-lock-flush))
+  (jit-lock-refontify))
 
 (defvar indent-bars--teardown-functions nil)
 (defun indent-bars-teardown ()
@@ -1714,10 +1714,7 @@ Adapted from `highlight-indentation-mode'."
 	  indent-bars--orig-fontify-region nil))
   (with-silent-modifications
     (remove-text-properties (point-min) (point-max) '(indent-bars-display nil)))
-
   (jit-lock-refontify)
-  ;; (font-lock-flush)
-  ;; (font-lock-ensure)
 
   (setq indent-bars--current-depth 0)
   (remove-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples t)
