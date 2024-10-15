@@ -39,7 +39,7 @@ See the release [NEWS](NEWS.org).
 
 ## Bar Placement
 
-- **I get too many bars inside function definitions and calls.** <br>You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter-details).
+- **I get too many bars inside function definitions/calls, and/or multi-line parenthesized expressions.** <br>You can turn on `indent-bars-no-descend-lists` or even use [tree-sitter to help](#tree-sitter-details).
 - **I want a bar in the very first column!** <br>Set `indent-bars-starting-column` to 0.
 - **indent-bars seems to be conflicting with another package I use.** <br>See [these workarounds](#compatibility-with-other-packages).
 - **In my brace language (C, JS, etc.) I sometimes get fewer bars than I expected!** <br>Your mode syntax likely interprets `{`/`}` as list context, and you have `indent-bars-no-descend-lists=t`.  Either disable this feature, or see [this config](#bar-setup-and-location) for another option.
