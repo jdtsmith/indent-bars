@@ -518,7 +518,9 @@ due to edits or contextual fontification."
     (setf (ibts/query ibtcs)
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx)))
     (add-hook 'post-command-hook #'indent-bars-ts--update-scope nil t))
-  (indent-bars-ts--finalize-jit-lock))
+  (if indent-bars-ts--orig-fontify-buffer ; setting up again
+      (indent-bars-ts--finalize-jit-lock)
+    (add-hook 'font-lock-mode-hook #'indent-bars-ts--finalize-jit-lock nil t)))
 
 (defun indent-bars-ts--teardown ()
   "Teardown indent-bars-ts in the buffer.
