@@ -1553,8 +1553,8 @@ WIN defaults to the selected window.  To be set as a local
     (with-current-buffer buf ;N.B. face-remapping-alist is buffer-local
       (dolist (rk unneeded)
 	(indent-bars--remove-plist-remaps (gethash rk rmp-hsh))
-	(remhash rk rmp-hsh)))
-    (setf (buffer-local-value 'indent-bars--needs-cleanup buf) nil)))
+	(remhash rk rmp-hsh))
+      (setq indent-bars--needs-cleanup nil))))
 
 ;;;; Setup and mode
 (defun indent-bars--guess-spacing ()
