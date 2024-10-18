@@ -2,21 +2,27 @@
 #+author: J.D. Smith
 #+language: en
 
+* Development
+
+- Guard against unspecified 'default backup foreground/background colors.
+- Improve compatibility with packages which directly call ~font-lock-flush~.
+- Ensure ~indent-bars--ts-mode~ is disabled when toggling off ~indent-bars-treesit-support~ in a buffer.
+
 * v0.8 (2024-10-09)
 
 - New configuration setting ~indent-bars-display-on-blank-lines=least~ which specifies using the /minimum/ bar depth of adjacent non-blank lines for blank line bar display (by default, when enabled, the /maximum/ is used).
-- [BUGFIX] Guard against custom-set errors when tree-sitter is enabled, but no scope stanza is present for the buffer's language.
+- =BUGFIX= Guard against custom-set errors when tree-sitter is enabled, but no scope stanza is present for the buffer's language.
 - Make ~indent-bars-no-descend-lists=nil~ by default (to avoid confusion in brace and paren languages).
 - Allow ~indent-bars-no-descend-string=all~ to inhibit /all/ bars inside multi-line strings.
-- [BUGFIX] Use correct offset guess when derived from ~python-base-mode~.
+- =BUGFIX= Use correct offset guess when derived from ~python-base-mode~.
 - Be more careful when replacing/restoring ~font-lock-fontify-region-function~. 
 - Ensure ~indent-bars--ts-mode~ is fully disabled when ~indent-bars~ is disabled.
 
 * v0.7.6 (2024-09-28)
 
 - Improve speed of disabling indent-bars.
-- [BUGFIX] Eliminated introduced bug leading to args-out-of-range error.
-- [BUGFIX] Correctly enable font-lock inhibit.
+- =BUGFIX= Eliminated introduced bug leading to args-out-of-range error.
+- =BUGFIX= Correctly enable font-lock inhibit.
 
 * v0.7.5 (2024-09-26)
 
@@ -24,8 +30,8 @@
 - Protect against frame unavailability in daemon server mode.
 - Handle empty stipple ~:pattern~ strings.
 - Cancel current depth timer on tear-down.
-- [BUGFIX] Ensure ~indent-bars--ts-mode~ is fully removed when indent-bars is disabled.
-- [BUGFIX] Fix issue where bar faces would be unspecified on new frames after resetting or customizing.
+- =BUGFIX= Ensure ~indent-bars--ts-mode~ is fully removed when indent-bars is disabled.
+- =BUGFIX= Fix issue where bar faces would be unspecified on new frames after resetting or customizing.
 
 * v0.7.4 (2024-09-18)
 
@@ -64,24 +70,24 @@
 
 A major new release with many added features and improvements.
 
-  - Stipple-based bars are now free from artifacts when the same buffer appears in multiple windows.
-  - Position-aware tree-sitter /scope focus/ with fully configurable in-scope/out-of-scope styling.
-  - Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
-  - Two new highlight selection "methods" including a new default ("context").
-  - Inhibit string and list bar descent without tree-sitter, using Emacs' syntax capabilities.
+- Stipple-based bars are now free from artifacts when the same buffer appears in multiple windows.
+- Position-aware tree-sitter /scope focus/ with fully configurable in-scope/out-of-scope styling.
+- Theme-awareness: bar styling gets updated on theme change (e.g. for depth-based colors).
+- Two new highlight selection "methods" including a new default ("context").
+- Inhibit string and list bar descent without tree-sitter, using Emacs' syntax capabilities.
 
 * *v0.2.2* (2024-01-02)
 
-  - Rate-limit updates of the current highlight depth; see ~indent-bars-depth-update-delay~. 
+- Rate-limit updates of the current highlight depth; see ~indent-bars-depth-update-delay~. 
 
 * v0.2 (2023-09-08)
 
-   - ability to configure the starting column (including col 0)
-   - Support for tab-based indent modes
-   - optional character-based indent bars (automatic in terminal)
-   - tree-sitter context-aware bar depth
-   - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
-   - other minor improvements
+ - ability to configure the starting column (including col 0)
+ - Support for tab-based indent modes
+ - optional character-based indent bars (automatic in terminal)
+ - tree-sitter context-aware bar depth
+ - additional mode support: `go-mode`, `go-ts-mode`, `cobol-mode`
+ - other minor improvements
 
 * v0.1
 
