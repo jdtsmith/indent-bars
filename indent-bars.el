@@ -642,6 +642,10 @@ instead of the :blend factor in `indent-bars-color'."
 			       main nil 'default))
 		     ((color-defined-p main) main)))
 	  (blend (or blend-override blend)))
+      (when (string-prefix-p "unspecified-" col)
+	(setq col (if face-bg
+		      indent-bars-unspecified-bg-color
+		    indent-bars-unspecified-fg-color)))
       (if (and tint tint-blend (color-defined-p tint)) ;tint main color
 	  (setq col (indent-bars--blend-colors tint col tint-blend)))
       (if blend				;now blend into BG
