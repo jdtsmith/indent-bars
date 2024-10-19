@@ -2,10 +2,10 @@
 #+author: J.D. Smith
 #+language: en
 
-* Development
+* v0.8.1 (2024-10-19)
 
-- Guard against unspecified 'default backup foreground/background colors.
-- Improve compatibility with packages which directly call ~font-lock-flush~.
+- Guard against unspecified ~default~ (backup) face foreground/background colors, as on TTY with ~tty-color-mode=no~.
+- Improve compatibility with other packages that directly call ~font-lock-flush~.
 - Ensure ~indent-bars--ts-mode~ is disabled when toggling off ~indent-bars-treesit-support~ in a buffer.
 
 * v0.8 (2024-10-09)
