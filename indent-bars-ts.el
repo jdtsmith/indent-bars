@@ -14,7 +14,7 @@
 ;;    innermost wrapping node containing point mentioned in
 ;;    `indent-bars-treesit-scope` for the current buffer's language.
 
-;; For Developers:
+;;;; For Developers:
 ;;
 ;; This file interfaces treesitter scope queries with font-lock-based
 ;; indent bar drawing.  "Scope" is defined as the range of the
@@ -48,12 +48,15 @@
 ;;    fontification over the union of the old and new scope regions.
 ;;  - jit-lock is modified to apply a special
 ;;    `indent-bars-font-lock-pending' property to modified text.  The
-;;    same happens for contextually-refontified text.
+;;    same happens for contextually-refontified text and explicit
+;;    calls to `font-lock-flush'.
 ;;  - font-lock and jit-lock are configured to skip the core font-lock
 ;;    region fontification function when font-lock itself is not
 ;;    pending in the region.  See `indent-bars--fontify'.
-;;    
-;; Note also the shorthand substitutions for style related prefixes
+;;
+
+;;;;; Shorthands
+;; Note the shorthand substitutions for style related prefixes
 ;; (slot accessors and variables); see file-local-variables at the
 ;; end:
 ;; 
