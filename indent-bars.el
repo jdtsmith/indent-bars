@@ -1130,12 +1130,14 @@ needed."
 	  (cl-incf pos indent-bars-spacing))
 	;; STILL bars to show: invent them (if requested)
 	(when (and invent (<= bar nbars))
-	  (put-text-property
-	   end (1+ end) 'indent-bars-display
-	   (concat (indent-bars--blank-string
-		    style (- pos end) (- nbars bar -1) bar nil
-		    switch-after style2)
-		   "\n")))))))
+	  (add-text-properties
+	   end (1+ end)
+	   `(indent-bars-display
+	     ,(concat (indent-bars--blank-string
+		       style (- pos end) (- nbars bar -1) bar nil
+		       switch-after style2)
+		      "\n")
+	    rear-nonsticky t)))))))
 
 (defsubst indent-bars--context-bars (end &optional min)
   "Maximum number of bars at point and END.
