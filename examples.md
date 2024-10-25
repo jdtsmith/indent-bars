@@ -131,7 +131,7 @@ Note: `indent-bars-prefer-character` need not be set unless you prefer to use ch
 
 ## With prism-whitespace-mode:
 
-<img src="https://private-user-images.githubusercontent.com/601365/370495812-15da0a63-a877-489a-8e27-0dd33fc3aef0.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjcyODYyNjUsIm5iZiI6MTcyNzI4NTk2NSwicGF0aCI6Ii82MDEzNjUvMzcwNDk1ODEyLTE1ZGEwYTYzLWE4NzctNDg5YS04ZTI3LTBkZDMzZmMzYWVmMC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwOTI1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDkyNVQxNzM5MjVaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT00ZmNiZTMyNzQ0N2VjZDVjNmRlOGY1Y2U3MDdjYzQwNzhkZDdjZjQ2YjQxOGRlYTc5OTJjYzNjNGM1ZTQwNjYyJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.UA2ZVs-saQ1_KIcfpLzKaKsRiGpw2uNFYWhsvnpd9GQ">
+![image](https://github.com/user-attachments/assets/62f9c618-7392-4167-88e4-6d076701fce1)
 
 This config (contributed by @alphapapa) shows using the faces from another mode to coordinate text and bar color.  Note the faces could also have been configured using the `:regexp` option `prism-level-\([0-9]+\)`.
 
