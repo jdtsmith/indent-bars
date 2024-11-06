@@ -1619,6 +1619,8 @@ Adapted from `highlight-indentation-mode'."
     tab-width)
    ((derived-mode-p 'nix-mode)
     tab-width)
+   ((derived-mode-p 'makefile-mode)
+    tab-width)
    ((and (derived-mode-p 'nix-ts-mode) (boundp 'nix-ts-mode-indent-offset))
     nix-ts-mode-indent-offset)
    ((and (derived-mode-p 'json-ts-mode) (boundp 'json-ts-mode-indent-offset))
