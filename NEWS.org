@@ -2,6 +2,13 @@
 #+author: J.D. Smith
 #+language: en
 
+
+* Development
+
+- Support ~makefile-mode~.
+- =BUGFIX= Prevent infloop and correctly display all appropriate bars when ~indent-tabs-mode=t~ and ~tab-width~ is small.
+- =BUGFIX= When blank line display is enabled, prevent the ~display~ property on blank newlines from temporarily leaking into added text (e.g. certain re-indentation modes).
+
 * v0.8.1 (2024-10-19)
 
 - Guard against unspecified ~default~ (backup) face foreground/background colors, as on TTY with ~tty-color-mode=no~.
