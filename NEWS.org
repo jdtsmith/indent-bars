@@ -3,11 +3,11 @@
 #+language: en
 
 
-* Development
+* v0.8.2 (2024-11-07)
 
 - Support ~makefile-mode~.
-- =BUGFIX= Prevent infloop and correctly display all appropriate bars when ~indent-tabs-mode=t~ and ~tab-width~ is small.
-- =BUGFIX= When blank line display is enabled, prevent the ~display~ property on blank newlines from temporarily leaking into added text (e.g. certain re-indentation modes).
+- =BUGFIX= Prevent infloop and correctly display all appropriate bars when ~indent-tabs-mode=t~ and ~tab-width~ is small (see #86).
+- =BUGFIX= When blank line display is enabled, prevent the ~display~ property on blank newlines from temporarily leaking into newly inserted text (e.g. certain re-indentation modes, #82).
 
 * v0.8.1 (2024-10-19)
 
