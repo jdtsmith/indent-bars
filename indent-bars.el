@@ -1252,6 +1252,9 @@ and END.  If it returns non-nil, skip font-lock."
   ;; Always draw bars (which may overwrite 'face in a few places)
   (pcase-let ((`(,beg . ,end) (indent-bars--extend-region beg end)))
     (with-silent-modifications
+      ;; We remove our display alias here instead of by adding it to
+      ;; `font-lock-extra-managed-keywords' because font-lock will not
+      ;; always be run.
       (remove-text-properties beg end '(indent-bars-display nil))
       (indent-bars--draw-all-bars-between beg end))
     `(jit-lock-bounds ,beg . ,end)))
@@ -1455,7 +1458,9 @@ appropriate for that style."
       (list w (length dlist) (string-join dlist)))))
 
 (defsubst indent-bars--whr (w h r)
-  "Encoded value for W, H and R."
+  "Encoded value for caching remaps.
+Combines font width W and height H, as well as window edge pixel
+offset R."
   (+ (ash w 16) (ash h 8) r))
 
 (defvar-local indent-bars--stipple-remaps nil
