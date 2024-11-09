@@ -303,6 +303,26 @@ Please document good tree-sitter settings for other languages in the [Wiki](http
 
 `indent-bars` in general has good compatibility with other packages.  But sometimes conflicts do occur.
 
+### `org-mode` src blocks
+
+In general, `org-mode` src blocks are difficult for many modes to support.  Org actually offsets the indentation of the src contents, copies that text to a special hidden buffer, and then maps all `face` properties (only)) back to the original buffer.  This doesn't work well for `indent-bars` for a few reasons:
+
+- the bars will be offset relative to your expectation by the "extra" indentation org applies.
+- stipple bars may no be correctly formatted (though this could be worked around).
+- Any `display` properties, e.g. for blank line bar display or bars on tab chars, will not be transferred.
+
+So it is best to disable `indent-bars` in `org` src blocks.  You can achieve this by inhibiting all the `mode-hooks` from running in org's special hidden fontification buffers (one per mode).  E.g., for python:
+
+```elisp
+  (defun my/org-simple-python-mode ()
+    (if (string-prefix-p " *org-src-fontification:" (buffer-name))
+	(delay-mode-hooks (python-mode))
+      (python-mode)))
+  (setf (alist-get "python" org-src-lang-modes) 'my/org-simple-python)
+```
+
+This will inhibit hooks (and hence `indent-bars`, `eglot`, `flymake`, whatever else you have setup) from running in the special ` *org-src-fontification:..` buffers (where they are either harmful or not needed), but these features will still be loaded and work when editing src block contents with `C-c '`. 
+
 ### Unwanted `:stipple` inheritance on popups/overlays/etc.
 
 `indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. [this](../../issues/67), or [this](../../issues/73)).  This becomes more likely if you set `indent-bars-starting-column=0` (since often overlays are placed at the line beginning).
