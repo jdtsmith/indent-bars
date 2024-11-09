@@ -374,7 +374,7 @@ This should then look something like (note the blue vertical bars):
 
 <img width="668" alt="image" src="https://github.com/jdtsmith/indent-bars/assets/93749/dd0f65f5-3cdc-4865-a66d-41365cecadd0">
 
-If you determine that stipples do not work in your version of Emacs, consider upgrading to a [version which supports them](https://github.com/jdtsmith/indent-bars/edit/main/README.md#compatibility), reporting the bug, or setting `indent-bars-prefer-character=t`.
+If you determine that stipples do not work in your version of Emacs, consider upgrading to a [version which supports them](https://github.com/jdtsmith/indent-bars/blob/main/README.md#compatibility), reporting the bug, or setting `indent-bars-prefer-character=t`.
 
 #### Per-buffer stipple offsets
 
