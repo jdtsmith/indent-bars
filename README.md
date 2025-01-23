@@ -175,7 +175,7 @@ Configuration variables for bar position and line locations (including on blank 
 Custom variables affecting character-based bar display, e.g. in the terminal:
 
 - `indent-bars-prefer-character`: Use *characters* to display the vertical bar instead of stipples.  This occurs automatically on non-graphical displays (terminals), but this variable can be used to always prefer character-based display.  Useful if your version of GUI Emacs does not support `:stipple` patterns.
-- `indent-bars-no-stipple-char`: The character to use when stipples are unavailable or disabled. Defaults to the vertical box character `│`.  Other good options include `┃`, `┋`, and `║`.
+- `indent-bars-no-stipple-char`: The character to use when stipples are unavailable or disabled. Defaults to the vertical box character `│`.  Other good options include `┃`, `┋`, and `║`.  Note that characters in emacs (e.g. in a `setq` command) are specified with a leading `?`, e.g. `?│`.
 - `indent-bars-no-stipple-char-font-weight`: Optional font weight to use for the face displaying the no-stipple character.
 - `indent-bars-unspecified-bg|fg-color`: Colors to use for the frame background and default foreground when they are unspecified (e.g. in terminals).  If you intend to use `indent-bars` in the terminal, set to the terminal background/foreground colors you use. 
 
