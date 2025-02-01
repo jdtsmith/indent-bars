@@ -124,7 +124,7 @@ Please [open an issue](../../issues) with any updates/corrections to this list. 
 # Customization
 
 > [!NOTE]
-> `indent-bars` is _highly_ flexible and can be adapted to most situations.  It can't anticipate all nuances of different languages, modes, and user preferences, however, so "some assembly may be required".  If you arrive at customizations you are happy with for a given mode, please consider adding to the  [Wiki page](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
+> `indent-bars` is _highly_ flexible and can be adapted to most situations.  It can't anticipate all nuances of different languages, modes, and user preferences, however — "some assembly may be required".  If you arrive at customizations you are happy with for a given mode, please consider adding to the  [Wiki page](https://github.com/jdtsmith/indent-bars/wiki/indent%E2%80%90bars-config-Wiki#tree-sitter-config).
 
 
 `M-x customize-group indent-bars` is the easiest way to customize everything about the appearance and function of `indent-bars` (check sub-groups too).  There are many customization variables and bar styling in particular is highly configurable, so use Customize!
