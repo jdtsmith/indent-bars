@@ -109,7 +109,7 @@ Known `:stipple` support, by Emacs build:
   - All other builds support stipples.
 - Mac:
   - The [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support.  `M-x version` should say `Carbon`, not `NS`.
-  - The `NS` build has partial stipple support in master, which may be released in Emacs v30.
+  - The `NS` build has partial stipple support in master, which may be released in Emacs v30.  A patch providing [full stipple support](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=73384) for NS in master is currently under review.
 - Windows: Emacs on Windows will support stipples starting at v30.
 - Android: Android builds (to appear with Emacs 30) support stipples.
 - Haiku: Haiku Emacs builds will support stipples starting with v30.
