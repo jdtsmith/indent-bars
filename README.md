@@ -76,8 +76,6 @@ Configures `tree-sitter` and `ignore-blank-line` support for an example language
 
 ```elisp
 (use-package indent-bars
-  :config
-  (require 'indent-bars-ts) 		; not needed with straight
   :custom
   (indent-bars-no-descend-lists t) ; no extra bars in continued func arg lists
   (indent-bars-treesit-support t)
