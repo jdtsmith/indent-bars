@@ -974,12 +974,17 @@ Skips any fully blank lines."
 (defvar-local indent-bars--ppss nil)
 (defun indent-bars--current-indentation-depth (&optional on-bar)
   "Calculate current indentation depth.
+Depth is 1-based (independent of the value of
+`indent-bars-starting-column'), with a depth of 1 corresponding
+to the outermost bar, and a depth of 0 indicating there is no
+valid current depth.
+
 If ON-BAR is nil, return the depth of the last visible bar on the
-line.  If ON-BAR is non-nil and content begins at a column where
-a bar would otherwise have fallen, report the depth of
-that (undrawn) bar.  If ON-BAR is the symbol `context', and the
-first non-blank line immediately above or below the current line
-is not at a deeper indentation level (by at least one bar
+current line.  If ON-BAR is non-nil and content begins at a
+column where a bar would otherwise have fallen, report the depth
+of that (undrawn) bar.  If ON-BAR is the symbol `context', and
+the first non-blank line immediately above or below the current
+line is not at a deeper indentation level (by at least one bar
 spacing), disable on-bar and use the last-visible-bar depth for
 that line instead.
 
@@ -1290,22 +1295,23 @@ ROT are as in `indent-bars--stipple', and have similar default values."
   "Update highlight for the current DEPTH.
 Works by remapping the appropriate indent-bars[-tag]-N face for
 all styles in the `indent-bars--styles' list.  DEPTH should be
-greater than zero."
+greater than or equal to zero (zero meaning: no highlight)."
   (setq indent-bars--highlight-timer nil)
   (dolist (s indent-bars--styles)
-    (let* ((face (indent-bars--face s depth))
-	   (hl-col (and (ibs/current-depth-palette s)
-			(indent-bars--get-color s depth 'highlight)))
-	   (hl-bg (ibs/current-bg-color s)))
-      (when (or hl-col hl-bg (ibs/current-stipple-face s))
-	(when-let ((c (alist-get (ibs/tag s) indent-bars--remaps))) ; out with the old
-	  (face-remap-remove-relative c))
-	(setf (alist-get (ibs/tag s) indent-bars--remaps)
-	      (face-remap-add-relative
-	       face
-	       `(,@(when hl-col `(:foreground ,hl-col))
-		 ,@(when hl-bg `(:background ,hl-bg)))
-	       (ibs/current-stipple-face s)))))))
+    (when-let ((c (alist-get (ibs/tag s) indent-bars--remaps))) ; out with the old
+      (face-remap-remove-relative c))
+    (when (> depth 0)
+      (let* ((face (indent-bars--face s depth))
+	     (hl-col (and (ibs/current-depth-palette s)
+			  (indent-bars--get-color s depth 'highlight)))
+	     (hl-bg (ibs/current-bg-color s)))
+	(when (or hl-col hl-bg (ibs/current-stipple-face s))
+	  (setf (alist-get (ibs/tag s) indent-bars--remaps)
+		(face-remap-add-relative
+		 face
+		 `(,@(when hl-col `(:foreground ,hl-col))
+		   ,@(when hl-bg `(:background ,hl-bg)))
+		 (ibs/current-stipple-face s))))))))
 
 (defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
   "Highlight bar at DEPTH in buffer BUF."
@@ -1320,8 +1326,7 @@ non-nil, update depth even if it has not changed."
   (unless (or indent-bars--highlight-timer (not indent-bars-mode))
     (let* ((depth (indent-bars--current-indentation-depth
 		   indent-bars-highlight-selection-method)))
-      (when (and depth (or force (not (= depth indent-bars--current-depth)))
-		 (> depth 0))
+      (when (and depth (or force (not (= depth indent-bars--current-depth))))
 	(setq indent-bars--current-depth depth)
 	(if (zerop indent-bars-depth-update-delay)
 	    (indent-bars--update-current-depth-highlight depth)
