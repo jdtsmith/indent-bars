@@ -5,6 +5,8 @@
 * DEVELOPMENT
 
 - Improve bar highlight logic when using ~indent-bars-starting-column=0~ (see #100).
+- Perform depth calculation current depth for highlight just in time (see #101).
+  
   
 * v0.8.2 (2024-11-07)
 
