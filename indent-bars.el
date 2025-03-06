@@ -1313,28 +1313,40 @@ greater than or equal to zero (zero meaning: no highlight)."
 		   ,@(when hl-bg `(:background ,hl-bg)))
 		 (ibs/current-stipple-face s))))))))
 
-(defun indent-bars--update-current-depth-highlight-in-buffer (buf depth)
-  "Highlight bar at DEPTH in buffer BUF."
+(defun indent-bars--do-highlight-current-depth (force)
+  "Refresh current indentation depth highlight immediately.
+No rate limiting is applied.  If FORCE is non-nil, update depth even
+if it has not changed."
+  (when indent-bars-mode
+    (let* ((depth (indent-bars--current-indentation-depth
+		   indent-bars-highlight-selection-method)))
+      (when (and depth (or force (not (= depth indent-bars--current-depth))))
+	(setq indent-bars--current-depth depth)
+	(indent-bars--update-current-depth-highlight depth)))))
+
+(defun indent-bars--do-highlight-current-depth-on-idle (buf force)
+  "Refresh current indentation depth highlight in buffer BUF.
+No rate limiting is applied.  If FORCE is non-nil, update depth even
+if it has not changed."
+  ;; Expicitly clear the timer here, so that it can be reset
+  ;; regardless of whether any updates actually get rendered.
+  (setq indent-bars--highlight-timer nil)
   (when (buffer-live-p buf)
     (with-current-buffer buf
-      (indent-bars--update-current-depth-highlight depth))))
+      (indent-bars--do-highlight-current-depth force))))
 
 (defun indent-bars--highlight-current-depth (&optional force)
   "Refresh current indentation depth highlight.
 Rate limit set by `indent-bars-depth-update-delay'.  If FORCE is
 non-nil, update depth even if it has not changed."
   (unless (or indent-bars--highlight-timer (not indent-bars-mode))
-    (let* ((depth (indent-bars--current-indentation-depth
-		   indent-bars-highlight-selection-method)))
-      (when (and depth (or force (not (= depth indent-bars--current-depth))))
-	(setq indent-bars--current-depth depth)
-	(if (zerop indent-bars-depth-update-delay)
-	    (indent-bars--update-current-depth-highlight depth)
-	  (setq indent-bars--highlight-timer
-		(run-with-idle-timer
-		 indent-bars-depth-update-delay nil
-		 #'indent-bars--update-current-depth-highlight-in-buffer
-		 (current-buffer) depth)))))))
+    (if (zerop indent-bars-depth-update-delay)
+        (indent-bars--do-highlight-current-depth force)
+      (setq indent-bars--highlight-timer
+            (run-with-idle-timer
+             indent-bars-depth-update-delay nil
+             #'indent-bars--do-highlight-current-depth-on-idle
+             (current-buffer) force)))))
 
 ;;;; Stipple Display
 (defsubst indent-bars--block (n)
