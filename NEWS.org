@@ -2,11 +2,10 @@
 #+author: J.D. Smith
 #+language: en
 
-* DEVELOPMENT
+* v0.8.3 (2025-04-09)
 
 - Improve bar highlight logic when using ~indent-bars-starting-column=0~ (see #100).
-- Perform depth calculation current depth for highlight just in time (see #101).
-  
+- Perform depth calculation current depth for highlight just in time (see #101).  
   
 * v0.8.2 (2024-11-07)
 
