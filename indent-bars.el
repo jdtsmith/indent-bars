@@ -957,7 +957,7 @@ Note that the first bar is expected at `indent-bars-starting-column'."
       (1+ (/ (- len indent-bars--offset 1) indent-bars-spacing))
     0))
 
-(defun indent-bars--context-depth ()
+(defun indent-bars--context-indentation ()
   "Return the maximum `current-indentation' around current line.
 Skips any fully blank lines."
   (let ((prior-indent
@@ -1022,7 +1022,7 @@ and can return an updated depth."
     (when (and indent-bars--update-depth-function (not ppss-ind))
       (setq d (funcall indent-bars--update-depth-function d)))
     (when (and (eq on-bar 'context)
-	       (< (indent-bars--context-depth) (+ c indent-bars-spacing)))
+	       (< (indent-bars--context-indentation) (+ c indent-bars-spacing)))
       (setq on-bar nil))
     (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
 	(1+ d) d)))
@@ -1136,7 +1136,7 @@ needed."
 	;; STILL bars to show: invent them (if requested)
 	(when (and invent (<= bar nbars))
 	  (add-text-properties
-	   end (1+ end)
+	   end (1+ end) ; atop the final newline
 	   `(indent-bars-display
 	     ,(concat (indent-bars--blank-string
 		       style (- pos end) (- nbars bar -1) bar nil
@@ -1166,7 +1166,7 @@ passed, uses `indent-bars-style' for drawing."
 					 switch-after style2))))
 
 (defun indent-bars--display-blank-lines (beg end &optional style switch-after style2)
-  "Display the appropriate bars over the blank-only lines from BEG..END.
+  "Display appropriate bars over the blank-only lines from BEG..END.
 Only called if `indent-bars-display-on-blank-lines' is non-nil.
 To be called on complete multi-line blank line regions.
 
@@ -1204,8 +1204,7 @@ not indicated, even if they otherwise would be."
   "Extend the region START..END.
 If `indent-bars-display-on-blank-lines' is non-nil, this extends
 it to include complete contiguous stretches of blank lines and
-always starts and ends on the beginning of a line.  Uses and sets
-the dynamic variables `jit-lock-start' and `jit-lock-end'."
+always starts and ends on the beginning of a line."
   (save-excursion
     (let ((chars " \t\n"))
       (goto-char start)

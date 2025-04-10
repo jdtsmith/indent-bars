@@ -395,7 +395,7 @@ font-lock is pending."
 (defvar indent-bars--ts-mode)
 (defun indent-bars-ts--context-fontify (fun)
   "Wrap FUN to keep track of context fontification.
-Added as `:around' advice to `jit-lock-context-unfontify-pos'.
+Added as `:around' advice to `jit-lock-context-fontify'.
 Applies `indent-bars-font-lock-pending' property to the newly
 invalidated text."
    (let (orig)
@@ -471,7 +471,7 @@ due to edits or contextual fontification."
   (setq-local indent-bars--font-lock-inhibit #'indent-bars-ts--font-lock-inhibit
 	      font-lock-fontify-buffer-function #'indent-bars-ts--fontify-buffer
 	      font-lock-flush-function #'indent-bars-ts--flush)
-  ;; We must mark the fontified=nil from after-change and contextual
+  ;; We must mark the fontified=nil regions of jit-lock, both after-change and contextual
   (add-hook 'jit-lock-after-change-extend-region-functions
 	    #'indent-bars-ts--mark-change 96 t)
   (when (eq jit-lock-contextually t)
