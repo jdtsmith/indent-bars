@@ -1643,6 +1643,8 @@ Adapted from `highlight-indentation-mode'."
     js-indent-level)
    ((and (derived-mode-p 'sh-base-mode) (boundp 'sh-basic-offset))
     sh-basic-offset)
+   ((and (derived-mode-p 'java-ts-mode) (boundp 'java-ts-mode-indent-offset))
+    java-ts-mode-indent-offset)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
