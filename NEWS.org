@@ -2,6 +2,9 @@
 #+author: J.D. Smith
 #+language: en
 
+* v0.8.4 (2025-05-08)
+- =BUGFIX= avoid ~args-out-of-range~ errors in TS modes.
+
 * v0.8.3 (2025-04-09)
 
 - Improve bar highlight logic when using ~indent-bars-starting-column=0~ (see #100).
