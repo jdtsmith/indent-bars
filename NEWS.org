@@ -2,6 +2,9 @@
 #+author: J.D. Smith
 #+language: en
 
+* DEVELOPMENT
+- Enable font-lock in modes where it is not enabled (e.g. fundamental/text). 
+
 * v0.8.4 (2025-05-08)
 - =BUGFIX= avoid ~args-out-of-range~ errors in TS modes.
 
