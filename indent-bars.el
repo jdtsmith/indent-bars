@@ -1666,7 +1666,7 @@ Adapted from `highlight-indentation-mode'."
 		       ;; group 2: multi-line blank regions
 		       ,@(if indent-bars-display-on-blank-lines
 			     '((group (* (or ?\s ?\t ?\n)) ?\n)))))))
-  (unless font-lock-defaults (setq font-lock-defaults t))
+  (unless font-lock-defaults (setq font-lock-defaults '(nil t)))
   (unless font-lock-mode (font-lock-mode 1)))
 
 (declare-function indent-bars--ts-mode "indent-bars-ts")
