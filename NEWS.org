@@ -3,7 +3,8 @@
 #+language: en
 
 * DEVELOPMENT
-- Enable font-lock in modes where it is not enabled (e.g. fundamental/text). 
+- Allow ~indent-bars~ to work in modes where ~font-lock~ keywords are not set (e.g. fundamental/text).
+- Additional support for java, scala and rust TS modes.
 
 * v0.8.4 (2025-05-08)
 - =BUGFIX= avoid ~args-out-of-range~ errors in TS modes.
