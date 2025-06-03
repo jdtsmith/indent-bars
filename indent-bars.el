@@ -1627,6 +1627,8 @@ Adapted from `highlight-indentation-mode'."
     (symbol-value c-ts-common-indent-offset))
    ((and (derived-mode-p 'yaml-mode) (boundp 'yaml-indent-offset))
     yaml-indent-offset)
+   ((and (derived-mode-p 'yaml-pro-mode) (boundp 'yaml-pro-indent))
+    yaml-pro-indent)
    ((and (derived-mode-p 'elixir-mode) (boundp 'elixir-smie-indent-basic))
     elixir-smie-indent-basic)
    ((and (derived-mode-p 'lisp-data-mode) (boundp 'lisp-body-indent))
