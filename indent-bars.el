@@ -1651,6 +1651,8 @@ Adapted from `highlight-indentation-mode'."
     sh-basic-offset)
    ((and (derived-mode-p 'java-ts-mode) (boundp 'java-ts-mode-indent-offset))
     java-ts-mode-indent-offset)
+   ((and (derived-mode-p 'tcl-mode) (boundp 'tcl-indent-level))
+    tcl-indent-level)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
