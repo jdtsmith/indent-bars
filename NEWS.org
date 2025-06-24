@@ -2,9 +2,9 @@
 #+author: J.D. Smith
 #+language: en
 
-* DEVELOPMENT
+* v0.8.5 (2025-06-24)
 - Allow ~indent-bars~ to work in modes where ~font-lock~ keywords are not set (e.g. fundamental/text).
-- Additional support for java, scala and rust TS modes.
+- Additional support for java, scala and rust TS modes, as well as TCL mode.
 
 * v0.8.4 (2025-05-08)
 - =BUGFIX= avoid ~args-out-of-range~ errors in TS modes.
