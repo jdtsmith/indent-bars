@@ -930,17 +930,19 @@ Useful for calling after theme changes."
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
 
   ;; Base stipple face
-  (let ((width (or (and (bound-and-true-p variable-pitch-mode)
-			(with-silent-modifications
-			  (let ((inhibit-read-only t))
-			    (unwind-protect
-				(save-excursion
-				  (insert-before-markers ?\s)
-				  (when-let ((wh (posn-object-width-height (posn-at-point (1- (point))))))
-				    (message "indent-bars: using variable pitch width = %d" (car wh))
-				    (car wh)))
-			      (delete-char -1)))))
-		   (frame-char-width))))
+  (let ((width
+	 (or (when-let* ((remap (alist-get 'default face-remapping-alist))
+			 ( (memq 'variable-pitch remap))) ; variable-pitch-mode
+	       (with-silent-modifications
+		 (let ((inhibit-read-only t))
+		   (unwind-protect
+		       (save-excursion
+			 (insert-before-markers ?\s)
+			 (when-let ((wh (posn-object-width-height (posn-at-point (1- (point))))))
+			   (message "indent-bars: using variable pitch width = %d" (car wh))
+			   (car wh)))
+		     (delete-char -1)))))
+	     (frame-char-width))))
     (face-spec-set
      (ibs/stipple-face style)
      (indent-bars--stipple-face-spec width (frame-char-height)
