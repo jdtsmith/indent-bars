@@ -84,7 +84,7 @@
 (defvar indent-bars-custom-set nil)
 (defvar indent-bars--custom-set-inhibit nil)
 (defun indent-bars--custom-set (sym val)
-  "Set SYM to VAL, and reset indent-bars in the `other-window'."
+  "Set SYM to VAL, and reset `indent-bars' in all windows."
   (set-default-toplevel-value sym val)
   (when (and (not indent-bars--custom-set-inhibit) (boundp 'indent-bars-mode))
     (let ((indent-bars--custom-set-inhibit t)) ; prevent re-entry
@@ -726,6 +726,17 @@ color, if setup (see `indent-bars-highlight-current-depth')."
      (t (ibs/main-color style)))))
 
 ;;;;; Faces
+(defun indent-bars--window-font-space-width (&optional win)
+  "Return the space width of the font in window WIN.
+If WIN is not provided, the selected window is used.  This works for
+both variable pitch and fixed pitch fonts."
+  (let ((win (or win (selected-window))))
+    (with-selected-window win
+      (or (when-let* ((ff (face-font 'default))
+		      (fi (font-info ff)))
+	    (aref fi 10))
+	  (window-font-width)))))
+
 (defun indent-bars--stipple-face-spec (w h rot &optional style stipple)
   "Create a face specification for the stipple face for STYLE.
 Create for character size W x H with offset ROT.  If STIPPLE is
@@ -930,19 +941,7 @@ Useful for calling after theme changes."
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
 
   ;; Base stipple face
-  (let ((width
-	 (or (when-let* ((remap (alist-get 'default face-remapping-alist))
-			 ( (memq 'variable-pitch remap))) ; variable-pitch-mode
-	       (with-silent-modifications
-		 (let ((inhibit-read-only t))
-		   (unwind-protect
-		       (save-excursion
-			 (insert-before-markers ?\s)
-			 (when-let ((wh (posn-object-width-height (posn-at-point (1- (point))))))
-			   (message "indent-bars: using variable pitch width = %d" (car wh))
-			   (car wh)))
-		     (delete-char -1)))))
-	     (frame-char-width))))
+  (let ((width (indent-bars--window-font-space-width)))
     (face-spec-set
      (ibs/stipple-face style)
      (indent-bars--stipple-face-spec width (frame-char-height)
@@ -1296,7 +1295,7 @@ ROT are as in `indent-bars--stipple', and have similar default values."
   (cl-destructuring-bind (&key width pad pattern zigzag &allow-other-keys)
       (indent-bars--style style "highlight-current-depth")
     (when (or width pad pattern zigzag)
-      (let* ((w (or w (window-font-width)))
+      (let* ((w (or w (indent-bars--window-font-space-width)))
 	     (h (or h (window-font-height)))
 	     (rot (or rot (indent-bars--stipple-rot nil w))))
 	(indent-bars--stipple w h rot style width pad pattern zigzag)))))
@@ -1419,9 +1418,9 @@ ROT should be less than W."
 ;; So g = (mod marg+fringe w).
 ;;
 ;; When the block/zigzag/whatever stipple pattern is made, to align
-;; with characters, it must get shifted up (= right) by g bits, with
-;; carry over (wrap) around w=(window-font-width) bits (i.e the width
-;; of the bitmap).  The byte/bit pattern is first-lowest-leftmost.
+;; with characters, it must be shifted up (= right) by g bits, with
+;; carry over (wrap) around w=space-width bits (i.e the width of the
+;; bitmap in pixels).  The byte/bit pattern is first-lowest-leftmost.
 ;;
 ;; Note that different windows may have different g values
 ;; (e.g. left/right), which means the same bitmap cannot work for the
@@ -1506,9 +1505,9 @@ attributes are set via filtered face remaps.")
 
 (defun indent-bars--create-stipple-remaps (w h rot)
   "Create and store stipple remaps for the given font size and pixel start.
-W is the `window-font-width', H is the corresponding height, and
-ROT is the number of bits to rotate the pattern start.  An entry
-is created for each active style, for both :main[-styletag] and
+W is the space font width in pixels, H is the corresponding height, and
+ROT is the number of bits to rotate the pattern start.  An entry is
+created for each active style, for both :main[-styletag] and
 :current[-styletag] highlight contexts."
   (let* ((whr (indent-bars--whr w h rot))
 	 (filter `(:window indent-bars-whr ,whr))
@@ -1555,7 +1554,7 @@ is created for each active style, for both :main[-styletag] and
 WIN defaults to the selected window.  To be set as a local
 `window-state-change-functions' hook."
   (unless win (setq win (selected-window)))
-  (let* ((w (window-font-width win))
+  (let* ((w (indent-bars--window-font-space-width win))
 	 (h (window-font-height win))
 	 (rot (indent-bars--stipple-rot win w))
 	 (whr (indent-bars--whr w h rot))
