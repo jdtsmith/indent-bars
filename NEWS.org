@@ -2,6 +2,10 @@
 #+author: J.D. Smith
 #+language: en
 
+* v0.9 (2025-06-29)
+
+- Add compatibility variable pitch fonts, per window.
+
 * v0.8.5 (2025-06-24)
 - Allow ~indent-bars~ to work in modes where ~font-lock~ keywords are not set (e.g. fundamental/text).
 - Additional support for java, scala and rust TS modes, as well as TCL mode.
