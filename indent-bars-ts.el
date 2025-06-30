@@ -203,10 +203,10 @@ that many newlines.  E.g. MIN-NEWLINES=1 demands a two line
 node (or larger).
 
 If no spanning node is found, nil is returned."
-  (when-let ((start (treesit-node-start node))
-	     (end (if start-only start (treesit-node-end node)))
-	     (nodes (treesit-query-capture indent-bars-ts--parser query
-					   start end t)))
+  (when-let* ((start (treesit-node-start node))
+	      (end (if start-only start (treesit-node-end node)))
+	      (nodes (treesit-query-capture indent-bars-ts--parser query
+					    start end t)))
     (cond ((eq spanning 'innermost)
 	   (cl-loop for n in (nreverse nodes)
 		    if (and (or (eq n node)
@@ -217,11 +217,11 @@ If no spanning node is found, nil is returned."
 				    min-newlines)))
 		    return n))
 	  (spanning  ; check first node, if it doesn't span, none will
-	   (when-let ((n (indent-bars-ts--node-spans-p (car nodes) start end))
-		      ((or (not min-newlines)
-			   (>= (count-lines
-				(treesit-node-start n) (treesit-node-end n))
-			       min-newlines))))
+	   (when-let* ((n (indent-bars-ts--node-spans-p (car nodes) start end))
+		       ((or (not min-newlines)
+			    (>= (count-lines
+				 (treesit-node-start n) (treesit-node-end n))
+				min-newlines))))
 	     n))
 	  (t nodes))))
 
@@ -243,20 +243,20 @@ enclosing string and marks indent depth no deeper than one more
 than the indentation depth at string start.  This reduces depth
 inside strings, and for wrapping contexts (e.g. function
 arguments)."
-  (if-let (((not (bobp)))
-	   (node (treesit-node-on (1- (point)) (point) indent-bars-ts--parser))
-	   (dnew
-	    (if (and indent-bars-ts--string-query
-		     (indent-bars-ts--node-query
-		      node indent-bars-ts--string-query t))
-		;; A string: do not descend
-		(1+ (indent-bars--depth (indent-bars--indent-at-node node)))
-	      ;; Check wrap context
-	      (when-let (( indent-bars-ts--wrap-query)
-			 (ctx (indent-bars-ts--node-query
-			       node indent-bars-ts--wrap-query nil t)))
-		(1+ (indent-bars--depth
-		     (indent-bars--indent-at-node ctx)))))))
+  (if-let* (((not (bobp)))
+	    (node (treesit-node-on (1- (point)) (point) indent-bars-ts--parser))
+	    (dnew
+	     (if (and indent-bars-ts--string-query
+		      (indent-bars-ts--node-query
+		       node indent-bars-ts--string-query t))
+		 ;; A string: do not descend
+		 (1+ (indent-bars--depth (indent-bars--indent-at-node node)))
+	       ;; Check wrap context
+	       (when-let* ((indent-bars-ts--wrap-query)
+			   (ctx (indent-bars-ts--node-query
+				 node indent-bars-ts--wrap-query nil t)))
+		 (1+ (indent-bars--depth
+		      (indent-bars--indent-at-node ctx)))))))
       (if dnew (min dnew d) d)
     d))
 
@@ -268,7 +268,7 @@ Blank lines to ignore are those within nodes of the types
 mentioned in `indent-bars-treesit-ignore-blank-lines-types'."
   (and indent-bars-ts--parser
        indent-bars-treesit-ignore-blank-lines-types
-       (when-let ((n (treesit-node-on beg beg)))
+       (when-let* ((n (treesit-node-on beg beg)))
 	 (seq-contains-p indent-bars-treesit-ignore-blank-lines-types
 			 (treesit-node-type n)))))
 
@@ -489,7 +489,7 @@ due to edits or contextual fontification."
 	(cl-find lang (treesit-parser-list) :key #'treesit-parser-language))
 
   ;; Wrap: prevent additional bars inside wrapped entities
-  (when-let ((types (alist-get lang indent-bars-treesit-wrap)))
+  (when-let* ((types (alist-get lang indent-bars-treesit-wrap)))
     (setq indent-bars-ts--wrap-query
 	  (treesit-query-compile lang `([,@(mapcar #'list types)] @ctx))
 	  indent-bars--update-depth-function
@@ -513,7 +513,7 @@ due to edits or contextual fontification."
 			#'indent-bars-ts--update-indentation-depth)))))
 
   ;; Emphasis Scope: use alternate styling outside(/inside) current scope
-  (when-let ((types (alist-get lang indent-bars-treesit-scope)))
+  (when-let* ((types (alist-get lang indent-bars-treesit-scope)))
     (indent-bars-ts--init-scope)
     (setq ibtcs (ibts/create))
     (setq-local
@@ -552,9 +552,9 @@ To be set in `indent-bars--teardown-functions'."
   (cond
    (indent-bars--ts-mode
     (add-hook 'indent-bars--teardown-functions 'indent-bars-ts--disable nil t)
-    (if-let (((fboundp #'treesit-available-p))
-	     ((treesit-available-p))
-	     (lang (treesit-language-at (point-min))))
+    (if-let* (((fboundp #'treesit-available-p))
+	      ((treesit-available-p))
+	      (lang (treesit-language-at (point-min))))
 	(indent-bars-ts--setup lang)
       (setq indent-bars--ts-mode nil)))
    (t (indent-bars-ts--teardown))))
