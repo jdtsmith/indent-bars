@@ -2,6 +2,10 @@
 #+author: J.D. Smith
 #+language: en
 
+* v0.9.1 (20205-06-30)
+
+- Guard against invalid font ~space-width~.
+
 * v0.9 (2025-06-29)
 
 - Add compatibility for variable pitch fonts, per window.
