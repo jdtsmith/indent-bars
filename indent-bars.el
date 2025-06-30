@@ -734,8 +734,9 @@ both variable pitch and fixed pitch fonts."
   (let ((win (or win (selected-window))))
     (with-selected-window win
       (or (when-let* ((ff (face-font 'default))
-		      (fi (font-info ff)))
-	    (aref fi 10))
+		      (fi (font-info ff))
+		      (space-width (aref fi 10)))
+	    (and (natnump space-width) (> space-width 0) space-width))
 	  (window-font-width)))))
 
 (defun indent-bars--stipple-face-spec (w h rot &optional style stipple)
