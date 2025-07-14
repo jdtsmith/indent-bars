@@ -2,6 +2,10 @@
 #+author: J.D. Smith
 #+language: en
 
+* Development
+
+- Support ~haml-mode~.
+
 * v0.9.1 (20205-06-30)
 
 - Guard against invalid font ~space-width~.
