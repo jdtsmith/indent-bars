@@ -733,7 +733,8 @@ If WIN is not provided, the selected window is used.  This works for
 both variable pitch and fixed pitch fonts."
   (let ((win (or win (selected-window))))
     (with-selected-window win
-      (or (when-let* ((ff (face-font 'default))
+      (or (when-let* (( (fboundp 'font-info))
+		      (ff (face-font 'default))
 		      (fi (font-info ff))
 		      (space-width (aref fi 10)))
 	    (and (natnump space-width) (> space-width 0) space-width))
