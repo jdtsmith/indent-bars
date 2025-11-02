@@ -322,7 +322,7 @@ This will inhibit hooks (and hence `indent-bars`, `eglot`, `flymake`, whatever e
 
 `indent-bars` by default uses `:stipple` face attributes, which have only rarely been used in Emacs in recent decades.  Consequently, some packages which inherit the face of underlying text while adding styled overlays, popups, etc. to the buffer neglect to guard against the presence of `:stipple` (e.g. [this](../../issues/67), or [this](../../issues/73)).  This becomes more likely if you set `indent-bars-starting-column=0` (since often overlays are placed at the line beginning).
 
-If you encounter unwanted bar patterns on text added to your buffer by other packages as seen in these issues, contact the package's maintainer to let them know they should also clear the `:stipple` face attribute.  You can also try restoring ``indent-bars-starting-column` to the default, if you've changed it.
+If you encounter unwanted bar patterns on text added to your buffer by other packages as seen in these issues, contact the package's maintainer to let them know they should also clear the `:stipple` face attribute.  You can also try restoring `indent-bars-starting-column` to the default, if you've changed it.
 
 Sometimes unwanted stipples can be worked around yourself by explicitly setting `:stipple` to `nil` in appropriate faces, like:
 
