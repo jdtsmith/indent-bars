@@ -102,16 +102,16 @@ See [tree-sitter](#tree-sitter-details), and also the [Wiki page](https://github
 Known `:stipple` support, by Emacs build:
 
 - Linux:
-  - "Pure GTK" (`--with-pgtk` build flag) versions support stipples starting with Emacs v30.  There was a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6) in Emacs 29 and earlier; these issues were fixed in Emacs [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html) and will be released with Emacs 30.
+  - "Pure GTK" (`--with-pgtk` build flag) versions support stipples starting with Emacs v30.  There was a display bug that caused them to appear incorrectly (as [reverse video](../../issues/3)) and lead to [crashes](../../issues/6) in Emacs 29 and earlier; these issues were fixed in Emacs [here](https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-07/msg02081.html) and released with Emacs 30.
   - Cairo builds (`--with-cairo`, the default) have been [reported](../../issues/33#issuecomment-1768888990) not to display stipples (but only in [some cases](https://github.com/jdtsmith/indent-bars/issues/54#issuecomment-2330334476)).  You can try building `--without-cairo` or just omitting `--with-cairo` (which still enables Cairo but may have correct stipple display).  Also, the issue may be encountered [only on high-DPI systems](../../issues/97).
   - All other builds support stipples.
 - Mac:
   - The [emacs-mac](https://bitbucket.org/mituharu/emacs-mac/src/master/)[^1] port has stipple support.  `M-x version` should say `Carbon`, not `NS`.
-  - The `NS` build has partial stipple support in master, which may be released in Emacs v30.  A patch providing [full stipple support](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=73384) for NS in master is currently under review.
+  - The `NS` build has partial stipple support in master in Emacs v30.  A patch providing [full stipple support](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=73384) for NS has been merged, and should be released with v31.
 - Windows: Emacs on Windows will support stipples starting at v30.
 - Android: Android builds (to appear with Emacs 30) support stipples.
 - Haiku: Haiku Emacs builds will support stipples starting with v30.
-- Terminal: Stipples are not supported on terminal emacs.  Character display is automatically selected.
+- Terminal: Stipples are not supported on terminal emacs.  Character display is automatically selected instead.
 
 [^1]: Most easily installed [with brew](https://github.com/railwaycat/homebrew-emacsmacport).
 
