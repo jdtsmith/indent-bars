@@ -35,7 +35,7 @@ See the release [NEWS](NEWS.org).
 - **I use Emacs on the terminal, you insensitive clod!** <br>`indent-bars` will just work for you (though you don't get any fancy bar patterns).
 - **I use graphical Emacs, but am an extreme minimalist.  All my outfits are gray.  Including my socks.** <br>Maybe [this](examples.md#minimal) will suit you?  Otherwise, you can turn off the stipple and use old fashioned `│` characters with [`indent-bars-prefer-character`](#character-display).
 - **The current bar highlight is so fast, but it flashes too rapidly during scrolling!** <br>Update to v0.2.2 or later and set `indent-bars-depth-update-delay` to a comfortable number like 0.1s (0.075s is the default).  If you _like_ the crazy-fast updates, set this to 0.
-- **Blank lines show spaces when using display table modes, like `whitespace-mode`**: These modes change how spaces are displayed in the buffer.  Since `indent-bars` uses display spaces to pad blank-lines, the only good solution is to disable blank line bar display.
+
 
 ## Bar Placement
 
