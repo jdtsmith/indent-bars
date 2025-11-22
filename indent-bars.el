@@ -522,12 +522,29 @@ buffer-local automatically."
   :group 'indent-bars)
 
 ;;;;; Color Utilities
-(defun indent-bars--frame-background-color()
-  "Return the frame background color."
-  (let ((fb (frame-parameter nil 'background-color)))
-    (cond ((not fb) "white")
-	  ((string= fb "unspecified-bg") indent-bars-unspecified-bg-color)
-	  (t fb))))
+(defun indent-bars--background (&optional no-remap)
+  "Return the background color.
+NO-REMAP is passed to `indent-bars--background-color'."
+  (when-let ((bg-cons (indent-bars--background-color no-remap)))
+    (if (consp bg-cons) (cdr bg-cons) bg-cons)))
+
+(defun indent-bars--background-color(&optional no-remap)
+  "Return the background color in the current buffer/frame.
+Unless NO-REMAP is non-nil, if the background comes from remapping,
+return (REMAP . COLOR).  Otherwise ignore remapping."
+  (let ((remap-face (and (null no-remap)
+			 (car (alist-get 'default face-remapping-alist))))
+	(fb (frame-parameter nil 'background-color)) bg)
+    (cond
+     ((and remap-face
+	   (let ((temp-face (make-symbol "temp-face")))
+	     ;; we must handle anonymous face remappings, like (:background "yellow")
+	     (face-spec-set temp-face `((t . ,remap-face)) 'face-defface-spec)
+	     (setq bg (face-background temp-face nil t))))
+      (cons 'remap bg))
+     ((not fb) "white")
+     ((string= fb "unspecified-bg") indent-bars-unspecified-bg-color)
+     (t fb))))
 
 (defun indent-bars--blend-colors (c1 c2 fac)
   "Return a fractional color between two colors C1 and C2.
@@ -591,10 +608,10 @@ returned."
 				      (if tag (concat "-" tag) "")))))))
   "A style configuration structure for indent-bars."
   ( tag nil :type string
-    :documentation "An optional tag to include in face name")
+    :documentation "An optional tag to include in face name.")
   ;; Colors and Faces
   ( main-color nil :type string
-    :documentation "The main bar color")
+    :documentation "The main bar color.")
   ( depth-palette nil
     :documentation "Palette of depth colors.
 May be nil, a color string or a vector of colors strings.")
@@ -650,7 +667,7 @@ instead of the :blend factor in `indent-bars-color'."
 	  (setq col (indent-bars--blend-colors tint col tint-blend)))
       (if blend				;now blend into BG
 	  (setq col (indent-bars--blend-colors
-		     col (indent-bars--frame-background-color) blend)))
+		     col (indent-bars--background) blend)))
       col)))
 
 (defun indent-bars--depth-palette (style &optional blend-override)
@@ -727,6 +744,20 @@ color, if setup (see `indent-bars-highlight-current-depth')."
      (t (ibs/main-color style)))))
 
 ;;;;; Faces
+(defface indent-bars-invisible-face nil
+  "Invisible face for `indent-bars' display spaces.")
+
+(defun indent-bars--initialize-invisible-face ()
+  "Setup the invisible face (or a remapping for it).
+Handles background color remapping."
+  (unless (face-foreground 'indent-bars-invisible-face nil t)
+    (set-face-foreground 'indent-bars-invisible-face
+			 (indent-bars--background 'no-remap)))
+  (let ((bg-cons (indent-bars--background-color)))
+    (when (consp bg-cons)
+      (face-remap-set-base 'indent-bars-invisible-face
+			   `(:foreground ,(cdr bg-cons))))))
+
 (defun indent-bars--window-font-space-width (&optional win)
   "Return the space width of the font in window WIN.
 If WIN is not provided, the selected window is used.  This works for
@@ -934,12 +965,9 @@ Useful for calling after theme changes."
 (defun indent-bars--initialize-style (style)
   "Initialize STYLE."
   ;; Colors
-  (setf (ibs/main-color style)
-	(indent-bars--main-color style)
-	(ibs/depth-palette style)
-	(indent-bars--depth-palette style)
-	(ibs/current-depth-palette style)
-	(indent-bars--current-depth-palette style)
+  (setf (ibs/main-color style) (indent-bars--main-color style)
+	(ibs/depth-palette style) (indent-bars--depth-palette style)
+	(ibs/current-depth-palette style) (indent-bars--current-depth-palette style)
 	(ibs/faces style) (indent-bars--create-faces style 7)
 	(ibs/no-stipple-chars style) (indent-bars--create-no-stipple-chars style 7))
 
@@ -1048,7 +1076,7 @@ and can return an updated depth."
 OFF is the character offset within the string to draw the first
 bar, NBARS is the desired number of bars to add, and BAR-FROM is
 the starting index of the first bar (>=1).  WIDTH is the total
-string width to return, right padding with space if needed.
+string width to return, right-padding with space if needed.
 
 If SWITCH-AFTER is supplied and is an integer, switch from STYLE
 to STYLE2 after drawing that many bars.  If it is t, use
@@ -1056,7 +1084,7 @@ STYLE2 for all bars.
 
 Bars are displayed using stipple properties or characters; see
 `indent-bars-prefer-character'."
-  (concat (make-string off ?\s)
+  (concat (propertize (make-string off ?\s) 'face 'indent-bars-invisible-face)
 	  (string-join
 	   (cl-loop
 	    for i from 0 to (1- nbars)
@@ -1070,11 +1098,14 @@ Bars are displayed using stipple properties or characters; see
 	    collect (if indent-bars--no-stipple
 			(indent-bars--no-stipple-char sty depth)
 		      (propertize " " 'face (indent-bars--face sty depth))))
-	   (make-string (1- indent-bars-spacing) ?\s))
-	  (if width
-	      (make-string (- width
-			      (+ off nbars (* (1- nbars) (1- indent-bars-spacing))))
-			   ?\s))))
+	   (propertize (make-string (1- indent-bars-spacing) ?\s)
+		       'face 'indent-bars-invisible-face))
+	  (when width
+	    (propertize
+	     (make-string (- width
+			     (+ off nbars (* (1- nbars) (1- indent-bars-spacing))))
+			  ?\s)
+	     'face 'indent-bars-invisible-face))))
 
 (defun indent-bars--tab-display (style p off bar-from max &rest r)
   "Display up to MAX bars on the tab at P, offsetting them by OFF.
@@ -1708,6 +1739,9 @@ Adapted from `highlight-indentation-mode'."
   (setq indent-bars--no-stipple
 	(or (not (display-graphic-p)) indent-bars-prefer-character))
 
+  ;; Invisible face
+  (indent-bars--initialize-invisible-face)
+  
   ;; Style (color + stipple)
   (unless (and indent-bars-style indent-bars--styles)
     (indent-bars--initialize-style
@@ -1729,7 +1763,7 @@ Adapted from `highlight-indentation-mode'."
   (unless indent-bars--no-stipple
     (setq indent-bars--stipple-remaps (make-hash-table))
     (add-hook 'text-scale-mode-hook #'indent-bars--update-all-stipples nil t)
-    (indent-bars--update-all-stipples)) ; sets all remaps for current buffer
+    (indent-bars--update-all-stipples)) ; sets all stipple remaps for current buffer
 
   ;; Current depth Highlighting
   (when (indent-bars--style 'any "highlight-current-depth")
