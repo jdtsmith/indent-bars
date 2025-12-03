@@ -532,14 +532,16 @@ NO-REMAP is passed to `indent-bars--background-color'."
   "Return the background color in the current buffer/frame.
 Unless NO-REMAP is non-nil, if the background comes from remapping,
 return (REMAP . COLOR).  Otherwise ignore remapping."
-  (let ((remap-face (and (null no-remap)
-			 (car (alist-get 'default face-remapping-alist))))
+  (let ((remap-face (and (not no-remap)
+			 (ensure-list
+			  (car (alist-get 'default face-remapping-alist)))))
 	(fb (frame-parameter nil 'background-color)) bg)
     (cond
      ((and remap-face
 	   (let ((temp-face (make-symbol "temp-face")))
 	     ;; we must handle anonymous face remappings, like (:background "yellow")
-	     (face-spec-set temp-face `((t . ,remap-face)) 'face-defface-spec)
+	     ;; Note that only the first (list or face) on the remap is handled
+	     (face-spec-set temp-face `((t ,remap-face)) 'face-defface-spec)
 	     (setq bg (face-background temp-face nil t))))
       (cons 'remap bg))
      ((not fb) "white")
