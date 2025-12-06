@@ -69,6 +69,12 @@
 ;;;; Variables
 (defvar indent-bars-mode)
 (defvar-local indent-bars--regexp nil)
+(defvar-local indent-bars-ppss-syntax-table nil
+  "A special syntax table for identifying strings and list contexts.
+This is used only if `indent-bars-no-descend-lists' and/or
+`indent-bars-no-descend-string' is non-nil.  A special syntax table can
+be configured to override the mode-local table, e.g. to add or remove
+open/close paren characters.")
 ;;;; Customization
 (defgroup indent-bars nil
   "Highlight indentation bars."
@@ -434,17 +440,15 @@ multiline strings at all."
 
 (defcustom indent-bars-no-descend-lists nil
   "Configure bar behavior inside lists.
-If non-nil, displayed bars will go no deeper than the indent
-level at the starting line of the innermost containing list.  If
-t, any list recognized by the active syntax table will be used to
-identify enclosing list contexts.  If set to a list of
-characters, only list-opening characters on this list will
-activate bar suppression."
+If non-nil, displayed bars will go no deeper than the indent level at
+the starting line of the innermost containing list.  This could formerly
+be set to a list of characters to limit list-opening characters to.
+This has been replaced by `indent-bars-ppss-syntax-table'.
+"
   :local t
   :type '(choice
 	  (const :tag "Disabled" nil)
-	  (const :tag "Any list element" t)
-	  (repeat :tag "List of open paren chars" character))
+	  (const :tag "Any list element" t))
   :set #'indent-bars--custom-set
   :initialize #'custom-initialize-default
   :group 'indent-bars)
@@ -1047,13 +1051,10 @@ and can return an updated depth."
     (when indent-bars--ppss
       (save-excursion
 	(forward-line 0)
-	(let* ((ppss (syntax-ppss))	; moves point!
+	(let* ((syntax-ppss-table indent-bars-ppss-syntax-table)
+	       (ppss (syntax-ppss))	; moves point!
 	       (string-start (and indent-bars-no-descend-string (nth 8 ppss)))
-	       (list-start (when-let*
-			       ((ndl indent-bars-no-descend-lists)
-				(open (nth 1 ppss))
-				((or (not (consp ndl)) (memq (char-after open) ndl))))
-			     open)))
+	       (list-start (and indent-bars-no-descend-lists (nth 1 ppss))))
 	  (if (and string-start (eq indent-bars-no-descend-string 'all))
 	      (setq d 0 c 0) ; always inhibit inside multiline strings
 	    (when (setq ppss-ind (if (and string-start list-start)
