@@ -1234,7 +1234,7 @@ not indicated, even if they otherwise would be."
 	ctxbars)
     (save-excursion
       (goto-char (1- beg))
-      (beginning-of-line 1)
+      (forward-line 0)
       (when (> (setq ctxbars (indent-bars--context-bars end lst)) 0)
 	(goto-char beg)
 	(while (< (point) end) ;note: end extends 1 char beyond blank line range
