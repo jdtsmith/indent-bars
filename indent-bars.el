@@ -392,12 +392,12 @@ non-nil, any stipple appearance parameters will be ignored."
 (defcustom indent-bars-highlight-selection-method 'context
   "Method for selecting bar depth for current indentation highlight.
 If nil, the last showing bar on the current line is selected for
-highlight.  If the symbol `on-bar', and the start of the text on
-the line would have fallen directly on a bar, highlight that bar
-depth instead.  If `context', use `on-bar' logic, but only if a
-directly adjacent (non-blank) context line is indented deeper, by
-more than one indent spacing.  Otherwise select the last bar
-showing for highlight (i.e. the same as CONTEXT nil)."
+highlight.  If the symbol `on-bar', and the start of the text on the
+line would have fallen directly on a bar, highlight that bar depth
+instead.  If `context', use `on-bar' logic, but only if a directly
+adjacent (non-blank) context line is indented deeper by more than one
+indent spacing.  Otherwise select the last bar actually shown for
+highlight (i.e. the same as CONTEXT nil)."
   :type '(choice (const :tag "Containing" nil)
 		 (const :tag "On Bar" on-bar)
 		 (const :tag "Context" context))
@@ -1020,34 +1020,38 @@ Skips any fully blank lines."
 
 (defvar-local indent-bars--update-depth-function nil)
 (defvar-local indent-bars--ppss nil)
-(defun indent-bars--current-indentation-depth (&optional on-bar)
+(defun indent-bars--current-indentation-depth
+    (&optional on-bar include-skip)
   "Calculate current indentation depth.
 Depth is 1-based (independent of the value of
-`indent-bars-starting-column'), with a depth of 1 corresponding
-to the outermost bar, and a depth of 0 indicating there is no
-valid current depth.
+`indent-bars-starting-column'), with a depth of 1 corresponding to the
+outermost bar, and a depth of 0 indicating there is no valid current
+depth.
 
 If ON-BAR is nil, return the depth of the last visible bar on the
-current line.  If ON-BAR is non-nil and content begins at a
-column where a bar would otherwise have fallen, report the depth
-of that (undrawn) bar.  If ON-BAR is the symbol `context', and
-the first non-blank line immediately above or below the current
-line is not at a deeper indentation level (by at least one bar
-spacing), disable on-bar and use the last-visible-bar depth for
-that line instead.
+current line.  If ON-BAR is non-nil and content on the line begins at a
+column where a bar would otherwise have fallen, report the depth of
+that (undrawn) bar.  If ON-BAR is the symbol `context', and the first
+non-blank line immediately above or below the current line is not at a
+deeper indentation level (by at least one bar spacing), disable on-bar
+and use the last-visible-bar depth for that line instead.
 
 If `indent-bars-no-descend-string' is non-nil and point at line
-beginning is inside a string, do not add bars deeper than one
-more than the string's start.  If it is `all', do not add any
-bars at all.  If `indent-bars-no-descend-lists' is non-nil,
-perform the same check for lists.
+beginning is inside a string, do not add bars deeper than one more than
+the string's start.  If it is `all', do not add any bars at all.  If
+`indent-bars-no-descend-lists' is non-nil, perform the same check for
+lists.
 
-If `indent-bars--update-depth-function' is non-nil, it will be
-called with the indentation depth (prior to the ON-BAR check),
-and can return an updated depth."
+If `indent-bars--update-depth-function' is non-nil, it will be called
+with the indentation depth (prior to the ON-BAR check), and can return
+an updated depth to use.
+
+If INCLUDE-SKIP is non-nil and some bars should be skipped,
+return (DEPTH . SKIP), with SKIP a list of bar numbers to skip display
+of."
   (let* ((c (current-indentation))
 	 (d (indent-bars--depth c)) 	;last visible bar
-	 ppss-ind)
+	 ppss-ind skip dppss)
     (when indent-bars--ppss
       (save-excursion
 	(forward-line 0)
@@ -1061,28 +1065,44 @@ and can return an updated depth."
 				     (max string-start list-start)
 				   (or string-start list-start)))
 	      (goto-char ppss-ind)
-	      (let* ((cnew (current-indentation))
-		     (dnew (1+ (indent-bars--depth cnew))))
-		(when (< dnew d) (setq d dnew c cnew))))))))
+	      (let* ((cppss (current-indentation)))
+		(setq dppss (1+ (indent-bars--depth cppss)))
+		(when (< dppss d) (setq d dppss c cppss)))))
+
+	  ;; Nested lists?  Generate bar skip list (if requested)
+	  (when (and include-skip list-start (> (car ppss) 1) (not string-start))
+	    (setq skip
+		  (cl-loop
+		   for pos in (cdr (nreverse (nth 9 ppss)))
+		   with depth
+		   for last-depth = dppss then depth
+		   do (progn (goto-char pos)
+			     (setq depth (1+ (indent-bars--depth
+					      (current-indentation)))))
+		   if (> last-depth (1+ depth))
+		   append (number-sequence (1+ depth) (1- last-depth))))))))
     (when (and indent-bars--update-depth-function (not ppss-ind))
       (setq d (funcall indent-bars--update-depth-function d)))
     (when (and (eq on-bar 'context)
 	       (< (indent-bars--context-indentation) (+ c indent-bars-spacing)))
       (setq on-bar nil))
-    (if (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
-	(1+ d) d)))
+    (when (and on-bar (= c (+ indent-bars--offset (* d indent-bars-spacing))))
+      (cl-incf d))
+    (if skip (cons d skip) d)))
 
-(defun indent-bars--blank-string (style off nbars bar-from
-					&optional width
-					switch-after style2)
+(defun indent-bars--blank-string ( style off nbars bar-from skip
+				   &optional width switch-after style2)
   "Return a blank string with bars displayed, using style STYLE.
-OFF is the character offset within the string to draw the first
-bar, NBARS is the desired number of bars to add, and BAR-FROM is
-the starting index of the first bar (>=1).  WIDTH is the total
-string width to return, right-padding with space if needed.
+OFF is the character offset within the string to draw the first bar,
+NBARS is the desired number of bars to add, and BAR-FROM is the starting
+index of the first bar (>=1).  If non-nil, WIDTH is the total string
+width to return, right-padding with space if needed.
 
-If SWITCH-AFTER is supplied and is an integer, switch from STYLE
-to STYLE2 after drawing that many bars.  If it is t, use
+If SKIP is provided, it should be a list of bar numbers to skip
+drawing (with first bar as number 1).
+
+If SWITCH-AFTER is supplied and is an integer, switch from STYLE to
+STYLE2 after drawing (or skipping) that many bars.  If it is t, use
 STYLE2 for all bars.
 
 Bars are displayed using stipple properties or characters; see
@@ -1092,56 +1112,68 @@ Bars are displayed using stipple properties or characters; see
 	   (cl-loop
 	    for i from 0 to (1- nbars)
 	    for depth = (+ bar-from i)
+	    for skip-bar = (memql depth skip)
 	    for sty = (if switch-after
 			  (if (or (eq switch-after t)
 				  (>= i switch-after))
 			      style2
 			    style)
 			style)
-	    collect (if indent-bars--no-stipple
-			(indent-bars--no-stipple-char sty depth)
-		      (propertize " " 'face (indent-bars--face sty depth))))
+	    collect (cond
+		     (skip-bar
+		      (propertize " " 'face 'indent-bars-invisible-face))
+		     (indent-bars--no-stipple
+		      (indent-bars--no-stipple-char sty depth))
+		     (t (propertize " " 'face (indent-bars--face sty depth)))))
 	   (propertize (make-string (1- indent-bars-spacing) ?\s)
 		       'face 'indent-bars-invisible-face))
-	  (when width
-	    (propertize
-	     (make-string (- width
-			     (+ off nbars (* (1- nbars) (1- indent-bars-spacing))))
-			  ?\s)
-	     'face 'indent-bars-invisible-face))))
+	  (and width
+	       (propertize
+		(make-string (- width
+				(+ off nbars (* (1- nbars)
+						(1- indent-bars-spacing))))
+			     ?\s)
+		'face 'indent-bars-invisible-face))))
 
-(defun indent-bars--tab-display (style p off bar-from max &rest r)
-  "Display up to MAX bars on the tab at P, offsetting them by OFF.
-Bars are spaced by `indent-bars-spacing' and displayed with style
-STYLE.  BAR-FROM is the bar number for the first bar.  Other
-arguments R are passed to `indent-bars--blank-string'.  Returns
-the number of bars actually displayed."
-  (let* ((nb (min max (1+ (/ (- tab-width off 1) indent-bars-spacing))))
-	 (str (apply #'indent-bars--blank-string style off nb
-		     bar-from tab-width r)))
-    (put-text-property p (+ p 1) 'indent-bars-display str)
-    nb))
+(defun indent-bars--tab-display (style p off bar-from skip max &rest r)
+  "Display up to MAX bars on the tab at position P.
+Within the space occupied by the tab character, bars are offset by OFF
+columns.  Bars are spaced by `indent-bars-spacing' and displayed with
+style STYLE.  BAR-FROM is the bar number for the first bar.  SKIP is a
+list of bar numbers to skip.  Other arguments R are passed to
+`indent-bars--blank-string'.  Returns the number of bars actually
+displayed or skipped."
+  (let ((nbars (min max (1+ (/ (- tab-width off 1) indent-bars-spacing)))))
+    (unless (and skip (cl-loop for b from bar-from upto (+ bar-from nbars)
+			       unless (memql b skip) return nil
+			       finally return t)) ; all skipped
+     (put-text-property p (+ p 1) 'indent-bars-display
+			(apply #'indent-bars--blank-string style off nbars
+			       bar-from skip tab-width r)))
+    nbars))
 
-(defun indent-bars--draw-line (style nbars start end &optional
-				     invent switch-after style2)
+(defun indent-bars--draw-line ( style nbars start end &optional
+				skip invent switch-after style2)
   "Draw NBARS bars on the line between positions START and END.
-Bars are drawn in style STYLE, `indent-bars-style' by default.
-START is assumed to be on a line beginning position.  Drawing
-starts at a column determined by `indent-bars-starting-column'.
-Tabs at the line beginning have appropriate display properties
-applied if `indent-tabs-mode' is enabled.
+Bars are drawn in style STYLE, `indent-bars-style' by default.  START is
+assumed to be on a line beginning position.  Drawing starts at a column
+determined by `indent-bars-starting-column'.  Tabs at the line beginning
+have appropriate display properties applied if `indent-tabs-mode' is
+enabled.
 
-If SWITCH-AFTER is an integer, switch from STYLE to STYLE2
-after drawing that many bars.  If it is t, use STYLE2
+If SWITCH-AFTER is an integer, switch from STYLE to STYLE2 after
+drawing (or skipping) that many bars.  If it is t, use STYLE2
 exclusively.
 
-If INVENT is non-nil and the line's length is insufficient to
-display all NBARS bars (whether by replacing tabs or adding
-properties to existing non-tab whitespace), bars will be
-\"invented\".  That is, the line's final newline, which is (only
-in this case) expected to be located at END, will have its
-display properties set to fill out the remaining bars, if any are
-needed."
+If SKIP is non-nil, it should be a list of bar numbers to skip while
+drawing (where the first and leftmost possible bar is number 1).
+
+If INVENT is non-nil and the line's length is insufficient to display
+all NBARS bars (whether by replacing tabs or adding properties to
+existing non-tab whitespace), bars will be \"invented\".  That is, the
+line's final newline, which is (only in this case) expected to be
+located at END, will have its display properties set to fill out the
+remaining bars, if any are needed."
   (let* ((tabs (and indent-tabs-mode
 		    (save-excursion
 		      (goto-char start) (looking-at "^\t+"))
@@ -1153,32 +1185,34 @@ needed."
       (while (and (<= bar nbars) (< (setq tnum (/ vp tab-width)) tabs))
 	(setq bars-drawn
 	      (indent-bars--tab-display style (+ start tnum) (mod vp tab-width)
-					bar (- nbars bar -1)
+					bar skip (- nbars bar -1)
 					switch-after style2))
 	(when (integerp switch-after)
 	  (cl-decf switch-after bars-drawn)
-	  (if (<= switch-after 0) (setq switch-after t))) ; switch the rest
+	  (when (<= switch-after 0)
+	    (setq switch-after t)))	; switch style of the rest
 	(cl-incf bar bars-drawn)
 	(cl-incf vp (* bars-drawn indent-bars-spacing)))
       (cl-incf start (+ (/ vp tab-width) (mod vp tab-width))))
-    (when (<= bar nbars)		; still bars to show
+    (when (<= bar nbars)		; still bars to show?
       (if indent-bars--no-stipple
 	  (setq prop 'indent-bars-display fun #'indent-bars--no-stipple-char)
 	(setq prop 'face fun #'indent-bars--face))
       (let ((pos (if tabs start (+ start indent-bars--offset))))
 	(while (and (<= bar nbars) (< pos end))
-	  (put-text-property
-	   pos (1+ pos)
-	   prop (funcall fun
-			 (cond ((integerp switch-after)
-				(prog1
-				    (if (> switch-after 0) style style2)
-				  (cl-decf switch-after)
-				  (when (<= switch-after 0)
-				    (setq switch-after t))))
-			       ((eq switch-after t) style2)
-			       (t style))
-			 bar))
+	  (unless (memql bar skip)
+	    (put-text-property
+	     pos (1+ pos)
+	     prop (funcall fun
+			   (cond ((integerp switch-after)
+				  (prog1
+				      (if (> switch-after 0) style style2)
+				    (cl-decf switch-after)
+				    (when (<= switch-after 0)
+				      (setq switch-after t))))
+				 ((eq switch-after t) style2)
+				 (t style))
+			   bar)))
 	  (cl-incf bar)
 	  (cl-incf pos indent-bars-spacing))
 	;; STILL bars to show: invent them (if requested)
@@ -1187,64 +1221,84 @@ needed."
 	   end (1+ end) ; atop the final newline
 	   `(indent-bars-display
 	     ,(concat (indent-bars--blank-string
-		       style (- pos end) (- nbars bar -1) bar nil
+		       style (- pos end) (- nbars bar -1) bar skip nil 
 		       switch-after style2)
 		      "\n")
 	    rear-nonsticky t)))))))
 
-(defsubst indent-bars--context-bars (end &optional min)
-  "Maximum number of bars at point and END.
-If MIN is non-nil, return the minimum number of bars instead.
-Moves point."
-  (funcall (if min #'min #'max)
-	   (indent-bars--current-indentation-depth)
-	   (progn
-	     (goto-char (1+ end))	; end is always eol
-	     (indent-bars--current-indentation-depth))))
+(defun indent-bars--context-bars (end &optional min)
+  "Maximum(/minimum) number of bars between point and END.
+If MIN is non-nil, return the minimum number of bars instead.  If bars
+are skipped on either line, the return value is (DEPTH . SKIP), where
+SKIP is a list of bar numbers to skip.  If the bar depths at point and
+END are the same, and both include skipped bars, the longer of thw two
+SKIP lists is returned.  Moves point."
+  (let ((pdepth (indent-bars--current-indentation-depth nil 'skip))
+	(edepth (progn
+		  (goto-char (1+ end))	; end is always eol
+		  (indent-bars--current-indentation-depth nil 'skip)))
+	skip eskip)
+    (when (consp pdepth)
+      (setq skip (cdr pdepth) pdepth (car pdepth)))
+    (when (consp edepth)
+      (setq eskip (cdr edepth) edepth (car edepth)))
+    (when (and skip eskip)
+      (cond
+       ((< edepth pdepth) (when min (setq skip eskip)))
+       ((> edepth pdepth) (unless min (setq skip eskip)))
+       (t (if (> (length eskip) (length skip)) (setq skip eskip)))))
+    (let ((depth (funcall (if min #'min #'max) pdepth edepth)))
+      (if skip (cons depth skip) depth))))
 
 (defun indent-bars--display (beg end &optional style switch-after style2)
   "Draw indentation bars from BEG..END, based on line contents.
 BEG and END should be on the same line.  STYLE, SWITCH-AFTER and
 STYLE2 are as in `indent-bars--draw-line'.  If STYLE is not
 passed, uses `indent-bars-style' for drawing."
-  (let ((n (save-excursion
-	     (goto-char beg)
-	     (indent-bars--current-indentation-depth))))
-    (and (> n 0) (indent-bars--draw-line style n beg end nil
-					 switch-after style2))))
+  (let* ((n (save-excursion
+	      (goto-char beg)
+	      (indent-bars--current-indentation-depth nil 'skip)))
+	 skip)
+    (when (consp n)
+	(setq skip (cdr n) n (car n))
+	(message "Skip: %s" skip))
+    (when (> n 0)
+      (indent-bars--draw-line style n beg end skip
+			      nil switch-after style2))))
 
 (defun indent-bars--display-blank-lines (beg end &optional style switch-after style2)
   "Display appropriate bars over the blank-only lines from BEG..END.
-Only called if `indent-bars-display-on-blank-lines' is non-nil.
-To be called on complete multi-line blank line regions.
+Only called if `indent-bars-display-on-blank-lines' is non-nil.  To be
+called on complete multi-line blank line regions.
 
-It is ambigious how many bars to draw on blank lines, so this
-uses the maximum depth of the surrounding line indentation, above
-and below, unless `indent-bars-display-on-blank-lines' is set to
-`least', in which case the minimum bar depth of such lines is
-used instead.
+It is ambigious how many bars to draw on blank lines, so this uses the
+maximum depth of the surrounding line indentation, above and below,
+unless `indent-bars-display-on-blank-lines' is set to `least', in which
+case the minimum bar depth of such lines is used instead.
 
-Drawing uses `indent-bars--draw-line'.  STYLE, SWITCH-AFTER and
-STYLE2 are as in `indent-bars--draw-line'.
+Drawing uses `indent-bars--draw-line'.  STYLE, SWITCH-AFTER and STYLE2
+are as in `indent-bars--draw-line'.
 
-Note: blank lines at the very beginning or end of the buffer are
-not indicated, even if they otherwise would be."
-  (let ((pm (point-max))
-	(lst (eq indent-bars-display-on-blank-lines 'least))
-	ctxbars)
-    (save-excursion
-      (goto-char (1- beg))
-      (forward-line 0)
-      (when (> (setq ctxbars (indent-bars--context-bars end lst)) 0)
+Note: blank lines at the very beginning or end of the buffer are not
+indicated, even if they otherwise would be."
+  (save-excursion
+    (goto-char (1- beg))
+    (forward-line 0)
+    (let* ((pm (point-max))
+	   (lst (eq indent-bars-display-on-blank-lines 'least))
+	   (ctxbars (indent-bars--context-bars end lst))
+	   (ctxskip (when (consp ctxbars)
+		      (prog1 (cdr ctxbars) (setq ctxbars (car ctxbars))))))
+      (when (> ctxbars 0)
 	(goto-char beg)
 	(while (< (point) end) ;note: end extends 1 char beyond blank line range
 	  (let* ((bp (line-beginning-position))
 		 (ep (line-end-position)))
 	    (unless (= ep pm)
-	      (indent-bars--draw-line style ctxbars bp ep 'invent
+	      (indent-bars--draw-line style ctxbars bp ep ctxskip 'invent
 				      switch-after style2))
-	    (beginning-of-line 2)))))
-    nil))
+	    (beginning-of-line 2))))
+    nil)))
 
 ;;;; jit-lock support
 (defvar-local indent-bars--orig-fontify-region nil)
