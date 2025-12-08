@@ -1235,14 +1235,14 @@ END are the same, and both include skipped bars, the longer of thw two
 SKIP lists is returned.  Moves point."
   (let ((pdepth (indent-bars--current-indentation-depth nil 'skip))
 	(edepth (progn
-		  (goto-char (1+ end))	; end is always eol
+		  (goto-char (1+ end))	; end is always at eol
 		  (indent-bars--current-indentation-depth nil 'skip)))
 	skip eskip)
     (when (consp pdepth)
       (setq skip (cdr pdepth) pdepth (car pdepth)))
     (when (consp edepth)
       (setq eskip (cdr edepth) edepth (car edepth)))
-    (when (and skip eskip)
+    (when (and skip eskip) ; unlikely case: two competing skip lists?
       (cond
        ((< edepth pdepth) (when min (setq skip eskip)))
        ((> edepth pdepth) (unless min (setq skip eskip)))
@@ -1259,9 +1259,7 @@ passed, uses `indent-bars-style' for drawing."
 	      (goto-char beg)
 	      (indent-bars--current-indentation-depth nil 'skip)))
 	 skip)
-    (when (consp n)
-	(setq skip (cdr n) n (car n))
-	(message "Skip: %s" skip))
+    (when (consp n) (setq skip (cdr n) n (car n)))
     (when (> n 0)
       (indent-bars--draw-line style n beg end skip
 			      nil switch-after style2))))
@@ -1269,7 +1267,10 @@ passed, uses `indent-bars-style' for drawing."
 (defun indent-bars--display-blank-lines (beg end &optional style switch-after style2)
   "Display appropriate bars over the blank-only lines from BEG..END.
 Only called if `indent-bars-display-on-blank-lines' is non-nil.  To be
-called on complete multi-line blank line regions.
+called on complete multi-line blank line regions.  BEG should be at the
+beginning of line for the first line in a contiguous range of blank
+lines, and END should be at the beginning of the first non-blank line
+below this range.
 
 It is ambigious how many bars to draw on blank lines, so this uses the
 maximum depth of the surrounding line indentation, above and below,
@@ -1285,8 +1286,8 @@ indicated, even if they otherwise would be."
     (goto-char (1- beg))
     (forward-line 0)
     (let* ((pm (point-max))
-	   (lst (eq indent-bars-display-on-blank-lines 'least))
-	   (ctxbars (indent-bars--context-bars end lst))
+	   (ctxbars (indent-bars--context-bars
+		     end (eq indent-bars-display-on-blank-lines 'least)))
 	   (ctxskip (when (consp ctxbars)
 		      (prog1 (cdr ctxbars) (setq ctxbars (car ctxbars))))))
       (when (> ctxbars 0)
