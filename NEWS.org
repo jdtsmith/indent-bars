@@ -4,10 +4,14 @@
 
 * DEVELOPMENT
 
-- Support ~yaml-pro-ts-mode~ and modes like ~typescript-tsx-mode~ derived from ~typescript-ts-base-mode~.
-- Work correctly with ~whitespace-mode~ and other modes which change the character display tables to ensure display spaces for blank lines are not visible.
 - Implement bar-skipping in multiply nested list contexts (with ~indent-bars-no-descend-lists~ set).
-  
+- Work correctly with ~whitespace-mode~ and other modes which change the character display tables to prevent display spaces on blank lines from showing.
+- New mode support:
+  + ~yaml-pro-ts-mode~
+  + ~r-ts-mode~
+  + ~ess-mode~
+  + modes which derive from ~typescript-ts-base-mode~ (like ~typescript-tsx-mode~)
+
 * v0.9.2 (2025-07-19)
 
 - Support ~haml-mode~.
