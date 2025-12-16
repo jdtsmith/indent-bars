@@ -1762,6 +1762,12 @@ Adapted from `highlight-indentation-mode'."
     tcl-indent-level)
    ((and (derived-mode-p 'haml-mode) (boundp 'haml-indent-offset))
     haml-indent-offset)
+   ((and (derived-mode-p 'r-ts-mode) (boundp 'r-ts-mode-indent-offset))
+    r-ts-mode-indent-offset)
+   ((and (derived-mode-p 'r-ts-mode) (boundp 'r-ts-mode-indent-level))
+    r-ts-mode-indent-level)
+   ((and (derived-mode-p 'ess-mode) (boundp 'ess-indent-offset))
+    ess-indent-offset)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
