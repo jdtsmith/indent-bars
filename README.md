@@ -43,7 +43,7 @@ See the release [NEWS](NEWS.org).
 - **I want a bar in the very first column!** <br>Set `indent-bars-starting-column` to 0.
 - **indent-bars seems to be conflicting with another package I use.** <br>See [these workarounds](#compatibility-with-other-packages).
 - **In my brace language (C, JS, etc.) I sometimes get fewer bars than I expected!** <br>Your mode syntax likely interprets `{`/`}` as list context, and you have `indent-bars-no-descend-lists=t`.  Either disable this feature, or see [this config](#bar-setup-and-location) for another option.
-- **In my paren language (Elisp, Scheme, etc.) the bars disappear on some lines!**<br> You probably need to disable `indent-bars-no-descend-lists` there: most lines of these languages are inside "continuing lists", so it makes little sense to inhibit bars there.
+- **In my paren language (Elisp, Scheme, etc.) the bars disappear on some lines!**<br> You probably need to disable `indent-bars-no-descend-lists` or set it to `skip` there: almost all lines of these languages are inside nested "continuing lists".
 - **Bars are missing on lines with tabs!**<br> You likely have `indent-tabs-mode` set to `nil` in a buffer with a tab-indented file.  See [this for more](#indentation).
 
 ## Tree-sitter and Scope
@@ -77,7 +77,7 @@ Configures `tree-sitter` and `ignore-blank-line` support for an example language
 ```elisp
 (use-package indent-bars
   :custom
-  (indent-bars-no-descend-lists t) ; no extra bars in continued func arg lists
+  (indent-bars-no-descend-lists 'skip) ; prevent extra bars in nested lists
   (indent-bars-treesit-support t)
   (indent-bars-treesit-ignore-blank-lines-types '("module"))
   ;; Add other languages as needed
@@ -166,7 +166,17 @@ Configuration variables for bar position and line locations (including on blank 
 - `indent-bars-spacing-override`:  Normally the number of spaces for indentation is automatically discovered from the mode and other variables.  If that doesn't work for any reason, it can be explicitly overridden using this variable.
 - `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines contiguous with lines already showing bars.  By default the maximum number of adjacent bars on non-blank lines is used for a blank lines, but setting this to `least` instead uses the _least_ number of adjacent line bars.
 - `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings.
-- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists.  Note that this can optionally be configured with a list of list-opening chars (e.g. `'(?\( ?\[)`?) to select only certain list context (useful for c-based modes, where `{}` braces are a list syntax).
+- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists.  Additionally, if set to the symbol `skip`, bars _between_ lists contexts are skipped (not displayed). 
+- If you need to alter what `indent-bars` considers a list context, override the variable `indent-bars-ppss-syntax-table`, e.g. for altering `python-mode` to omit `{`/`}` from consideration:
+
+   ```elisp
+    (setq indent-bars-ppss-syntax-table
+          (let ((table (make-syntax-table python-mode-syntax-table)))
+            ;; Remove { and } from list context
+            (modify-syntax-entry ?\{ "." table)
+            (modify-syntax-entry ?\} "." table)
+            table))
+    ```
 
 ## Character-based bars and terminal
 
@@ -250,7 +260,7 @@ Note that tree-sitter scope and wrap config are keyed to the parser _language_, 
 
 ## Indentation
 
-`indent-bars` works with either space- or tab-based indentation (see `indent-tabs-mode`).  If possible, prefer space indentation, as it is faster.  
+`indent-bars` works with either space- or tab-based indentation (see `indent-tabs-mode`).  If possible, prefer space indentation, as it is faster.
 
 Note that some modes explicitly enable or disable `indent-tabs-mode`.  If the value of that variable does not match the actual indentation used in a file (e.g. file is indented with tabs, but you have set `indent-tabs-mode=nil`), bars may go missing.  You should ideally pick _one_ indentation-style (tabs or spaces) per mode and stick to it for all files in that mode, but see [dtrt-indent](https://github.com/jscheid/dtrt-indent) for a package that can adapt this variable by examining the file's contents.
 
