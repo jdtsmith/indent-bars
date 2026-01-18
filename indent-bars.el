@@ -439,16 +439,24 @@ multiline strings at all."
   :group 'indent-bars)
 
 (defcustom indent-bars-no-descend-lists nil
-  "Configure bar behavior inside lists.
+  "Configure bar behavior inside (nested) list contexts.
 If non-nil, displayed bars will go no deeper than the indent level at
-the starting line of the innermost containing list.  This could formerly
-be set to a list of characters to limit list-opening characters to.
-This has been replaced by `indent-bars-ppss-syntax-table'.
-"
+the starting line of the innermost containing list.
+
+If the symbol `skip', nested list contexts are considered (for the line
+start position).  In addition to bars going no deeper than the innermost
+containing list, bars which appear between the indent level of lines
+with list-opening characters for all the nested lists are skipped (not
+displayed).
+
+N.B., this custom variable could formerly be set to a list of characters to
+limit list-opening characters to.  This fuctionality has been replaced
+by `indent-bars-ppss-syntax-table'."
   :local t
   :type '(choice
 	  (const :tag "Disabled" nil)
-	  (const :tag "Any list element" t))
+	  (const :tag "Omit deeper bars" t)
+	  (const :tag "Omit deeper and skip nested bars" skip))
   :set #'indent-bars--custom-set
   :initialize #'custom-initialize-default
   :group 'indent-bars)
@@ -1022,15 +1030,15 @@ Skips any fully blank lines."
 (defvar-local indent-bars--ppss nil)
 (defun indent-bars--current-indentation-depth
     (&optional on-bar include-skip)
-  "Calculate current indentation depth.
-Depth is 1-based (independent of the value of
+  "Calculate current indentation depth and bar skip list.
+Depth is always 1-based (independent of the value of
 `indent-bars-starting-column'), with a depth of 1 corresponding to the
-outermost bar, and a depth of 0 indicating there is no valid current
-depth.
+outermost bar, and a depth of 0 indicating that there is no valid
+current depth.
 
 If ON-BAR is nil, return the depth of the last visible bar on the
 current line.  If ON-BAR is non-nil and content on the line begins at a
-column where a bar would otherwise have fallen, report the depth of
+column where a bar would otherwise have been drawn, report the depth of
 that (undrawn) bar.  If ON-BAR is the symbol `context', and the first
 non-blank line immediately above or below the current line is not at a
 deeper indentation level (by at least one bar spacing), disable on-bar
@@ -1227,22 +1235,26 @@ remaining bars, if any are needed."
 	    rear-nonsticky t)))))))
 
 (defun indent-bars--context-bars (end &optional min)
-  "Maximum(/minimum) number of bars between point and END.
-If MIN is non-nil, return the minimum number of bars instead.  If bars
-are skipped on either line, the return value is (DEPTH . SKIP), where
-SKIP is a list of bar numbers to skip.  If the bar depths at point and
-END are the same, and both include skipped bars, the longer of thw two
-SKIP lists is returned.  Moves point."
-  (let ((pdepth (indent-bars--current-indentation-depth nil 'skip))
-	(edepth (progn
-		  (goto-char (1+ end))	; end is always at eol
-		  (indent-bars--current-indentation-depth nil 'skip)))
-	skip eskip)
+  "Maximum number of bars between point and END.
+Point and END are expected to be on different lines.  If MIN is non-nil,
+return the minimum number of bars instead.  If bars are skipped on
+either line, the return value is (DEPTH . SKIP), where SKIP is a list of
+bar numbers to skip.  If the bar depths at point and END are the same,
+and both include a list of bars to be skipped, the longer of the two
+SKIP lists is returned.
+
+Moves point."
+  (let* ((skip-p (eq indent-bars-no-descend-lists 'skip))
+	 (pdepth (indent-bars--current-indentation-depth nil skip-p))
+	 (edepth (progn
+		   (goto-char (1+ end))	; end is always at eol
+		   (indent-bars--current-indentation-depth nil skip-p)))
+	 skip eskip)
     (when (consp pdepth)
       (setq skip (cdr pdepth) pdepth (car pdepth)))
     (when (consp edepth)
       (setq eskip (cdr edepth) edepth (car edepth)))
-    (when (and skip eskip) ; unlikely case: two competing skip lists?
+    (when (and skip eskip)  ; unlikely case: two competing skip lists?
       (cond
        ((< edepth pdepth) (when min (setq skip eskip)))
        ((> edepth pdepth) (unless min (setq skip eskip)))
@@ -1257,7 +1269,8 @@ STYLE2 are as in `indent-bars--draw-line'.  If STYLE is not
 passed, uses `indent-bars-style' for drawing."
   (let* ((n (save-excursion
 	      (goto-char beg)
-	      (indent-bars--current-indentation-depth nil 'skip)))
+	      (indent-bars--current-indentation-depth
+	       nil (eq indent-bars-no-descend-lists 'skip))))
 	 skip)
     (when (consp n) (setq skip (cdr n) n (car n)))
     (when (> n 0)
