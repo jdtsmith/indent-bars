@@ -4,7 +4,8 @@
 
 * DEVELOPMENT
 
-- Implement bar-skipping in multiply nested list contexts (with ~indent-bars-no-descend-lists~ set).
+- Implement /bar-skipping/ in multiply-nested list contexts (with ~indent-bars-no-descend-lists~ set to ~skip~).
+- Breaking change: ~indent-bars-no-descend-lists~ can no longer be set to a list of list opening characters.  If you need this functionality, set the local variable ~indent-bars-ppss-syntax-table~.
 - Work correctly with ~whitespace-mode~ and other modes which change the character display tables to prevent display spaces on blank lines from showing.
 - New mode support:
   + ~yaml-pro-ts-mode~
