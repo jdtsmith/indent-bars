@@ -166,7 +166,9 @@ Configuration variables for bar position and line locations (including on blank 
 - `indent-bars-spacing-override`:  Normally the number of spaces for indentation is automatically discovered from the mode and other variables.  If that doesn't work for any reason, it can be explicitly overridden using this variable.
 - `indent-bars-display-on-blank-lines`: Whether to display bars on blank lines contiguous with lines already showing bars.  By default the maximum number of adjacent bars on non-blank lines is used for a blank lines, but setting this to `least` instead uses the _least_ number of adjacent line bars.
 - `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings.
-- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists.  Additionally, if set to the symbol `skip`, bars _between_ lists contexts are skipped (not displayed). 
+- `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists.  Additionally, if set to the symbol `skip`, bars _between_ lists contexts are skipped (not displayed). An example with `indent-bars-no-descend-list=skip` shows how intermediate bars in nested lists contexts are skipped:
+
+   <img width="483" height="232" alt="image" src="https://github.com/user-attachments/assets/a28a956f-5031-4f9c-b2fe-b6e17f0d2402" />
 - If you need to alter what `indent-bars` considers a list context, override the variable `indent-bars-ppss-syntax-table`, e.g. for altering `python-mode` to omit `{`/`}` from consideration:
 
    ```elisp
@@ -177,6 +179,8 @@ Configuration variables for bar position and line locations (including on blank 
             (modify-syntax-entry ?\} "." table)
             table))
     ```
+
+See also [treesitter](#tree-sitter) for configuration that can affect bar location in TS-enabled buffers.
 
 ## Character-based bars and terminal
 
