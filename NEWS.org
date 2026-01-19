@@ -2,7 +2,7 @@
 #+author: J.D. Smith
 #+language: en
 
-* DEVELOPMENT
+* v1.0 (2025-01-19)
 
 - Implement /bar-skipping/ in multiply-nested list contexts (with ~indent-bars-no-descend-lists~ set to ~skip~).
 - Breaking change: ~indent-bars-no-descend-lists~ can no longer be set to a list of list opening characters.  If you need this functionality, set the local variable ~indent-bars-ppss-syntax-table~.
