@@ -4,19 +4,25 @@
 <a href="#installconfig"><b>INSTALL</b></a> ⏐
 <a href="#customization"><b>CUSTOMIZE</b></a> ⏐
 <a href="#details-and-caveats"><b>MORE DETAILS</b></a>
-</p> <a href="https://elpa.gnu.org/packages/indent-bars.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/indent-bars.svg"/></a> 
-<img hspace="10" align="right" width="500" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c"/>
+</p> 
+<a href="https://elpa.gnu.org/packages/indent-bars.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/indent-bars.svg"/></a> 
 
-This package provides indentation _guide bars_ in Emacs, with optional tree-sitter enhancement:
+<!-- Note: <picture>..</picture> required for padding to be visible -->
+<picture> 
+  <img align="right" src="https://github.com/jdtsmith/indent-bars/assets/93749/0eaa0d85-0893-4893-8a56-a63ab6eeac1c">
+</picture>
+
+This package provides fast, flexible indentation _guide bars_ in Emacs, with optional `tree-sitter` enhancement:
 
 - Optimized for speed.
 - Optional tree-sitter support, including _scope focus_, among [other features](#tree-sitter-details).
 - Supports either space or tab-based indentation.
-- Bar appearance is _highly_ [configurable](#customization): color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
-- Bars can have optional depth-based coloring, with a cyclical color palette you can [customize](#customization).
-- Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
 - Bars can appear on blank lines.
+- Bars can have optional depth-based coloring, with a cyclical color palette you can [customize](#customization).
+- Bar appearance is _highly_ [configurable](#customization): color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
+- Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
 - Bar depth can be held constant inside multi-line strings and lists.
+- Supports bar-skipping in multiply-nested list structures.
 - Works in the terminal, using a vertical bar character.
 
 ## What's New
