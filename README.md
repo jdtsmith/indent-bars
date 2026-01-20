@@ -221,7 +221,7 @@ To customize the alternate bar appearance, you use the parallel set of custom va
 You can interchange the role of in-scope and out-of-scope using `indent-bars-ts-styling-scope`.  This is useful if you prefer to have the _default_ style (e.g. the bar style in non-tree-sitter-enabled buffers) match the out-of-scope style within tree-sitter buffers (i.e. if you want to _emphasize_ bars within scope, not _de-emphasize_ out-of-scope bars).
 
 > [!NOTE]
-> _Scope focus_ highlighting is completely independent of _current depth highlighting_, and you can style them separately, and can enable one or the other, both, or neither.
+> _Scope focus_ highlighting is completely independent of _current depth highlighting_. You can enable one or the other, both, or neither, and they can be styled separately.
 
 The `ts` custom variables for configuring the alternate styling are:
 
@@ -284,6 +284,10 @@ Note that some modes explicitly enable or disable `indent-tabs-mode`.  If the va
 3. `context`: The new default, a blend of these two methods.  It selects the last-visible bar (à la `nil`), _unless_ an adjacent non-blank line (above or below) is indented deeper by at least one level, in which case the `on-bar` approach is used.
 
 Experiment with these to see which you prefer.
+
+## Ensuring `indent-bars` initializes _last_
+
+If you alter important variables that affect the indentation spacing after `indent-bars` is setup in a buffer, e.g. in a mode hook or using `dtrt-indent` or similar packages, `indent-bars` may not work correctly.  You _must_ ensure that `indent-bars-mode` is initialized _after_ all configuration work affecting indent spacing or style (tabs vs. space) has been done.  See [this issue](../../issues/127) for an example of the type of configuration needed.
 
 ## Tree-sitter Details
 
