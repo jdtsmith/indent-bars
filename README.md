@@ -168,7 +168,8 @@ Configuration variables for bar position and line locations (including on blank 
 - `indent-bars-no-descend-string`: Whether to inhibit increasing bar depth inside of strings.
 - `indent-bars-no-descend-list`: Whether to inhibit increasing bar depth inside of lists.  Additionally, if set to the symbol `skip`, bars _between_ lists contexts are skipped (not displayed). An example with `indent-bars-no-descend-list=skip` shows how intermediate bars in nested lists contexts are skipped:
 
-   <img width="483" height="232" alt="image" src="https://github.com/user-attachments/assets/a28a956f-5031-4f9c-b2fe-b6e17f0d2402" />
+   <img width="394" height="347" alt="image" src="https://github.com/user-attachments/assets/602c6466-c9bc-4718-a9e7-5e91fda0f86a" />
+
 - If you need to alter what `indent-bars` considers a list context, override the variable `indent-bars-ppss-syntax-table`, e.g. for altering `python-mode` to omit `{`/`}` from consideration:
 
    ```elisp
