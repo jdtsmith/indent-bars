@@ -83,13 +83,13 @@ Configures `tree-sitter` and `ignore-blank-line` support for an example language
 ```elisp
 (use-package indent-bars
   :custom
-  (indent-bars-no-descend-lists 'skip) ; prevent extra bars in nested lists
+  (indent-bars-no-descend-lists 'skip) ; prevent extra bars in nested lists + skip intermediate bars
   (indent-bars-treesit-support t)
   (indent-bars-treesit-ignore-blank-lines-types '("module"))
-  ;; Add other languages as needed
+  ;; Add other languages as needed; check the wiki
   (indent-bars-treesit-scope '((python function_definition class_definition for_statement
 	  if_statement with_statement while_statement)))
-  ;; Note: wrap may not be needed if no-descend-list is enough
+  ;; Note: wrap likely not be needed if no-descend-list is enough
   ;;(indent-bars-treesit-wrap '((python argument_list parameters ; for python, as an example
   ;;				      list list_comprehension
   ;;				      dictionary dictionary_comprehension
