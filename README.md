@@ -20,10 +20,10 @@ This package provides fast, flexible indentation _guide bars_ in Emacs, with opt
 - Bars can appear on blank lines.
 - Bars can have optional depth-based coloring, with a cyclical color palette you can [customize](#customization).
 - Bar appearance is _highly_ [configurable](#customization): color, blending, width, position within the character, vertical fill/blank pattern, even zigzag (see [examples](examples.md)).
-- Fast current-depth bar highlighting with configurable bar color and/or appearance changes.
+- Fast [current-depth bar highlighting](#current-depth-highlighting) with configurable bar color and/or appearance changes.
 - Bar depth can be held constant inside multi-line strings and lists.
-- Supports bar-skipping in multiply-nested list structures.
-- Works in the terminal, using a vertical bar character.
+- Supports [bar-skipping](#bar-setup-and-location) in multiply-nested list structures.
+- Works in the [terminal](#character-based-bars-and-terminal), using a vertical bar character.
 
 ## What's New
 
