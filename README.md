@@ -309,7 +309,7 @@ Simply configure `indent-bars-treesit-scope` with the languages and node types f
 > If you don't know the name treesitter uses for your language, try `M-: (treesit-language-at (point-min))` in a ts-enabled buffer.
 
 #### Wrap
-`indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that `indent-bars-no-descend-list`, which does not require tree-sitter and is on by default, may be sufficient for your uses.
+`indent-bars-treesit-wrap` can be configured in a similar manner (mapping language to wrapping node types). Note that `indent-bars-no-descend-list`, which does not require tree-sitter, may be sufficient for your uses.
 
 #### Ignore certain blank lines
 You can assign a single (usually top-level) node type to ignore when drawing bars on blanks linkes; see `indent-bars-treesit-ignore-blank-lines-types` (which, please note, is configured as a list of _strings_, unlike `indent-bars-treesit-wrap/scope`).
