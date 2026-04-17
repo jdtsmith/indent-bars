@@ -287,7 +287,7 @@ Experiment with these to see which you prefer.
 
 ## Ensuring `indent-bars` initializes _last_
 
-If you alter important variables that affect the indentation spacing after `indent-bars` is setup in a buffer, e.g. in a mode hook or using `dtrt-indent` or similar packages, `indent-bars` may not work correctly.  You _must_ ensure that `indent-bars-mode` is initialized _after_ all configuration work affecting indent spacing or style (tabs vs. space) has been done.  See [this issue](../../issues/127) for an example of the type of configuration needed.
+If you alter important variables that affect the indentation spacing after `indent-bars` is setup in a buffer, e.g. using `.dir-locals.el`, in a mode hook or using `dtrt-indent` or similar packages, `indent-bars` may not work correctly.  You _must_ ensure that `indent-bars-mode` is initialized _after_ all configuration work affecting indent spacing or style (tabs vs. space) has been done.  See [this issue](../../issues/127) for an example of the type of configuration needed.
 
 ## Tree-sitter Details
 
