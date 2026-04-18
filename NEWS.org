@@ -2,6 +2,10 @@
 #+author: J.D. Smith
 #+language: en
 
+* DEVELOPMENT
+
+- Add custom option ~indent-bars-defer-setup~ to help with late setup of indentation parameters, including file/dir-local and other helper modes like ~dtrt-indent~.
+
 * v1.0 (2025-01-19)
 
 - Implement /bar-skipping/ in multiply-nested list contexts (with ~indent-bars-no-descend-lists~ set to ~skip~).

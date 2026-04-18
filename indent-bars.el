@@ -533,6 +533,19 @@ buffer-local automatically."
   :initialize #'custom-initialize-default
   :group 'indent-bars)
 
+(defcustom indent-bars-defer-setup nil
+  "Whether to defer indent-bars setup to `after-change-major-mode-hook'.
+Setting up `indent-bars' correctly in a buffer requires correct
+information about the indentation spacing and tabs vs. spaces.  If these
+are set after `indent-bars' is initialized, via another minor mode, or
+in file or directory-local variables, this can lead to incorrect
+behavior.  In these cases, it can be useful to defer `indent-bars' setup
+to the `after-change-major-mode-hook'.  Enable this only if you only
+experience problems, and enable `indent-bars' via major mode
+hooks (e.g. `python-base-mode')."
+  :type 'boolean
+  :group 'indent-bars)
+
 ;;;;; Color Utilities
 (defun indent-bars--background (&optional no-remap)
   "Return the background color.
@@ -1910,7 +1923,9 @@ Adapted from `highlight-indentation-mode'."
       (if (and (daemonp) (not (frame-parameter nil 'client)))
 	  (add-hook 'after-make-frame-functions #'indent-bars-setup-and-remove
 		    nil t)
-	(indent-bars-setup))
+	(if indent-bars-defer-setup
+	    (add-hook 'after-change-major-mode-hook #'indent-bars-setup nil t)
+	  (indent-bars-setup)))
     (indent-bars-teardown)))
 
 ;; Theme support
