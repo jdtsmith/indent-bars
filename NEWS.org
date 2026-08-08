@@ -2,7 +2,7 @@
 #+author: J.D. Smith
 #+language: en
 
-* DEVELOPMENT
+* v1.0.1 (2026-08-08)
 
 - Add custom option ~indent-bars-defer-setup~ to help with late setup of indentation parameters, including file/dir-local and other helper modes like ~dtrt-indent~.
 
