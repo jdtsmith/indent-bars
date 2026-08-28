@@ -1800,6 +1800,10 @@ Adapted from `highlight-indentation-mode'."
     r-ts-mode-indent-level)
    ((and (derived-mode-p 'ess-mode) (boundp 'ess-indent-offset))
     ess-indent-offset)
+   ((and (derived-mode-p 'jq-mode) (boundp 'jq-indent-offset))
+    jq-indent-offset)
+   ((and (derived-mode-p 'terraform-mode) (boundp 'terraform-indent-level))
+    terraform-indent-level)
    ((and (boundp 'standard-indent) standard-indent))
    (t 4))) 				; backup
 
