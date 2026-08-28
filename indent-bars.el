@@ -89,12 +89,18 @@ open/close paren characters.")
 (defvar indent-bars-depth-update-delay)
 (defvar indent-bars-custom-set nil)
 (defvar indent-bars--custom-set-inhibit nil)
-(defun indent-bars--custom-set (sym val)
-  "Set SYM to VAL, and reset `indent-bars' in all windows."
-  (set-default-toplevel-value sym val)
+(defun indent-bars--custom-set (sym val &optional buffer-local)
+  "Set SYM to VAL, and reset `indent-bars' in all windows, on all frames.
+If optional BUFFER-LOCAL is non-nil, affect only the current buffer and
+its windows on all frames."
+  (if buffer-local
+      (set-local sym val)
+    (set-default-toplevel-value sym val))
   (when (and (not indent-bars--custom-set-inhibit) (boundp 'indent-bars-mode))
     (let ((indent-bars--custom-set-inhibit t)) ; prevent re-entry
-      (cl-loop for win in (window-list)
+      (cl-loop for win in (if buffer-local
+                              (get-buffer-window-list nil nil t)
+                            (window-list-1 nil nil t))
 	       if (buffer-local-value 'indent-bars-mode (window-buffer win)) do
 	       (with-selected-window win
 		 (indent-bars-reset)
@@ -1242,10 +1248,10 @@ remaining bars, if any are needed."
 	   end (1+ end) ; atop the final newline
 	   `(indent-bars-display
 	     ,(concat (indent-bars--blank-string
-		       style (- pos end) (- nbars bar -1) bar skip nil 
+		       style (- pos end) (- nbars bar -1) bar skip nil
 		       switch-after style2)
 		      "\n")
-	    rear-nonsticky t)))))))
+	     rear-nonsticky t)))))))
 
 (defun indent-bars--context-bars (end &optional min)
   "Maximum number of bars between point and END.
@@ -1831,7 +1837,7 @@ Adapted from `highlight-indentation-mode'."
 
   ;; Invisible face
   (indent-bars--initialize-invisible-face)
-  
+
   ;; Style (color + stipple)
   (unless (and indent-bars-style indent-bars--styles)
     (indent-bars--initialize-style
