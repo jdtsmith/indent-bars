@@ -54,11 +54,10 @@ See the release [NEWS](NEWS.org).
 
 ## Tree-sitter and Scope
 
-- **I turned on treesitter support but nothing happened** <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest. [More info](#configuring-tree-sitter).
+- **I turned on treesitter support but nothing happened** <br>You need to configure `indent-bars-treesit-scope` (and possibly `wrap`) for your language(s) of interest, and maybe set alt style like `indent-bars-ts-highlight-current-depth`. [More info](#configuring-tree-sitter).
 - **My treesitter scope makes no sense!** <br>A common mistake is adding too many node types for your language to the `indent-bars-treesit-scope` variable.  Start small, with thing you _know_ you want (function, method, class, etc.).
-- **How can I change the style of the out-of-scope bars?** <br>Using an [alternate set](#tree-sitter-alternate-styling-variables) of `ts-` customizations.
+- **How can I change the style of the out-of-scope bars?** <br>Using an [alternate set](#tree-sitter-alternate-styling-variables) of `ts-` customizations.  Note that by default, only the `:blend` differs between `ts` and normal style variables.
 - **What if I want out-of-scope text to have the default style, and in-scope text to be special?** <br>You want to set `indent-bars-ts-styling-scope` to `'in-scope`. 
-
 
 # Install/config
 
