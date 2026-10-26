@@ -556,7 +556,7 @@ hooks (e.g. `python-base-mode')."
 (defun indent-bars--background (&optional no-remap)
   "Return the background color.
 NO-REMAP is passed to `indent-bars--background-color'."
-  (when-let ((bg-cons (indent-bars--background-color no-remap)))
+  (when-let* ((bg-cons (indent-bars--background-color no-remap)))
     (if (consp bg-cons) (cdr bg-cons) bg-cons)))
 
 (defun indent-bars--background-color(&optional no-remap)
